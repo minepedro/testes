@@ -47,3 +47,6 @@ Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertenc
 
 ## 13. Onde fica a tela no personagem?
 **O mascote vive dentro da tela.** A tela exibe o mascote animado; a carcaça impressa é uma caixa/moldura simples ao redor, sem corpo mecânico.
+
+## 14. Orçamento da v1
+**Sem teto definido.** Priorizar qualidade (touch capacitivo, controlador ST7796, alto-falante decente) e comprar peças reserva.
