@@ -44,3 +44,6 @@ Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitig
 ## 12. Como o mascote é fisicamente?
 **É o mascote do Claude** (assumido: o bichinho laranja pixelado do Claude Code, conhecido como Clawd; confirmar). Personagem com corpo impresso na A1, tela 3,5" exibindo o personagem animado.
 Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertence à Anthropic.
+
+## 13. Onde fica a tela no personagem?
+**O mascote vive dentro da tela.** A tela exibe o mascote animado; a carcaça impressa é uma caixa/moldura simples ao redor, sem corpo mecânico.
