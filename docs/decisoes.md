@@ -34,3 +34,6 @@ Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitig
 
 ## 9. Confirmação antes de agir
 **Toque na tela para confirmar, por enquanto (provisório).** Tela mostra exatamente a ação; só executa quando o Pedro toca em Aprovar. Rever o nível de confirmação (sempre vs só ações de risco) antes da v1 final.
+
+## 10. Alimentação
+**USB-C na tomada na v1.** Bateria fica para uma v2; carcaça da v1 não precisa reservar espaço.
