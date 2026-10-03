@@ -126,6 +126,7 @@ h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
 .state p { margin: 0; color: var(--muted); font-size: 14px; }
 .notes ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
 .notes li + li { margin-top: 6px; }
+.fixed { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
 code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px; border-radius: 4px; }
 @media (max-width: 420px) { .state { grid-template-columns: 1fr; gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { .device { transition: none; } }
@@ -136,15 +137,22 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   <header>
     <div class="eyebrow">software/ui-proto · tela 3,5" · 480×320</div>
     <h1>Mascote Claude</h1>
-    <p class="lead">Protótipo da tela em repouso. Segure o dedo (ou o mouse) na tela para falar com ele; solte para ele pensar e responder.</p>
+    <p class="lead">Protótipo da tela do mascote. Segure o dedo (ou o mouse) para falar com ele e solte para ele responder. Toque na faixa de cima para ver as sessões.</p>
   </header>
 
   <div class="bench">
     <div class="device" id="device">
-      <canvas id="screen" width="480" height="320" tabindex="0" aria-label="Tela do mascote, 480 por 320 pixels. Segure para falar."></canvas>
+      <canvas id="screen" width="480" height="320" tabindex="0" aria-label="Tela do mascote, 480 por 320 pixels. Segure para falar. Toque no topo para ver as sessões."></canvas>
     </div>
 
     <div class="controls">
+      <div class="group">
+        <span class="label">tela</span>
+        <div class="seg" id="viewSeg" role="group" aria-label="Tela do aparelho">
+          <button type="button" data-view="mascot" aria-pressed="true">mascote</button>
+          <button type="button" data-view="list" aria-pressed="false">sessões</button>
+        </div>
+      </div>
       <div class="group">
         <span class="label">estado</span>
         <div class="seg" id="stateSeg" role="group" aria-label="Estado do mascote">
@@ -170,20 +178,30 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     <section>
       <h2>Estados</h2>
       <div class="states">
-        <div class="state"><div class="name">idle</div><p>Respira (4 px), pisca a cada 3–6 s, olha para os lados de vez em quando. Rodapé: "segure para falar".</p></div>
-        <div class="state"><div class="name">listening</div><p>Entra ao tocar e segurar. Olhos arregalados, inclina para frente, anel pulsando, barras de áudio e a transcrição aparecendo no rodapé.</p></div>
+        <div class="state"><div class="name">idle</div><p>Pisca a cada 3–6 s e olha para os lados de vez em quando. Rodapé: "segure para falar".</p></div>
+        <div class="state"><div class="name">listening</div><p>Entra ao tocar e segurar. Olhos arregalados, barras de áudio e a transcrição aparecendo no rodapé.</p></div>
         <div class="state"><div class="name">thinking</div><p>Entra ao soltar. Olha para o lado, três pontos ao lado da cabeça. Sem texto.</p></div>
-        <div class="state"><div class="name">speaking</div><p>Boca abre e fecha no ritmo da fala, corpo balança, a resposta sai no rodapé. Tocar aqui interrompe e volta a ouvir.</p></div>
+        <div class="state"><div class="name">speaking</div><p>Boca abre e fecha no ritmo da fala e a resposta sai no rodapé. Tocar aqui interrompe e volta a ouvir.</p></div>
+      </div>
+      <p class="fixed">O mascote não muda de lugar em nenhum estado. Só olhos, boca e rodapé mudam.</p>
+    </section>
+    <section>
+      <h2>Sessões</h2>
+      <div class="states">
+        <div class="state"><div class="name">entrar</div><p>Toque na faixa de cima. Ela mostra "N aguardando aprovação" em âmbar quando alguma sessão precisa de você, ou "ponte ok" em verde.</p></div>
+        <div class="state"><div class="name">lista</div><p>Uma sessão por linha, 58 px: ícone de estado, título, repositório e branch, tempo e estado. Quem precisa de você vem primeiro, com fundo âmbar. Arraste para rolar.</p></div>
+        <div class="state"><div class="name">detalhe</div><p>Toque numa linha. Mostra a última atividade e, se a sessão pede permissão, o comando exato num quadro âmbar.</p></div>
+        <div class="state"><div class="name">voltar</div><p>Seta no canto superior esquerdo, ou Esc no teclado. As sessões desta tela são exemplos.</p></div>
       </div>
     </section>
     <section>
       <h2>Para portar ao firmware (LVGL)</h2>
       <ul>
         <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>15×30 px</code> na tela (1:2, como a célula do terminal). Os olhos e a boca são buracos no corpo, como no original.</li>
-        <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão, que encolhe quando ele sobe. O corpo não tem faixas internas.</li>
-        <li>Movimento é discreto (passos de 4 px), sem interpolação: cada pose é um frame.</li>
-        <li>Paleta fixa de 11 cores, todas representáveis em RGB565 sem perda visível.</li>
-        <li>Topo (ponte, sessões, relógio) e rodapé (texto) são duas faixas de 28 px; o mascote fica entre elas.</li>
+        <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão. O corpo não tem faixas internas.</li>
+        <li>O sprite fica sempre na mesma posição. Cada pose (olhos, boca) é um frame, sem interpolação.</li>
+        <li>Paleta fixa de 15 cores, todas representáveis em RGB565 sem perda visível.</li>
+        <li>Tela do mascote: topo (ponte, sessões, relógio) e rodapé (texto) são faixas; o mascote fica entre elas. Lista de sessões: cabeçalho de 36 px e linhas de 58 px.</li>
         <li>A máquina de estados em <code>update()</code> é o contrato: a ponte na VPS vai mandar só o estado e o texto.</li>
       </ul>
     </section>
@@ -202,7 +220,9 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     hi: '#f0a07c', mid: '#e5896a',           // luz: topo e borda esquerda
     body: '#d97757',
     lo: '#bf6446', deep: '#8f4731',          // sombra: borda direita/baixo, pernas
-    fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73'
+    fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73',
+    warn: '#e6b450', warnBg: '#231b0f',      // aguardando aprovacao
+    panel: '#1a1613', line: '#2a2420'        // cabecalho e divisorias das listas
   };
   // O Clawd do terminal, " ▐▛███▜▌ / ▝▜█████▛▘ / ▘▘ ▝▝ ", lido em quadrantes:
   // 18 pixels de largura por 5 de altura. Os olhos sao os quadrantes que
@@ -218,41 +238,74 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   const EYE_L = 5, EYE_R = 12, EYE_ROW = 1;  // posicao dos olhos (pixels)
   const MOUTH_X = 8, MOUTH_Y = 2.5;          // boca: 2 px de largura, entre os olhos e a barriga
   const BODY_X = (W - BODY_W * PW) / 2;      // 105
-  const BODY_Y = 68;                         // topo da cabeca em repouso
-  const TOP_BAR = 28, FOOT_Y = H - 44;       // faixas de texto
+  const BODY_Y = 68;                         // fixo: o mascote nunca sai daqui
+  const TOP_BAR = 28, TOP_HIT = 40, FOOT_Y = H - 44;  // faixas da tela do mascote
+  const HDR = 36, RH = 58;                   // cabecalho e altura de cada linha da lista
 
   const SAMPLE_ASK = 'Como está a sessão do mascote?';
   const SAMPLE_REPLY = 'A sessão mascote-claude está parada, esperando você. Nenhuma permissão pendente.';
 
+  // Sessoes de exemplo (a ponte vai mandar as reais). Ordem: o que precisa de
+  // voce primeiro (aguardando), depois o que esta rodando, depois o resto por recencia.
+  const STATUS = {
+    waiting: { label: 'aguardando',  color: PAL.warn },
+    working: { label: 'trabalhando', color: PAL.body },
+    idle:    { label: 'parada',      color: PAL.dim },
+    done:    { label: 'concluída',   color: PAL.ok }
+  };
+  const SESSIONS = [
+    { title: 'Corrigir build do site', repo: 'lookvision-site', branch: 'fix/build', status: 'waiting', ago: '4 min',
+      last: 'O build quebrava no passo de lint. Corrigi 3 erros e o build passou local.',
+      ask: 'Rodar: npm run deploy' },
+    { title: 'UI do mascote', repo: 'testes', branch: 'main', status: 'working', ago: 'agora',
+      last: 'Editando software/ui-proto/index.html: fixando a posição do mascote em todos os estados.' },
+    { title: 'Ponte das sessões', repo: 'mascote-claude', branch: 'bridge', status: 'idle', ago: '1 h',
+      last: 'Esqueleto da ponte pronto. Falta ler as sessões do cc.remote.' },
+    { title: 'Guia de compras', repo: 'testes', branch: 'main', status: 'done', ago: 'ontem',
+      last: 'PDF gerado com marcas, lojas e preços estimados.' },
+    { title: 'Revisar PR 214', repo: 'api-pagamentos', branch: 'main', status: 'done', ago: '2 d',
+      last: 'Revisão enviada com 2 comentários bloqueantes.' },
+    { title: 'Atualizar zsh', repo: 'dotfiles', branch: 'main', status: 'idle', ago: '3 d',
+      last: 'Aliases migrados. Falta testar no servidor.' }
+  ];
+
   const canvas = document.getElementById('screen');
   const ctx = canvas.getContext('2d');
   const readout = document.getElementById('readout');
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---- estado -------------------------------------------------------------
+  let view = 'mascot';              // 'mascot' | 'list' | 'detail'
+  let scroll = 0, sel = 0;          // rolagem da lista e sessao aberta
   const m = {
     state: 'idle', t: 0,          // estado atual e tempo nele (s)
-    bob: 0, lean: 0,              // deslocamento do corpo (px)
     eyeH: 1, eyeDx: 0, eyeDy: 0,  // olhos (pixels do sprite)
-    mouth: 0,                     // altura da boca (células, 0 = fechada)
+    mouth: 0,                     // altura da boca (meios pixels, 0 = fechada)
     blinkAt: 2.5, blinkT: -1,     // proximo piscar / tempo no piscar
     glanceAt: 4, glanceDx: 0, glanceUntil: 0,
     mouthNext: 0,
     bars: new Array(24).fill(0), barsTarget: new Array(24).fill(0),
     typed: 0, caption: '',
     hint: '', hintUntil: 0,
-    pressedAt: 0
+    pressedAt: 0, manual: false
   };
 
   function setState(s) {
     m.state = s; m.t = 0;
-    m.eyeH = 1; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0; m.lean = 0; m.bob = 0;
+    m.eyeH = 1; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0;
     m.typed = 0; m.caption = '';
-    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 1.5; m.eyeDy = -0.5; m.lean = 6; }
+    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 1.5; m.eyeDy = -0.5; }
     if (s === 'thinking')  { m.eyeDx = 1; }
     if (s === 'speaking')  { m.caption = SAMPLE_REPLY; }
     document.querySelectorAll('#stateSeg button').forEach(b =>
       b.setAttribute('aria-pressed', String(b.dataset.state === s)));
+  }
+
+  function setView(v) {
+    view = v;
+    if (v === 'list') scroll = Math.min(scroll, listMax());
+    if (v !== 'mascot' && m.state !== 'idle') setState('idle');
+    document.querySelectorAll('#viewSeg button').forEach(b =>
+      b.setAttribute('aria-pressed', String((b.dataset.view === 'mascot') === (v === 'mascot'))));
   }
 
   function update(dt) {
@@ -269,8 +322,6 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     }
 
     if (m.state === 'idle') {
-      // respira em 4 px, ciclo de ~3 s; passos inteiros
-      m.bob = reduceMotion ? 0 : (Math.sin(t * 2.1) > 0 ? -4 : 0);
       // olhar para o lado de vez em quando
       if (t >= m.glanceAt) {
         m.glanceDx = Math.random() < 0.5 ? -1 : 1;
@@ -278,11 +329,9 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         m.glanceAt = t + 4 + Math.random() * 5;
       }
       m.eyeDx = t < m.glanceUntil ? m.glanceDx : 0;
-      m.eyeH = 1;
     }
 
     if (m.state === 'listening') {
-      m.bob = 0;
       // transcricao aparece a 18 chars/s depois de meio segundo
       m.typed = Math.max(0, Math.floor((t - 0.5) * 18));
       // barras de audio: envelope lento com ruido
@@ -296,7 +345,6 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     }
 
     if (m.state === 'thinking') {
-      m.bob = 0;
       if (t > 1.6 && !m.manual) setState('speaking');
     }
 
@@ -308,15 +356,14 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
           m.mouth = [0, 1, 2, 1][Math.floor(Math.random() * 4)];
           m.mouthNext = t + 0.07 + Math.random() * 0.08;
         }
-        m.bob = reduceMotion ? 0 : (m.mouth === 2 ? -4 : 0);
       } else {
-        m.mouth = 0; m.bob = 0;
+        m.mouth = 0;
         if (t > m.caption.length / 22 + 1.2 && !m.manual) setState('idle');
       }
     }
   }
 
-  // ---- desenho -----------------------------------------------------------
+  // ---- desenho: mascote ----------------------------------------------------
   // unidades do sprite (pixels PW x PH) -> retangulo na tela
   const cell = (cx, cy, color, w = 1, h = 1) => {
     ctx.fillStyle = color;
@@ -324,20 +371,17 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   };
   const solid = (x, y) => y >= 0 && y < BODY_H && x >= 0 && x < BODY_W && SPRITE[y][x] === '#';
 
-  // chao: brilho quente fixo + sombra que encolhe quando o corpo sobe
+  // chao: brilho quente + sombra, fixos como o mascote
   function drawFloor() {
     const cx = BODY_X + (BODY_W * PW) / 2, fy = BODY_Y + BODY_H * PH;
-    const lift = -m.bob / 4;                           // 0 ou 1
-    const rows = [[300, 0], [240, 6], [180, 12]];
     ctx.fillStyle = PAL.floor;
-    rows.forEach(([w, dy]) => ctx.fillRect(cx - w / 2, fy + 3 + dy, w, 6));
+    [[300, 0], [240, 6], [180, 12]].forEach(([w, dy]) => ctx.fillRect(cx - w / 2, fy + 3 + dy, w, 6));
     ctx.fillStyle = PAL.shadow;
-    const sw = [210, 150, 90].map(w => w - lift * 30);
-    sw.forEach((w, i) => ctx.fillRect(cx - w / 2 + m.lean / 2, fy + 3 + i * 6, w, 6));
+    [210, 150, 90].forEach((w, i) => ctx.fillRect(cx - w / 2, fy + 3 + i * 6, w, 6));
   }
 
   function drawMascot() {
-    const ox = BODY_X + m.lean, oy = BODY_Y + m.bob;
+    const ox = BODY_X, oy = BODY_Y;
     // corpo: o sprite do terminal pixel a pixel, com luz vinda de cima e da
     // esquerda. A sombra e decidida pelos vizinhos: borda sem vizinho em cima
     // ganha luz, borda sem vizinho embaixo ou a direita ganha sombra.
@@ -382,15 +426,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     }
   }
 
-  function drawListening() {
-    // anel pulsando em volta do mascote (contorno de 2 px)
-    const pulse = reduceMotion ? 0.6 : 0.4 + 0.6 * Math.abs(Math.sin(m.t * 3));
-    ctx.globalAlpha = pulse;
-    ctx.strokeStyle = PAL.body;
-    ctx.lineWidth = 2;
-    const pad = 10 + Math.floor((reduceMotion ? 0 : Math.abs(Math.sin(m.t * 3))) * 4) * 2;
-    ctx.strokeRect(BODY_X - pad + m.lean, BODY_Y - pad, BODY_W * PW + pad * 2, BODY_H * PH + pad * 2);
-    ctx.globalAlpha = 1;
+  function drawBars() {
     // barras de audio acima do rodape
     const n = m.bars.length, bw = 6, gap = 4, total = n * bw + (n - 1) * gap;
     const x0 = (W - total) / 2, base = FOOT_Y - 6;
@@ -402,13 +438,19 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   }
 
   function drawTopBar() {
+    const waiting = SESSIONS.filter(s => s.status === 'waiting').length;
     ctx.font = '11px Silkscreen, monospace';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = PAL.ok;
+    ctx.fillStyle = waiting ? PAL.warn : PAL.ok;
     ctx.fillRect(12, TOP_BAR / 2 - 3, 6, 6);
-    ctx.fillStyle = PAL.dim;
+    const label = waiting ? waiting + ' aguardando aprovação' : 'ponte ok · ' + SESSIONS.length + ' sessões';
+    ctx.fillStyle = waiting ? PAL.warn : PAL.dim;
     ctx.textAlign = 'left';
-    ctx.fillText('ponte ok · 2 sessões', 26, TOP_BAR / 2 + 1);
+    ctx.fillText(label, 26, TOP_BAR / 2 + 1);
+    // seta: avisa que o topo e tocavel e leva a lista
+    const ax = 26 + ctx.measureText(label).width + 10, ay = TOP_BAR / 2;
+    [[0, -6], [3, -3], [6, 0], [3, 3], [0, 6]].forEach(([dx, dy]) => ctx.fillRect(ax + dx, ay + dy - 1, 3, 3));
+    ctx.fillStyle = PAL.dim;
     ctx.textAlign = 'right';
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0'), mm = String(now.getMinutes()).padStart(2, '0');
@@ -446,50 +488,200 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     lines.forEach((l, i) => ctx.fillText(l, W / 2, FOOT_Y + 4 + i * 16));
   }
 
+  // ---- desenho: sessoes ----------------------------------------------------
+  const listMax = () => Math.max(0, SESSIONS.length * RH - (H - HDR));
+
+  function truncate(text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    while (text.length && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+    return text + '…';
+  }
+
+  // icone de estado, 16x16, em pixels como o resto da tela
+  function drawGlyph(status, x, y) {
+    const c = STATUS[status].color;
+    if (status === 'idle') {                           // anel vazio
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, 16, 3); ctx.fillRect(x, y + 13, 16, 3);
+      ctx.fillRect(x, y, 3, 16); ctx.fillRect(x + 13, y, 3, 16);
+      return;
+    }
+    ctx.fillStyle = status === 'working' && Math.floor(performance.now() / 600) % 2 ? PAL.hi : c;
+    ctx.fillRect(x, y, 16, 16);
+    ctx.fillStyle = PAL.bg;
+    if (status === 'waiting') { ctx.fillRect(x + 6, y + 3, 4, 7); ctx.fillRect(x + 6, y + 11, 4, 3); }
+    if (status === 'done') [[3, 8], [5, 10], [7, 8], [9, 6], [11, 4]].forEach(([dx, dy]) => ctx.fillRect(x + dx, y + dy, 3, 3));
+  }
+
+  function drawHeader(title, right) {
+    ctx.fillStyle = PAL.panel; ctx.fillRect(0, 0, W, HDR);
+    ctx.fillStyle = PAL.line;  ctx.fillRect(0, HDR - 1, W, 1);
+    ctx.fillStyle = PAL.fg;                            // seta de voltar
+    [[21, 8], [18, 12], [15, 16], [18, 20], [21, 24]].forEach(([x, y]) => ctx.fillRect(x, y, 4, 4));
+    ctx.font = '13px Silkscreen, monospace';
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillText(truncate(title, W - 44 - 110), 44, HDR / 2 + 1);
+    if (right) {
+      ctx.font = '11px Silkscreen, monospace';
+      ctx.fillStyle = PAL.dim; ctx.textAlign = 'right';
+      ctx.fillText(right, W - 14, HDR / 2 + 1);
+    }
+  }
+
+  function drawList() {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, HDR, W, H - HDR); ctx.clip();
+    SESSIONS.forEach((s, i) => {
+      const y = HDR + i * RH - scroll;
+      if (y > H || y + RH < HDR) return;
+      const st = STATUS[s.status];
+      if (s.status === 'waiting') { ctx.fillStyle = PAL.warnBg; ctx.fillRect(0, y, W, RH - 1); }
+      ctx.fillStyle = PAL.line; ctx.fillRect(0, y + RH - 1, W, 1);
+      drawGlyph(s.status, 14, y + 21);
+      ctx.textBaseline = 'middle';
+      ctx.font = '13px Silkscreen, monospace'; ctx.textAlign = 'left'; ctx.fillStyle = PAL.fg;
+      ctx.fillText(truncate(s.title, W - 44 - 110), 44, y + 20);
+      ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
+      ctx.fillText(truncate(s.repo + ' · ' + s.branch, W - 44 - 110), 44, y + 40);
+      ctx.textAlign = 'right';
+      ctx.fillText(s.ago, W - 14, y + 20);
+      ctx.fillStyle = st.color; ctx.fillText(st.label, W - 14, y + 40);
+    });
+    ctx.restore();
+    const max = listMax();
+    if (max > 0) {                                     // barra de rolagem
+      const trackH = H - HDR - 8, thumbH = Math.max(24, trackH * (H - HDR) / (SESSIONS.length * RH));
+      ctx.fillStyle = PAL.line; ctx.fillRect(W - 4, HDR + 4, 2, trackH);
+      ctx.fillStyle = PAL.dim;  ctx.fillRect(W - 4, HDR + 4 + (trackH - thumbH) * scroll / max, 2, thumbH);
+    }
+    drawHeader('Sessões', SESSIONS.length + ' no total');
+  }
+
+  function drawDetail() {
+    const s = SESSIONS[sel], st = STATUS[s.status];
+    drawHeader(s.title, '');
+    drawGlyph(s.status, 16, 54);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = st.color;
+    ctx.fillText(st.label, 44, 63);
+    ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
+    ctx.textAlign = 'right'; ctx.fillText('há ' + s.ago, W - 16, 63);
+    ctx.textAlign = 'left';
+    ctx.fillText(truncate(s.repo + ' · ' + s.branch, W - 32), 16, 92);
+    ctx.fillStyle = PAL.line; ctx.fillRect(16, 108, W - 32, 1);
+    ctx.font = '10px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
+    ctx.fillText('ÚLTIMA ATIVIDADE', 16, 124);
+    ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.fg; ctx.textBaseline = 'top';
+    wrapText(s.last, W - 32).slice(0, 4).forEach((l, i) => ctx.fillText(l, 16, 138 + i * 18));
+    if (s.ask) {                                       // pedido de permissao pendente
+      const by = H - 78;
+      ctx.fillStyle = PAL.warnBg; ctx.fillRect(16, by, W - 32, 62);
+      ctx.fillStyle = PAL.warn;
+      ctx.fillRect(16, by, W - 32, 2); ctx.fillRect(16, by + 60, W - 32, 2);
+      ctx.fillRect(16, by, 2, 62); ctx.fillRect(W - 18, by, 2, 62);
+      ctx.font = '10px Silkscreen, monospace'; ctx.fillText('PEDE PERMISSÃO', 28, by + 12);
+      ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.fg;
+      wrapText(s.ask, W - 56).slice(0, 2).forEach((l, i) => ctx.fillText(l, 28, by + 30 + i * 16));
+    }
+  }
+
   function draw() {
     ctx.fillStyle = PAL.bg;
     ctx.fillRect(0, 0, W, H);
+    if (view === 'list') return drawList();
+    if (view === 'detail') return drawDetail();
     drawTopBar();
     drawFloor();
-    if (m.state === 'listening') drawListening();
+    if (m.state === 'listening') drawBars();
     drawMascot();
     if (m.state === 'thinking') drawThinkingDots();
     drawFooter();
   }
 
-  // ---- toque (push-to-talk) ----------------------------------------------
+  // ---- toque ---------------------------------------------------------------
+  const toCanvas = e => {
+    const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  };
+  let drag = null;
+  const hitBack = p => p.y < HDR && p.x < 80;
+
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
+    const p = toCanvas(e);
+    drag = { x: p.x, y: p.y, scroll, moved: false, top: false };
+    if (view !== 'mascot') return;
+    if (p.y < TOP_HIT) { drag.top = true; return; }    // topo: abre as sessoes
     m.pressedAt = performance.now();
     m.manual = false;
     if (m.state === 'idle' || m.state === 'speaking') setState('listening');
   });
+  canvas.addEventListener('pointermove', e => {
+    if (!drag || view !== 'list') return;
+    const dy = toCanvas(e).y - drag.y;
+    if (Math.abs(dy) > 6) drag.moved = true;
+    if (drag.moved) scroll = Math.max(0, Math.min(listMax(), drag.scroll - dy));
+  });
   canvas.addEventListener('pointerup', e => {
-    if (m.state !== 'listening') return;
-    const held = performance.now() - m.pressedAt;
-    if (held < 300) {
-      setState('idle');
-      m.hint = 'segure o dedo enquanto fala'; m.hintUntil = performance.now() + 1800;
-    } else {
-      setState('thinking');
+    const d = drag; drag = null;
+    if (!d) return;
+    const p = toCanvas(e);
+    if (view === 'mascot') {
+      if (d.top) { if (p.y < TOP_HIT) setView('list'); return; }
+      if (m.state !== 'listening') return;
+      const held = performance.now() - m.pressedAt;
+      if (held < 300) {
+        setState('idle');
+        m.hint = 'segure o dedo enquanto fala'; m.hintUntil = performance.now() + 1800;
+      } else {
+        setState('thinking');
+      }
+    } else if (view === 'list') {
+      if (d.moved) return;
+      if (hitBack(p)) { setView('mascot'); return; }
+      const i = Math.floor((p.y - HDR + scroll) / RH);
+      if (p.y >= HDR && i >= 0 && i < SESSIONS.length) { sel = i; setView('detail'); }
+    } else if (hitBack(p)) {
+      setView('list');
     }
   });
-  canvas.addEventListener('pointercancel', () => { if (m.state === 'listening') setState('idle'); });
+  canvas.addEventListener('pointercancel', () => {
+    drag = null;
+    if (view === 'mascot' && m.state === 'listening') setState('idle');
+  });
+  canvas.addEventListener('wheel', e => {
+    if (view !== 'list') return;
+    e.preventDefault();
+    scroll = Math.max(0, Math.min(listMax(), scroll + e.deltaY));
+  }, { passive: false });
   canvas.addEventListener('keydown', e => {
-    if (e.key === ' ' || e.key === 'Enter') {
+    if (view === 'mascot') {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (m.state === 'idle') { m.pressedAt = performance.now() - 1000; setState('listening'); }
+        else if (m.state === 'listening') setState('thinking');
+      }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setView('list'); }
+    } else if (e.key === 'Escape' || e.key === 'Backspace') {
+      e.preventDefault(); setView(view === 'detail' ? 'list' : 'mascot');
+    } else if (view === 'list' && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       e.preventDefault();
-      if (m.state === 'idle') { m.pressedAt = performance.now() - 1000; setState('listening'); }
-      else if (m.state === 'listening') setState('thinking');
+      scroll = Math.max(0, Math.min(listMax(), scroll + (e.key === 'ArrowDown' ? RH : -RH)));
     }
   });
 
   // ---- controles da bancada ----------------------------------------------
   document.getElementById('stateSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    setView('mascot');
     m.manual = true;                 // nao avanca sozinho quando escolhido a mao
     setState(b.dataset.state);
     if (b.dataset.state === 'listening') { m.t = 0.6; }
+  });
+  document.getElementById('viewSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    setView(b.dataset.view);
   });
   const device = document.getElementById('device');
   document.getElementById('zoomSeg').addEventListener('click', e => {
@@ -512,13 +704,16 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     acc += dt;
     if (acc > 0.2) {
       acc = 0;
-      readout.innerHTML = 'estado <b>' + m.state + '</b> · ' + m.t.toFixed(1).replace('.', ',') + ' s';
+      readout.innerHTML = view === 'mascot'
+        ? 'estado <b>' + m.state + '</b> · ' + m.t.toFixed(1).replace('.', ',') + ' s'
+        : view === 'list' ? 'tela <b>sessões</b> · rolagem ' + Math.round(scroll) + ' px'
+        : 'sessão <b>' + SESSIONS[sel].repo + '</b>';
     }
     requestAnimationFrame(frame);
   }
   const start = () => requestAnimationFrame(frame);
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load('12px Silkscreen'), document.fonts.load('11px Silkscreen')])
+    Promise.all(['10px', '11px', '12px', '13px'].map(s => document.fonts.load(s + ' Silkscreen')))
       .then(start, start);
   } else start();
 })();
