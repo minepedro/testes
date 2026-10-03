@@ -27,3 +27,7 @@ Nota de compra: preferir controlador ST7796 (RGB565, mais rápido) ao ILI9488 (1
 
 ## 7. Como acorda o mascote?
 **Toque na tela (push-to-talk) na v1; palavra de ativação depois.** O ESP32-S3 suporta as duas, então o hardware não muda.
+
+## 8. O que acontece quando fala com ele?
+**B) Claude do mascote que lê e responde, e também envia comandos e aprova permissões nas sessões.**
+Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitigação a definir na decisão 9.
