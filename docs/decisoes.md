@@ -20,3 +20,7 @@ Motivo: já existe servidor ligado 24h, então não precisa de Raspberry Pi (mai
 
 ## 5. Placa pronta ou peças avulsas?
 **Peças avulsas, compradas na Santa Ifigênia.** ESP32-S3 (com PSRAM) + tela touch + microfone I2S + amplificador + alto-falante. Carcaça impressa na Bambu A1.
+
+## 6. Qual tela?
+**3,5" touch, 480x320.** Maior e mais legível para lista de sessões.
+Nota de compra: preferir controlador ST7796 (RGB565, mais rápido) ao ILI9488 (18 bits, mais lento no SPI). Confirmar o tipo de touch (resistivo XPT2046 ou capacitivo) na loja.
