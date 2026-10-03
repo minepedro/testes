@@ -7,6 +7,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 
 ## Estrutura
 - `docs/decisoes.md` — decisões tomadas (uma por pergunta do grill-me)
+- `docs/compras-online.md` — lista de compras com links (Mercado Livre)
 - `docs/bom.md` — lista de componentes (Santa Ifigênia)
 - `docs/guia-de-compras.pdf` — guia ilustrado: marcas, alternativas, onde achar, preço estimado, ferramentas extras
 - `hardware/` — esquemáticos, fotos, modelos 3D da carcaça (Bambu A1)
