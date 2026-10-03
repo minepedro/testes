@@ -13,6 +13,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `docs/bom.md` — lista de componentes (Santa Ifigênia)
 - `docs/guia-de-compras.pdf` — guia ilustrado: marcas, alternativas, onde achar, preço estimado, ferramentas extras
 - `hardware/` — esquemáticos, fotos, modelos 3D da carcaça (Bambu A1)
+- `firmware/testes/` — programas de teste de cada etapa da montagem (compilam para ESP32-S3; ainda não testados na placa)
 - `firmware/` — código do microcontrolador
 - `software/bridge/` — ponte entre as sessões do Claude e o mascote
 - `software/ui-proto/` — protótipo web da tela (480x320): mascote animado e push-to-talk

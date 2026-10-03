@@ -83,7 +83,7 @@ Capacitor de 470 µF entre `VIN` e `GND` do amplificador, **com a perna do traç
    - Flash Size: **16MB (128Mb)**
    - PSRAM: **OPI PSRAM**
    - USB CDC On Boot: **Disabled** (o Serial sai pela porta UART)
-   - Partition Scheme: um esquema de 16 MB
+   - Partition Scheme: **16M Flash (3MB APP/9.9MB FATFS)**
 4. O ESP32-S3-DevKitC-1 tem **duas portas USB-C**. Use a marcada **UART** (ou COM) para gravar e ver o Serial.
 
 **Bancada:** protoboard, jumpers (macho-macho e macho-fêmea), multímetro, cabo USB-C **de dados**.
@@ -173,6 +173,24 @@ push-to-talk. Essa parte eu escrevo junto com você quando você chegar aqui.
 
 Fora da v1 (decisão 16). Se decidir ter voz depois, monte o MAX98357A com o
 alto-falante e o capacitor, conforme a tabela opcional acima.
+
+## Programas de teste
+
+Ficam em `firmware/testes/`, um por etapa:
+
+| Etapa | Pasta | O que faz |
+|---|---|---|
+| 1 | `etapa1_psram` | Imprime PSRAM e flash no Serial |
+| 2 e 3 | `etapa2_3_tela_touch` | Pinta a tela; com `USAR_TOUCH 1`, desenha um ponto a cada toque |
+| 3 | `etapa3_i2c_scan` | Procura o chip do touch no I2C |
+| 4 | `etapa4_microfone` | Mostra o volume do microfone no Serial |
+
+Os quatro **compilam** para o ESP32-S3 N16R8 (arduino-cli, pacote esp32 3.3.12,
+LovyanGFX 1.2.32), inclusive a variante com touch ligado. **Não foram testados na
+placa.** Se algum não compilar na sua IDE, ou se comportar diferente do esperado,
+me mande a mensagem de erro ou o que apareceu no Serial.
+
+O desenho da protoboard, com cada jumper e as etapas, está em `hardware/esquema-ligacoes.html`.
 
 ## Como vamos fazer juntos
 

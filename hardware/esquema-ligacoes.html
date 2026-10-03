@@ -55,7 +55,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
-.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 40px; }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
 header { display: grid; gap: 8px; }
 .eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 h1 { margin: 0; font: 700 30px/1.1 var(--font-display); letter-spacing: .01em; text-wrap: balance; }
@@ -63,6 +63,7 @@ h2 { margin: 0 0 6px; font-size: 20px; line-height: 1.25; font-weight: 600; text
 h3 { margin: 0; font-size: 16px; font-weight: 600; }
 p { margin: 0; }
 .lead { color: var(--muted); max-width: 64ch; }
+section, .stage, .card { grid-template-columns: minmax(0, 1fr); }
 section { display: grid; gap: 14px; min-width: 0; }
 .sub { color: var(--muted); max-width: 64ch; }
 code, .mono { font-family: var(--font-mono); font-size: 13px; }
@@ -130,6 +131,40 @@ tr:last-child td { border-bottom: 0; }
 .steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--fg); max-width: 70ch; }
 .steps li::marker { color: var(--muted); font-family: var(--font-mono); }
 .hint { font: 500 12px/1.4 var(--font-mono); color: var(--muted); }
+
+/* protoboard e etapas */
+:root { --bb: #eef0f2; --bb-edge: #b9bec6; --hole: #a3aab4; --gap: #dfe2e6; --code-bg: #14171a; --code-fg: #e3e6ea; --code-dim: #8d96a1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bb: #2a2e33; --bb-edge: #3a4047; --hole: #5b636c; --gap: #22262a; --code-bg: #0d0f11; } }
+:root[data-theme="dark"] { --bb: #2a2e33; --bb-edge: #3a4047; --hole: #5b636c; --gap: #22262a; --code-bg: #0d0f11; }
+.bb[data-stage="1"] :is(.st2,.st3,.st4) { display: none; }
+.bb[data-stage="2"] :is(.st3,.st4) { display: none; }
+.bb[data-stage="3"] .st4 { display: none; }
+.bb[data-stage="2"] .bw:not(.st2), .bb[data-stage="3"] .bw:not(.st3), .bb[data-stage="4"] .bw:not(.st4) { opacity: .4; }
+.bb[data-stage="1"] .bw { opacity: 1; }
+.jt .stg { font: 500 12px/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
+.jt td.type { white-space: nowrap; color: var(--muted); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; background: var(--c); vertical-align: -1px; }
+.mesa { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.mesa ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.mesa li::marker { color: var(--muted); }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.stage header { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.stage .n { font: 700 13px/1 var(--font-display); color: var(--accent); letter-spacing: .04em; }
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; font-size: 14px; }
+.kv dt { font: 500 11px/1.8 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+.okbox { border-left: 3px solid var(--w-i2s); padding: 8px 12px; background: var(--bg); border-radius: 0 6px 6px 0; }
+.codewrap { position: relative; min-width: 0; }
+.codewrap .cap { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 500 12px/1 var(--font-mono); color: var(--code-dim); background: var(--code-bg); padding: 8px 10px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #2a2f35; }
+.codewrap button { appearance: none; cursor: pointer; background: transparent; color: var(--code-fg); border: 1px solid #3a4047; border-radius: 6px; padding: 5px 10px; font: 500 12px/1 var(--font-body); }
+.codewrap button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+pre.code code { background: transparent; padding: 0; border-radius: 0; font: inherit; color: inherit; }
+pre.code { margin: 0; background: var(--code-bg); color: var(--code-fg); padding: 12px 14px; border-radius: 0 0 8px 8px; overflow: auto; max-height: 420px; font: 12.5px/1.55 var(--font-mono); tab-size: 2; }
+details > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ide { display: grid; gap: 6px; }
+@media (max-width: 560px) { .kv { grid-template-columns: 1fr; gap: 0; } .kv dd { margin-bottom: 8px; } }
+
 @media (max-width: 560px) { .res div { grid-template-columns: 1fr; gap: 2px; } h1 { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .wire { transition: none; } }
 </style>
@@ -139,7 +174,7 @@ tr:last-child td { border-bottom: 0; }
   <header>
     <div class="eyebrow">hardware · v1 · protoboard</div>
     <h1>Ligações do Mascote</h1>
-    <p class="lead">Quatro peças e 14 fios de sinal. A regra que vale para tudo: as peças trabalham em 3,3 V. Esta página mostra quem liga em quem, por qual fio e para quê.</p>
+    <p class="lead">Quatro peças e 14 fios de sinal, 21 jumpers no total. A regra que vale para tudo: as peças trabalham em 3,3 V. Esta página mostra quem liga em quem, por qual fio e para quê.</p>
   </header>
 
   <section id="fluxo">
@@ -186,24 +221,312 @@ tr:last-child td { border-bottom: 0; }
     </div>
   </section>
 
+  <section id="protoboard">
+    <h2>Como fica na protoboard</h2>
+    <p class="sub">Vista de cima da protoboard de 830 pontos. Escolha uma etapa para ver só os fios que já entram nela. Cada etapa tem um teste, e você só passa para a próxima quando o teste passa.</p>
+    <div class="chips" id="stageChips" role="group" aria-label="Etapa da montagem">
+      <button class="chip" type="button" data-stage="1" aria-pressed="false">Etapa 1 · só o ESP32</button>
+      <button class="chip" type="button" data-stage="2" aria-pressed="false">Etapa 2 · tela</button>
+      <button class="chip" type="button" data-stage="3" aria-pressed="false">Etapa 3 · touch</button>
+      <button class="chip" type="button" data-stage="4" aria-pressed="true">Etapa 4 · microfone (tudo)</button>
+    </div>
+    <figure>
+      <div class="scroller"><svg id="bb" class="bb" data-stage="4" viewBox="0 0 800 560" role="img" aria-label="Protoboard vista de cima: o ESP32-S3 encaixado no meio, com o primeiro pino na coluna 14. O microfone encaixa nas colunas 4 a 9. A tela fica fora da protoboard, abaixo, ligada por jumpers aos furos livres ao lado dos pinos do ESP32. Os trilhos de baixo levam 3V3 e GND."></svg></div>
+      <figcaption>Os pinos do ESP32 ocupam duas fileiras e deixam <b>um furo livre ao lado de cada pino</b>, do lado de fora. É nesse furo que cada jumper entra. A tela fica fora da protoboard (fora de escala). As letras impressas na sua protoboard podem estar em outra ordem; use o nome do pino do ESP32 como referência, não a letra. <span class="hint">No celular, arraste o desenho para o lado.</span></figcaption>
+    </figure>
+    <h3>Lista dos 21 jumpers</h3>
+    <div class="scroller"><div class="tbl" style="padding:4px 14px"><table class="jt"><thead><tr><th>Etapa</th><th>Jumper</th><th>De</th><th>Para</th></tr></thead><tbody id="jbody"></tbody></table></div></div>
+    <ol class="steps">
+      <li>Encaixe o ESP32-S3 com o primeiro pino (3V3) na <b>coluna 14</b>, a antena para a esquerda e as portas USB para a direita. Pode usar outra coluna inicial; some o mesmo deslocamento em todos os números.</li>
+      <li>As duas fileiras de pinos do ESP32 ficam <b>uma de cada lado</b> do canal central da protoboard. Nunca as duas do mesmo lado.</li>
+      <li>Os trilhos de baixo viram a alimentação: um para o <b>3V3</b> e outro para o <b>GND</b>. Alguns modelos têm o trilho dividido ao meio; se o seu for assim, ligue as duas metades com um jumper.</li>
+      <li>A tela fica fora da protoboard. Os jumpers dela são <b>macho-fêmea</b>: a ponta fêmea encaixa no pino do módulo e a ponta macho no furo da protoboard. Se o módulo da tela vier com pinos fêmea, use macho-macho.</li>
+      <li>O microfone encaixa direto na protoboard, nas colunas 4 a 9, com os fios dele curtos. Fio comprido capta ruído.</li>
+    </ol>
+  </section>
+
+  <section id="mesa">
+    <h2>O que você precisa na mesa para testar</h2>
+    <p class="sub">Tudo o que as quatro etapas pedem. A etapa 1 só precisa do ESP32, do cabo e do computador, então dá para começar assim que a placa chegar.</p>
+    <div class="mesa">
+      <div class="card"><h3>Peças</h3><ul>
+        <li>1 ESP32-S3 DevKitC-1 <b>N16R8</b> (mais 1 de reserva)</li>
+        <li>1 tela 3,5″ SPI 480×320 <b>ST7796</b> com touch capacitivo</li>
+        <li>1 microfone <b>INMP441</b> (mais 1 de reserva)</li>
+        <li>1 protoboard de 830 pontos</li>
+        <li><b>13 jumpers macho-fêmea</b> (tela, de 20 cm)</li>
+        <li><b>8 jumpers macho-macho</b> (protoboard)</li>
+        <li>1 cabo USB-C de <b>dados</b></li>
+      </ul></div>
+      <div class="card"><h3>Ferramentas</h3><ul>
+        <li><b>Multímetro</b> com tensão contínua e continuidade (a que apita)</li>
+        <li>Computador com porta USB livre</li>
+        <li>Celular para fotografar a montagem antes de ligar</li>
+        <li>Barra de pinos e solda, só se a tela vier sem pinos</li>
+      </ul></div>
+      <div class="card"><h3>Software</h3><ul>
+        <li><a href="https://www.arduino.cc/en/software" target="_blank" rel="noopener">Arduino IDE 2</a></li>
+        <li>Pacote de placas <b>esp32</b> da Espressif, versão <b>3.0 ou mais nova</b></li>
+        <li>Biblioteca <b>LovyanGFX</b> (Gerenciador de Bibliotecas)</li>
+        <li>Driver do conversor USB (CP210x), se o computador não reconhecer a porta UART</li>
+      </ul></div>
+    </div>
+    <details open>
+      <summary>Configurar a Arduino IDE para o N16R8</summary>
+      <div class="ide">
+        <div class="tbl"><table><thead><tr><th>Em Ferramentas</th><th>Escolha</th></tr></thead><tbody>
+          <tr><td>Placa</td><td><b>ESP32S3 Dev Module</b></td></tr>
+          <tr><td>Flash Size</td><td><b>16MB (128Mb)</b></td></tr>
+          <tr><td>PSRAM</td><td><b>OPI PSRAM</b></td></tr>
+          <tr><td>USB CDC On Boot</td><td><b>Disabled</b> (o Serial sai pela porta UART)</td></tr>
+          <tr><td>Partition Scheme</td><td><b>16M Flash (3MB APP/9.9MB FATFS)</b></td></tr>
+          <tr><td>Porta</td><td>a do cabo ligado na entrada <b>UART</b> da placa</td></tr>
+        </tbody></table></div>
+        <p class="sub">Os nomes das opções variam um pouco entre versões do pacote esp32.</p>
+      </div>
+    </details>
+  </section>
+
   <section id="antes">
     <h2>Antes de ligar o USB</h2>
     <p class="sub">Cinco conferências que evitam queimar uma peça. Marque conforme faz; o estado fica salvo neste navegador.</p>
     <div class="checks" id="checks"></div>
   </section>
 
-  <section id="protoboard">
-    <h2>Como isso fica na protoboard</h2>
-    <ol class="steps">
-      <li>Encaixe o ESP32-S3 na protoboard com as duas portas USB para fora. Como os sinais usados estão todos no conector esquerdo, os jumpers saem de um lado só.</li>
-      <li>Use os trilhos laterais da protoboard como barramentos: um para o <b>3V3</b> e outro para o <b>GND</b>. Ligue o pino 3V3 do ESP32 ao trilho 3V3 e o pino GND ao trilho GND.</li>
-      <li>A tela fica fora da protoboard, ao lado. Use jumpers macho-fêmea do conector dela até a protoboard ou direto aos pinos do ESP32.</li>
-      <li>O microfone é pequeno e pode ficar encaixado na própria protoboard. Mantenha os fios dele curtos, porque o ruído entra pelos fios compridos.</li>
-      <li>Monte e teste uma peça por vez, na ordem do guia <code>docs/montagem.md</code>: ESP32, tela, touch, microfone.</li>
-    </ol>
+  <section id="etapas">
+    <h2>As quatro etapas de teste</h2>
+    <p class="sub">Uma por vez, na ordem. Cada etapa diz quais fios entram, qual programa gravar, o que precisa aparecer e o que fazer se não aparecer. Os programas estão na pasta <code>firmware/testes/</code> do repositório.</p>
+    <div id="stages" style="display:grid;grid-template-columns:minmax(0,1fr);gap:20px"></div>
   </section>
 </div>
 
+<script type="text/plain" id="code-etapa1_psram">// Etapa 1: confirma que a placa é N16R8 (PSRAM de 8 MB e flash de 16 MB).
+// Abra o Monitor Serial em 115200.
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+  Serial.println();
+  Serial.printf("Chip:  %s, %d MHz\n", ESP.getChipModel(), ESP.getCpuFreqMHz());
+  Serial.printf("PSRAM: %u bytes (esperado: perto de 8388608)\n", ESP.getPsramSize());
+  Serial.printf("Flash: %u bytes (esperado: perto de 16777216)\n", ESP.getFlashChipSize());
+}
+
+void loop() {}
+</script>
+<script type="text/plain" id="code-etapa2_3_tela_touch">// Etapas 2 e 3: tela ST7796 (SPI) e touch (I2C).
+// Etapa 2: deixe USAR_TOUCH em 0 e veja as cores na tela.
+// Etapa 3: troque USAR_TOUCH para 1; cada toque desenha um ponto e imprime x e y.
+// Biblioteca: LovyanGFX (Gerenciador de Bibliotecas).
+// Touch GT911 em vez de FT6336: troque Touch_FT5x06 por Touch_GT911 e i2c_addr por 0x5D.
+
+#define USAR_TOUCH 0
+
+#define LGFX_USE_V1
+#include <LovyanGFX.hpp>
+
+// Pinos (docs/montagem.md)
+constexpr int PIN_SCK = 12, PIN_MOSI = 11, PIN_MISO = 13, PIN_DC = 14;
+constexpr int PIN_CS = 10, PIN_RST = 6, PIN_BL = 7;
+constexpr int PIN_SDA = 8, PIN_SCL = 9, PIN_TP_INT = 4, PIN_TP_RST = 5;
+
+class LGFX : public lgfx::LGFX_Device {
+  lgfx::Panel_ST7796 _panel;
+  lgfx::Bus_SPI _bus;
+  lgfx::Light_PWM _light;
+  lgfx::Touch_FT5x06 _touch;  // o chip FT6336 usa este driver
+
+public:
+  LGFX() {
+    {
+      auto cfg = _bus.config();
+      cfg.spi_host = SPI2_HOST;
+      cfg.spi_mode = 0;
+      cfg.freq_write = 40000000;
+      cfg.freq_read = 16000000;
+      cfg.pin_sclk = PIN_SCK;
+      cfg.pin_mosi = PIN_MOSI;
+      cfg.pin_miso = PIN_MISO;
+      cfg.pin_dc = PIN_DC;
+      _bus.config(cfg);
+      _panel.setBus(&_bus);
+    }
+    {
+      auto cfg = _panel.config();
+      cfg.pin_cs = PIN_CS;
+      cfg.pin_rst = PIN_RST;
+      cfg.pin_busy = -1;
+      cfg.panel_width = 320;   // a tela é 320x480 "em pé"; setRotation(1) deixa 480x320
+      cfg.panel_height = 480;
+      cfg.offset_x = 0;
+      cfg.offset_y = 0;
+      cfg.offset_rotation = 0;
+      cfg.readable = false;
+      cfg.invert = false;      // se as cores saírem invertidas (preto vira branco), troque para true
+      cfg.rgb_order = false;   // se vermelho e azul saírem trocados, troque para true
+      cfg.dlen_16bit = false;
+      cfg.bus_shared = false;
+      _panel.config(cfg);
+    }
+    {
+      auto cfg = _light.config();
+      cfg.pin_bl = PIN_BL;
+      cfg.invert = false;
+      cfg.freq = 44100;
+      cfg.pwm_channel = 7;
+      _light.config(cfg);
+      _panel.setLight(&_light);
+    }
+#if USAR_TOUCH
+    {
+      auto cfg = _touch.config();
+      cfg.x_min = 0;
+      cfg.x_max = 319;
+      cfg.y_min = 0;
+      cfg.y_max = 479;
+      cfg.pin_int = PIN_TP_INT;
+      cfg.bus_shared = false;
+      cfg.offset_rotation = 0;
+      cfg.i2c_port = 0;
+      cfg.i2c_addr = 0x38;     // FT6336
+      cfg.pin_sda = PIN_SDA;
+      cfg.pin_scl = PIN_SCL;
+      cfg.freq = 400000;
+      _touch.config(cfg);
+      _panel.setTouch(&_touch);
+    }
+#endif
+    setPanel(&_panel);
+  }
+};
+
+LGFX tft;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+#if USAR_TOUCH
+  // reinicia o chip do touch antes de iniciar a tela
+  pinMode(PIN_TP_RST, OUTPUT);
+  digitalWrite(PIN_TP_RST, LOW);
+  delay(10);
+  digitalWrite(PIN_TP_RST, HIGH);
+  delay(100);
+#endif
+
+  tft.init();
+  tft.setRotation(1);       // paisagem, 480x320
+  tft.setBrightness(200);
+
+  // 1) as três cores, nesta ordem: vermelho, verde, azul
+  const uint32_t cores[] = {TFT_RED, TFT_GREEN, TFT_BLUE};
+  for (uint32_t c : cores) {
+    tft.fillScreen(c);
+    delay(800);
+  }
+
+  // 2) moldura e texto
+  tft.fillScreen(TFT_BLACK);
+  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_WHITE);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextSize(3);
+  tft.setCursor(24, 24);
+  tft.print("Mascote Claude");
+  tft.setTextSize(2);
+  tft.setCursor(24, 80);
+  tft.printf("Tela %dx%d ok", tft.width(), tft.height());
+#if USAR_TOUCH
+  tft.setCursor(24, 112);
+  tft.print("Toque na tela");
+#endif
+}
+
+void loop() {
+#if USAR_TOUCH
+  int32_t x, y;
+  if (tft.getTouch(&x, &y)) {
+    tft.fillCircle(x, y, 6, TFT_YELLOW);
+    Serial.printf("toque: x=%d y=%d\n", (int)x, (int)y);
+  }
+#endif
+}
+</script>
+<script type="text/plain" id="code-etapa3_i2c_scan">// Etapa 3 (diagnóstico): procura o chip do touch no I2C.
+// Esperado: 0x38 (FT6336) ou 0x5D / 0x14 (GT911).
+
+constexpr int PIN_SDA = 8, PIN_SCL = 9, PIN_TP_RST = 5;
+
+#include <Wire.h>
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+
+  // sem este reset o chip do touch pode não responder
+  pinMode(PIN_TP_RST, OUTPUT);
+  digitalWrite(PIN_TP_RST, LOW);
+  delay(10);
+  digitalWrite(PIN_TP_RST, HIGH);
+  delay(100);
+
+  Wire.begin(PIN_SDA, PIN_SCL);
+  Serial.println("Procurando dispositivos I2C...");
+  int achados = 0;
+  for (uint8_t endereco = 1; endereco < 127; endereco++) {
+    Wire.beginTransmission(endereco);
+    if (Wire.endTransmission() == 0) {
+      Serial.printf("achei: 0x%02X\n", endereco);
+      achados++;
+    }
+  }
+  Serial.printf("%d dispositivo(s) encontrado(s)\n", achados);
+}
+
+void loop() {}
+</script>
+<script type="text/plain" id="code-etapa4_microfone">// Etapa 4: lê o microfone INMP441 pelo I2S e mostra o volume no Serial.
+// Precisa do núcleo esp32 (Espressif) versão 3.0 ou mais nova.
+// Esperado: o número e a barra sobem quando você bate palma perto.
+
+#include <ESP_I2S.h>
+
+constexpr int PIN_BCLK = 15, PIN_WS = 16, PIN_MIC_DATA = 17;
+
+I2SClass i2s;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+
+  i2s.setPins(PIN_BCLK, PIN_WS, -1, PIN_MIC_DATA);  // sem saída de áudio (-1)
+  // o INMP441 manda 24 bits dentro de uma palavra de 32; L/R no GND = canal esquerdo
+  if (!i2s.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT)) {
+    Serial.println("Falha ao iniciar o I2S. Confira os fios SCK, WS e SD.");
+    while (true) delay(1000);
+  }
+  Serial.println("Microfone pronto. Bata palma perto dele.");
+}
+
+void loop() {
+  int32_t amostras[256];
+  size_t n = i2s.readBytes((char *)amostras, sizeof(amostras)) / sizeof(int32_t);
+  if (n == 0) return;
+
+  // volume = desvio médio em relação à média (tira o nível contínuo do microfone)
+  int64_t soma = 0;
+  for (size_t i = 0; i < n; i++) soma += amostras[i] >> 14;
+  int32_t media = soma / (int64_t)n;
+  int64_t desvio = 0;
+  for (size_t i = 0; i < n; i++) desvio += abs((amostras[i] >> 14) - media);
+  int32_t volume = desvio / (int64_t)n;
+
+  int barra = constrain(volume / 100, 0, 60);
+  Serial.printf("%6d ", (int)volume);
+  for (int i = 0; i < barra; i++) Serial.print('#');
+  Serial.println();
+}
+</script>
 <script>
 (() => {
   'use strict';
@@ -420,7 +743,197 @@ tr:last-child td { border-bottom: 0; }
     });
   }
 
-  drawFlow(); drawDiagram(); drawCards(); drawChecks(); wireChips();
+
+  // ---- protoboard ---------------------------------------------------------------------
+  // Colunas 1 a 50. Pino i do conector esquerdo (J1) do ESP32 fica na coluna 14 + i.
+  const BB_C0 = 14, MIC_C0 = 4, BB_X0 = 48, BB_P = 14;
+  const bx = c => BB_X0 + (c - 1) * BB_P;
+  const ROW = { j: 82, i: 96, h: 110, g: 124, f: 138, e: 180, d: 194, c: 208, b: 222, a: 236 };
+  const RAIL_Y = { '3V3': 264, 'GND': 278 }, RAIL_COL = { '3V3': 2, 'GND': 3 };
+  const TELA_Y = 400, TELA_X0 = 150, TELA_P = 46;
+  const colOf = g => BB_C0 + LEFT.indexOf(String(g));
+  const TELA_PINS = WIRES.filter(w => w.mod === 'tela');       // ordem tipica do modulo
+  const MIC_PINS = WIRES.filter(w => w.mod === 'mic');
+
+  // cada jumper: etapa, tipo, barramento, de, para e caminho
+  function buildJumpers() {
+    const J = [];
+    // ESP32 aos trilhos (etapa 2)
+    J.push({ st: 2, type: 'MM', bus: 'pwr', from: 'ESP32 · pino 3V3 (coluna ' + colOf('3V3') + ')', to: 'trilho 3V3',
+             path: { kind: 'drop', x: bx(BB_C0), y: RAIL_Y['3V3'] } });
+    J.push({ st: 2, type: 'MM', bus: 'pwr', from: 'ESP32 · pino GND (coluna ' + colOf('GND') + ')', to: 'trilho GND',
+             path: { kind: 'drop', x: bx(colOf('GND')), y: RAIL_Y['GND'] } });
+    // tela (etapas 2 e 3)
+    TELA_PINS.forEach((w, k) => {
+      const xp = TELA_X0 + TELA_P * k;
+      const st = w.bus === 'i2c' ? 3 : 2;
+      if (w.net) {
+        J.push({ st, type: 'MF', bus: 'pwr', net: w.net, from: 'Tela · ' + w.pin, to: 'trilho ' + w.net,
+                 path: { kind: 'tela', xp, xh: bx(RAIL_COL[w.net]), yh: RAIL_Y[w.net] } });
+      } else {
+        const c = colOf(w.gpio);
+        J.push({ st, type: 'MF', bus: w.bus, from: 'Tela · ' + w.pin, to: 'coluna ' + c + ', ao lado do GPIO ' + w.gpio,
+                 path: { kind: 'tela', xp, xh: bx(c), yh: ROW.a } });
+      }
+    });
+    // microfone (etapa 4)
+    MIC_PINS.forEach((w, k) => {
+      const mc = MIC_C0 + k;
+      if (w.net) {
+        J.push({ st: 4, type: 'MM', bus: 'pwr', net: w.net, from: 'Microfone · ' + w.pin + ' (coluna ' + mc + ')', to: 'trilho ' + w.net,
+                 path: { kind: 'drop', x: bx(mc), y: RAIL_Y[w.net] } });
+      } else {
+        const c = colOf(w.gpio);
+        J.push({ st: 4, type: 'MM', bus: w.bus, from: 'Microfone · ' + w.pin + ' (coluna ' + mc + ')', to: 'coluna ' + c + ', ao lado do GPIO ' + w.gpio,
+                 path: { kind: 'arc', x1: bx(mc), x2: bx(c), d: 26 + 7 * k } });
+      }
+    });
+    return J.sort((a, b) => a.st - b.st);
+  }
+
+  function drawBreadboard() {
+    const J = buildJumpers();
+    const col = j => j.net === '3V3' ? 'var(--w-pwr)' : j.net === 'GND' ? 'var(--w-gnd)' : BUS[j.bus].c;
+    let s = `<defs><pattern id="hole" x="41" y="0" width="14" height="14" patternUnits="userSpaceOnUse"><rect x="4.5" y="9.5" width="5" height="5" rx="1" fill="var(--hole)"/></pattern></defs>`;
+    s += `<rect x="30" y="18" width="720" height="282" rx="8" fill="var(--bb)" stroke="var(--bb-edge)" stroke-width="2"/>`;
+    s += `<rect x="41" y="146" width="700" height="22" fill="var(--gap)"/>`;
+    [[28, 28], [70, 70], [168, 70], [252, 28]].forEach(([y, h]) => { s += `<rect x="41" y="${y}" width="700" height="${h}" fill="url(#hole)"/>`; });
+    // trilhos: faixa colorida e nome
+    [['3V3', RAIL_Y['3V3'], 'var(--w-pwr)'], ['GND', RAIL_Y['GND'], 'var(--w-gnd)']].forEach(([n, y, c]) => {
+      s += `<line x1="41" x2="741" y1="${y - 8}" y2="${y - 8}" stroke="${c}" stroke-width="1.5" opacity=".7"/><text x="${bx(1) - 40}" y="${y + 3.5}" class="t-title" style="fill:${c}">${n}</text>`;
+    });
+    s += `<text x="${bx(1) - 40}" y="43" class="t-dim">livre</text><text x="${bx(1) - 40}" y="57" class="t-dim">livre</text>`;
+    // regua de colunas
+    for (let c = 1; c <= 50; c++) if (c === 1 || c % 5 === 0) s += `<text class="t-dim" x="${bx(c)}" y="66" text-anchor="middle" style="font-size:9px">${c}</text>`;
+    ['j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'].forEach(r => { s += `<text class="t-dim" x="38" y="${ROW[r] + 3}" style="font-size:9px" text-anchor="end">${r}</text>`; });
+
+    // microfone encaixado nas colunas 4 a 9 (pinos na fileira e)
+    s += `<g class="st4"><rect x="${bx(MIC_C0) - 12}" y="108" width="${bx(MIC_C0 + 5) - bx(MIC_C0) + 24}" height="66" rx="4" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<rect x="${bx(MIC_C0) + 4}" y="118" width="22" height="22" rx="3" fill="var(--chip)"/><circle cx="${bx(MIC_C0) + 15}" cy="129" r="4.5" fill="#141210"/>`;
+    s += `<text class="t-pcb t-title" x="${bx(MIC_C0) + 30}" y="126" style="font-size:9px">INMP441</text><text class="t-pcbdim" x="${bx(MIC_C0) + 30}" y="138" style="font-size:8.5px">microfone</text>`;
+    MIC_PINS.forEach((w, k) => { s += `<circle cx="${bx(MIC_C0 + k)}" cy="${ROW.e}" r="3.2" fill="var(--gold)"/><text transform="translate(${bx(MIC_C0 + k) + 3.2} 171) rotate(-90)" class="t-pcb t-used" style="font-size:9px">${w.pin}</text>`; });
+    s += `</g>`;
+
+    // placa ESP32: corpo por cima dos furos entre as duas fileiras de pinos
+    const xl = bx(BB_C0) - 26, xr = bx(BB_C0 + 21) + 36;
+    s += `<rect x="${xl}" y="86" width="${xr - xl}" height="146" rx="4" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<rect x="${xr}" y="112" width="14" height="24" rx="2" fill="var(--chip)"/><rect x="${xr}" y="158" width="14" height="24" rx="2" fill="var(--chip)"/>`;
+    s += `<rect x="${xl + 8}" y="104" width="86" height="104" rx="3" fill="var(--chip)"/><text x="${xl + 51}" y="159" text-anchor="middle" transform="rotate(-90 ${xl + 51} 156)" style="fill:#1d2024;font-size:9.5px">WROOM-1 N16R8</text>`;
+    s += `<text class="t-pcbdim" x="${bx(BB_C0 + 5)}" y="124" style="font-size:9px">J3 (lado direito da placa, sem uso)</text>`;
+    s += `<text class="t-pcbdim" x="${xr - 6}" y="102" text-anchor="end" style="font-size:9px">USB →</text>`;
+    const usedG = new Set(sig.map(w => String(w.gpio)));
+    LEFT.forEach((p, i) => {
+      const x = bx(BB_C0 + i), used = usedG.has(p) || p === '3V3' || p === 'GND', res = RES.left.includes(p);
+      s += `<circle cx="${x}" cy="${ROW.i}" r="3.2" fill="var(--gold)"/><circle cx="${x}" cy="${ROW.b}" r="3.2" fill="var(--gold)"/>`;
+      s += `<text transform="translate(${x + 3.4} 214) rotate(-90)" class="${res ? 't-bad' : used ? 't-pcb t-used' : 't-pcbdim'}" style="font-size:9px">${label(p)}</text>`;
+    });
+
+    // jumpers
+    J.forEach(j => {
+      const c = col(j), pth = j.path;
+      let d;
+      if (pth.kind === 'drop') d = `M${pth.x} ${ROW.a} V${pth.y}`;
+      else if (pth.kind === 'arc') d = `M${pth.x1} ${ROW.a} C${pth.x1} ${ROW.a + pth.d} ${pth.x2} ${ROW.a + pth.d} ${pth.x2} ${ROW.a}`;
+      else d = `M${pth.xp} ${TELA_Y} C${pth.xp} ${TELA_Y - 70} ${pth.xh} ${pth.yh + 70} ${pth.xh} ${pth.yh}`;
+      const ends = pth.kind === 'drop' ? [[pth.x, ROW.a], [pth.x, pth.y]] : pth.kind === 'arc' ? [[pth.x1, ROW.a], [pth.x2, ROW.a]] : [[pth.xp, TELA_Y], [pth.xh, pth.yh]];
+      s += `<g class="bw st${j.st}"><path d="${d}" fill="none" stroke="var(--bb)" stroke-width="5.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>` +
+           ends.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.6" fill="${c}"/>`).join('') + `</g>`;
+    });
+
+    // modulo da tela, fora da protoboard
+    const tw = TELA_PINS.length;
+    s += `<g class="st2"><rect x="${TELA_X0 - 30}" y="${TELA_Y}" width="${TELA_P * (tw - 1) + 60}" height="130" rx="8" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<rect x="${TELA_X0 + 160}" y="${TELA_Y + 40}" width="240" height="80" rx="3" fill="#141210"/>` + mascot(TELA_X0 + 224, TELA_Y + 62, 6, 8);
+    s += `<text class="t-title t-pcb" x="${TELA_X0 - 14}" y="${TELA_Y + 62}">Tela 3,5″ ST7796</text><text class="t-pcbdim" x="${TELA_X0 - 14}" y="${TELA_Y + 80}">fora de escala</text><text class="t-pcbdim" x="${TELA_X0 - 14}" y="${TELA_Y + 96}">ordem dos pinos: a mais comum</text>`;
+    TELA_PINS.forEach((w, k) => {
+      const x = TELA_X0 + TELA_P * k, tone = w.net ? (w.net === '3V3' ? 'var(--w-pwr)' : 'var(--w-gnd)') : BUS[w.bus].c;
+      s += `<circle cx="${x}" cy="${TELA_Y}" r="4" fill="var(--gold)"/><text class="t-pcb t-used" x="${x}" y="${TELA_Y + 18}" text-anchor="middle" style="font-size:9.5px">${w.pin}</text>`;
+      s += `<rect x="${x - 3}" y="${TELA_Y + 24}" width="6" height="6" fill="${tone}"/>`;
+    });
+    s += `</g>`;
+    document.getElementById('bb').innerHTML = s;
+
+    // tabela de jumpers
+    const tag = { 1: '1', 2: '2', 3: '3', 4: '4' };
+    document.getElementById('jbody').innerHTML = J.map((j, i) => {
+      const c = col(j);
+      return `<tr><td class="stg">${tag[j.st]}</td><td class="type">${j.type === 'MF' ? 'macho-fêmea' : 'macho-macho'}</td><td><span class="dot" style="--c:${c}"></span>${j.from}</td><td>${j.to}</td></tr>`;
+    }).join('');
+  }
+
+  // ---- etapas de teste -------------------------------------------------------------------------
+  const CODE = id => (document.getElementById('code-' + id) || {}).textContent || '';
+  const STAGES = [
+    { n: 1, title: 'O ESP32-S3 sozinho', fios: 'Nenhum. Só o cabo USB-C na porta UART.',
+      prep: 'Configure a IDE como no quadro acima.',
+      progs: [['etapa1_psram', 'etapa1_psram.ino']],
+      ok: 'O Monitor Serial (115200) mostra PSRAM perto de 8388608 e Flash perto de 16777216.',
+      fail: [['PSRAM: 0', 'A opção PSRAM está errada (use OPI PSRAM) ou a placa não tem PSRAM. Se a opção está certa, o anúncio era enganoso: peça troca.'],
+             ['Não grava', 'Cabo só de carga ou porta errada. Use a porta UART. Segure BOOT, aperte RESET, solte BOOT e grave de novo.'],
+             ['Texto ilegível', 'O Monitor Serial não está em 115200.'],
+             ['A porta não aparece', 'Troque o cabo e instale o driver do conversor USB (CP210x).']] },
+    { n: 2, title: 'A tela', fios: '11 jumpers: os 7 sinais SPI (CS, RESET, DC, SDI, SCK, LED, SDO), VCC e GND da tela, e 3V3 e GND do ESP32 aos trilhos. Veja a etapa 2 no desenho.',
+      prep: 'Desligue o USB antes de ligar os fios. Com o multímetro em continuidade, confirme que não há curto entre o trilho 3V3 e o trilho GND. Instale a biblioteca LovyanGFX.',
+      progs: [['etapa2_3_tela_touch', 'etapa2_3_tela_touch.ino · deixe USAR_TOUCH em 0']],
+      ok: 'A tela acende e mostra vermelho, verde e azul, nessa ordem, e depois "Mascote Claude" com uma moldura branca.',
+      fail: [['Tela branca ou preta', 'RESET, DC ou CS trocados. Confira os três com a tabela de jumpers. Veja se o LED (luz de fundo) está no GPIO 7 ou no 3V3.'],
+             ['Cores trocadas (azul vira vermelho)', 'No programa, troque rgb_order de false para true.'],
+             ['Cores invertidas (preto vira branco)', 'No programa, troque invert de false para true.'],
+             ['Imagem espelhada ou de lado', 'Troque o número em tft.setRotation(1) por 0, 2 ou 3.'],
+             ['Imagem com ruído ou falhas', 'Fio de SCK ou SDI frouxo. Reencaixe e use jumpers mais curtos. Pode baixar freq_write para 20000000.']] },
+    { n: 3, title: 'O touch', fios: '4 jumpers: CTP_SCL, CTP_RST, CTP_SDA e CTP_INT.',
+      prep: 'Desligue o USB antes de ligar os fios. Grave primeiro o scanner, depois o programa da tela com o touch ligado.',
+      progs: [['etapa3_i2c_scan', 'etapa3_i2c_scan.ino · diagnóstico'], ['etapa2_3_tela_touch', 'etapa2_3_tela_touch.ino · troque USAR_TOUCH para 1']],
+      ok: 'O scanner acha 0x38 (FT6336) ou 0x5D / 0x14 (GT911). No programa da tela, cada toque desenha um ponto amarelo e imprime x e y no Serial.',
+      fail: [['Nenhum dispositivo no scanner', 'SDA e SCL trocados, ou CTP_RST sem ligar. Confira os dois pelo nome impresso na tela.'],
+             ['Achou 0x5D ou 0x14', 'É GT911: no programa, troque Touch_FT5x06 por Touch_GT911 e i2c_addr pelo endereço achado.'],
+             ['O ponto aparece em outro lugar', 'Normal na primeira vez: ajuste offset_rotation do touch e setRotation até coincidir.'],
+             ['Nada acontece ao tocar', 'CTP_INT sem ligar ou no pino errado. Confira o GPIO 4.']] },
+    { n: 4, title: 'O microfone', fios: '6 jumpers: SCK, WS, SD, L/R, VDD e GND do microfone. L/R vai ao GND.',
+      prep: 'Desligue o USB antes de ligar os fios. Encaixe o microfone nas colunas 4 a 9. O programa precisa do pacote esp32 versão 3.0 ou mais nova.',
+      progs: [['etapa4_microfone', 'etapa4_microfone.ino']],
+      ok: 'O Monitor Serial mostra números baixos no silêncio. Quando você bate palma perto do microfone, o número e a barra de # sobem.',
+      fail: [['Sempre zero', 'L/R solto (precisa ir ao GND) ou SD no GPIO errado.'],
+             ['Ruído alto e constante', 'Fios longos. Aproxime o microfone do ESP32 e encurte os jumpers.'],
+             ['Falha ao iniciar o I2S', 'Confira SCK (GPIO 15) e WS (GPIO 16) e se o pacote esp32 é 3.0 ou mais novo.'],
+             ['Não sobe com a palma', 'Troque o microfone pelo reserva: o primeiro pode ter vindo com defeito.']] }
+  ];
+  function drawStages() {
+    const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    document.getElementById('stages').innerHTML = STAGES.map(st => {
+      const progs = st.progs.map(([id, cap], i) => {
+        const code = CODE(id), lines = code.split('\n').length;
+        return `<details ${st.n === 1 ? 'open' : ''}><summary>Programa ${st.progs.length > 1 ? (i + 1) + ' de ' + st.progs.length : ''} · ${cap.split(' · ')[0]}</summary><div class="codewrap"><div class="cap"><span>${cap} · ${lines} linhas</span><button type="button" data-copy="${id}">Copiar</button></div><pre class="code"><code>${esc(code)}</code></pre></div></details>`;
+      }).join('');
+      const fails = st.fail.map(([a, b]) => `<tr><td style="white-space:normal;min-width:130px"><b>${a}</b></td><td>${b}</td></tr>`).join('');
+      return `<article class="stage" id="etapa${st.n}"><header><span class="n">ETAPA ${st.n}</span><h3>${st.title}</h3></header>
+        <dl class="kv"><dt>Fios</dt><dd>${st.fios}</dd><dt>Antes</dt><dd>${st.prep}</dd></dl>
+        ${progs}
+        <div class="okbox"><b>Passou quando:</b> ${st.ok}</div>
+        <details><summary>Se não passar</summary><div class="tbl"><table><tbody>${fails}</tbody></table></div></details></article>`;
+    }).join('');
+    document.getElementById('stages').addEventListener('click', e => {
+      const b = e.target.closest('button[data-copy]'); if (!b) return;
+      const text = CODE(b.dataset.copy), old = b.textContent;
+      const done = ok => { b.textContent = ok ? 'Copiado' : 'Selecione e copie'; setTimeout(() => (b.textContent = old), 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done(true), () => { selectCode(b); done(false); });
+      else { selectCode(b); done(false); }
+    });
+  }
+  function selectCode(btn) {
+    const code = btn.closest('.codewrap').querySelector('code'), r = document.createRange();
+    r.selectNodeContents(code); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }
+  function wireStageChips() {
+    const svg = document.getElementById('bb');
+    document.getElementById('stageChips').addEventListener('click', e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      svg.dataset.stage = b.dataset.stage;
+      document.querySelectorAll('#stageChips .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+  }
+
+  drawFlow(); drawDiagram(); drawCards(); drawBreadboard(); drawChecks(); drawStages(); wireChips(); wireStageChips();
 })();
 </script>
 </body>
