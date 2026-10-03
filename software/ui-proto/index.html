@@ -170,18 +170,18 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     <section>
       <h2>Estados</h2>
       <div class="states">
-        <div class="state"><div class="name">idle</div><p>Respira (2 px), pisca a cada 3–6 s, olha para os lados de vez em quando. Rodapé: "segure para falar".</p></div>
+        <div class="state"><div class="name">idle</div><p>Respira (4 px), pisca a cada 3–6 s, olha para os lados de vez em quando. Rodapé: "segure para falar".</p></div>
         <div class="state"><div class="name">listening</div><p>Entra ao tocar e segurar. Olhos arregalados, inclina para frente, anel pulsando, barras de áudio e a transcrição aparecendo no rodapé.</p></div>
-        <div class="state"><div class="name">thinking</div><p>Entra ao soltar. Olha para cima, três pontos ao lado da cabeça. Sem texto.</p></div>
+        <div class="state"><div class="name">thinking</div><p>Entra ao soltar. Olha para o lado, três pontos ao lado da cabeça. Sem texto.</p></div>
         <div class="state"><div class="name">speaking</div><p>Boca abre e fecha no ritmo da fala, corpo balança, a resposta sai no rodapé. Tocar aqui interrompe e volta a ouvir.</p></div>
       </div>
     </section>
     <section>
       <h2>Para portar ao firmware (LVGL)</h2>
       <ul>
-        <li>Tudo é desenhado numa grade de células de <code>12 px</code>; o corpo tem 16×12 células, olhos 2×3, pés 2×1. Vira sprite direto.</li>
-        <li>Movimento é discreto (passos de 1–2 px, altura do olho em células), sem interpolação: cada pose é um frame.</li>
-        <li>Paleta fixa de 6 cores, todas representáveis em RGB565 sem perda visível.</li>
+        <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>18 px</code> na tela. Os olhos e a boca são buracos no corpo, como no original.</li>
+        <li>Movimento é discreto (passos de 4 px, olho em pixels inteiros), sem interpolação: cada pose é um frame.</li>
+        <li>Paleta fixa de 5 cores, todas representáveis em RGB565 sem perda visível.</li>
         <li>Topo (ponte, sessões, relógio) e rodapé (texto) são duas faixas de 28 px; o mascote fica entre elas.</li>
         <li>A máquina de estados em <code>update()</code> é o contrato: a ponte na VPS vai mandar só o estado e o texto.</li>
       </ul>
@@ -192,14 +192,26 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
 <script>
 (() => {
   'use strict';
-  const W = 480, H = 320, C = 12;            // tela e tamanho da célula (px)
+  const W = 480, H = 320, C = 18;            // tela e tamanho do pixel do sprite (px)
   const PAL = {                              // paleta da tela (RGB565-friendly)
-    bg: '#141210', body: '#d97757', bodyDark: '#b85f42', eye: '#1c1917',
+    bg: '#141210', body: '#d97757',
     fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73'
   };
-  const BODY_W = 16, BODY_H = 12;
-  const BODY_X = (W - BODY_W * C) / 2;       // 144
-  const BODY_Y = 76;                         // topo do corpo em repouso
+  // O Clawd do terminal, " ▐▛███▜▌ / ▝▜█████▛▘ / ▘▘ ▝▝ ", lido em quadrantes:
+  // 18 pixels de largura por 5 de altura. Os olhos sao os quadrantes que
+  // faltam em ▛ e ▜ (buracos, nao blocos), por isso sao desenhados a parte.
+  const SPRITE = [
+    '...############...',
+    '...############...',
+    '.################.',
+    '...############...',
+    '....#.#....#.#....'
+  ];
+  const BODY_W = 18, BODY_H = 5;
+  const EYE_L = 5, EYE_R = 12, EYE_ROW = 1;  // posicao dos olhos (pixels)
+  const MOUTH_X = 8, MOUTH_ROW = 3;          // boca: 2 px de largura, centro
+  const BODY_X = (W - BODY_W * C) / 2;       // 78
+  const BODY_Y = 108;                        // topo da cabeca em repouso
   const TOP_BAR = 28, FOOT_Y = H - 44;       // faixas de texto
 
   const SAMPLE_ASK = 'Como está a sessão do mascote?';
@@ -214,7 +226,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   const m = {
     state: 'idle', t: 0,          // estado atual e tempo nele (s)
     bob: 0, lean: 0,              // deslocamento do corpo (px)
-    eyeH: 3, eyeDx: 0, eyeDy: 0,  // olhos (células)
+    eyeH: 1, eyeDx: 0, eyeDy: 0,  // olhos (pixels do sprite)
     mouth: 0,                     // altura da boca (células, 0 = fechada)
     blinkAt: 2.5, blinkT: -1,     // proximo piscar / tempo no piscar
     glanceAt: 4, glanceDx: 0, glanceUntil: 0,
@@ -227,10 +239,10 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
 
   function setState(s) {
     m.state = s; m.t = 0;
-    m.eyeH = 3; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0; m.lean = 0; m.bob = 0;
+    m.eyeH = 1; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0; m.lean = 0; m.bob = 0;
     m.typed = 0; m.caption = '';
-    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 4; m.lean = 4; }
-    if (s === 'thinking')  { m.eyeDy = -1; m.eyeDx = 1; }
+    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 2; m.lean = 6; }
+    if (s === 'thinking')  { m.eyeDx = 1; }
     if (s === 'speaking')  { m.caption = SAMPLE_REPLY; }
     document.querySelectorAll('#stateSeg button').forEach(b =>
       b.setAttribute('aria-pressed', String(b.dataset.state === s)));
@@ -250,8 +262,8 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     }
 
     if (m.state === 'idle') {
-      // respira em 2 px, ciclo de ~3 s; passos inteiros
-      m.bob = reduceMotion ? 0 : (Math.sin(t * 2.1) > 0 ? -2 : 0);
+      // respira em 4 px, ciclo de ~3 s; passos inteiros
+      m.bob = reduceMotion ? 0 : (Math.sin(t * 2.1) > 0 ? -4 : 0);
       // olhar para o lado de vez em quando
       if (t >= m.glanceAt) {
         m.glanceDx = Math.random() < 0.5 ? -1 : 1;
@@ -259,7 +271,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         m.glanceAt = t + 4 + Math.random() * 5;
       }
       m.eyeDx = t < m.glanceUntil ? m.glanceDx : 0;
-      m.eyeH = 3;
+      m.eyeH = 1;
     }
 
     if (m.state === 'listening') {
@@ -289,7 +301,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
           m.mouth = [0, 1, 2, 1][Math.floor(Math.random() * 4)];
           m.mouthNext = t + 0.07 + Math.random() * 0.08;
         }
-        m.bob = reduceMotion ? 0 : (m.mouth === 2 ? -2 : 0);
+        m.bob = reduceMotion ? 0 : (m.mouth === 2 ? -4 : 0);
       } else {
         m.mouth = 0; m.bob = 0;
         if (t > m.caption.length / 22 + 1.2 && !m.manual) setState('idle');
@@ -305,36 +317,32 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
 
   function drawMascot() {
     const ox = BODY_X + m.lean, oy = BODY_Y + m.bob;
-    // corpo com cantos de raio 2 celulas
+    // corpo: o sprite do terminal, pixel a pixel, chapado como o original
     for (let y = 0; y < BODY_H; y++) {
       for (let x = 0; x < BODY_W; x++) {
-        const cornerX = x < 2 || x >= BODY_W - 2, cornerY = y < 2 || y >= BODY_H - 2;
-        if (cornerX && cornerY) {
-          const dx = x < 2 ? 1 - x : x - (BODY_W - 2);
-          const dy = y < 2 ? 1 - y : y - (BODY_H - 2);
-          if (dx + dy >= 2) continue;              // tira os 3 pixels do canto
-        }
-        const shade = y === BODY_H - 1 || (x === BODY_W - 1 && y >= 2 && y < BODY_H - 2);
-        cell(ox + x * C, oy + y * C, shade ? PAL.bodyDark : PAL.body);
+        if (SPRITE[y][x] === '#') cell(ox + x * C, oy + y * C, PAL.body);
       }
     }
-    // pes
-    cell(ox + 3 * C, oy + BODY_H * C, PAL.body, 2, 1);
-    cell(ox + (BODY_W - 5) * C, oy + BODY_H * C, PAL.body, 2, 1);
-    // olhos
-    const eyeH = m.blinkT >= 0 ? 1 : m.eyeH;
-    const eyeTop = 4 + m.eyeDy + (m.blinkT >= 0 ? 1 : 0) + (m.eyeH === 4 ? -1 : 0);
-    cell(ox + (4 + m.eyeDx) * C, oy + eyeTop * C, PAL.eye, 2, eyeH);
-    cell(ox + (BODY_W - 6 + m.eyeDx) * C, oy + eyeTop * C, PAL.eye, 2, eyeH);
-    // boca
-    if (m.mouth > 0) cell(ox + 7 * C, oy + 8 * C, PAL.eye, 2, m.mouth);
+    // olhos sao buracos no corpo (cor do fundo). Piscar fecha o buraco;
+    // arregalar desce uma fileira; olhar para o lado desloca 1 px.
+    if (m.blinkT < 0) {
+      const eyeTop = EYE_ROW + m.eyeDy;
+      cell(ox + (EYE_L + m.eyeDx) * C, oy + eyeTop * C, PAL.bg, 1, m.eyeH);
+      cell(ox + (EYE_R + m.eyeDx) * C, oy + eyeTop * C, PAL.bg, 1, m.eyeH);
+    }
+    // boca: buraco na fileira de baixo. 1 = 2x1, 2 = 2x2 (sobe uma fileira)
+    if (m.mouth > 0) {
+      cell(ox + MOUTH_X * C, oy + (MOUTH_ROW - (m.mouth - 1)) * C, PAL.bg, 2, m.mouth);
+    }
   }
 
   function drawThinkingDots() {
     const step = Math.floor(m.t * 4) % 4;
-    const x0 = BODY_X + BODY_W * C + C, y0 = BODY_Y - 2 * C;
+    const d = 12;                                      // tamanho do ponto (px)
+    const x0 = BODY_X + 15 * C + 10, y0 = BODY_Y - d;  // a direita da cabeca
     for (let i = 0; i < 3; i++) {
-      cell(x0 + i * C * 1.5, y0 - i * C * 0.5, i < step ? PAL.fg : PAL.dim);
+      ctx.fillStyle = i < step ? PAL.fg : PAL.dim;
+      ctx.fillRect(x0 + i * (d + 8), y0 - i * 10, d, d);
     }
   }
 
@@ -345,7 +353,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     ctx.strokeStyle = PAL.body;
     ctx.lineWidth = 2;
     const pad = 10 + Math.floor((reduceMotion ? 0 : Math.abs(Math.sin(m.t * 3))) * 4) * 2;
-    ctx.strokeRect(BODY_X - pad + m.lean, BODY_Y - pad, BODY_W * C + pad * 2, (BODY_H + 1) * C + pad * 2);
+    ctx.strokeRect(BODY_X - pad + m.lean, BODY_Y - pad, BODY_W * C + pad * 2, BODY_H * C + pad * 2);
     ctx.globalAlpha = 1;
     // barras de audio acima do rodape
     const n = m.bars.length, bw = 6, gap = 4, total = n * bw + (n - 1) * gap;

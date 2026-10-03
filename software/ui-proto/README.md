@@ -16,9 +16,9 @@ Abra `index.html` no navegador. Não precisa de servidor.
 
 | Estado      | Entra quando              | O que faz                                                        |
 |-------------|---------------------------|------------------------------------------------------------------|
-| `idle`      | ligou / terminou de falar | Respira (2 px), pisca, olha para os lados. Rodapé "segure para falar". |
+| `idle`      | ligou / terminou de falar | Respira (4 px), pisca, olha para os lados. Rodapé "segure para falar". |
 | `listening` | toque e segurar           | Olhos arregalados, inclina, anel pulsa, barras de áudio, transcrição. |
-| `thinking`  | soltou o dedo             | Olha para cima, três pontos ao lado da cabeça.                   |
+| `thinking`  | soltou o dedo             | Olha para o lado, três pontos ao lado da cabeça.                 |
 | `speaking`  | resposta chegou           | Boca abre e fecha, corpo balança, texto da resposta no rodapé.   |
 
 Toque curto demais (< 300 ms) volta ao `idle` com a dica "segure o dedo enquanto fala".
@@ -26,9 +26,20 @@ Tocar durante `speaking` interrompe e volta a ouvir.
 
 ## Para o firmware
 
-- Grade de 12 px por célula. Corpo 16×12, olhos 2×3, pés 2×1, boca 2×(0–2).
+- O sprite é o Clawd do terminal do Claude Code, lido em quadrantes:
+
+  ```
+   ▐▛███▜▌        ...############...
+  ▝▜█████▛▘  ->   ...##.######.##...
+    ▘▘ ▝▝         .################.
+                  ...############...
+                  ....#.#....#.#....
+  ```
+
+  18×5 pixels, cada um com 18 px na tela. Olhos (fileira 1, colunas 5 e 12)
+  e boca (fileira 3, colunas 8–9) são buracos no corpo, como no original.
 - Movimento em passos inteiros (sem interpolação): cada pose é um frame de sprite.
-- Paleta de 6 cores, todas representáveis em RGB565.
+- Paleta de 5 cores, todas representáveis em RGB565.
 - Faixas de texto: topo 28 px (ponte, sessões, relógio) e rodapé 44 px.
 - A ponte na VPS só precisa mandar `{estado, texto}`; a máquina de estados
   em `update()` dentro do `index.html` é o contrato.
