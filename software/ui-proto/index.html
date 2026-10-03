@@ -137,7 +137,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   <header>
     <div class="eyebrow">software/ui-proto · tela 3,5" · 480×320</div>
     <h1>Mascote Claude</h1>
-    <p class="lead">Protótipo da tela do mascote. Segure o dedo (ou o mouse) para falar com ele e solte para ele responder. Toque na faixa de cima para ver as sessões.</p>
+    <p class="lead">Protótipo da tela do mascote. Segure o dedo (ou o mouse) para falar com ele e solte para ele responder. Toque na faixa de cima para ver as sessões, escolher uma e abrir o mascote nela.</p>
   </header>
 
   <div class="bench">
@@ -151,6 +151,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         <div class="seg" id="viewSeg" role="group" aria-label="Tela do aparelho">
           <button type="button" data-view="mascot" aria-pressed="true">mascote</button>
           <button type="button" data-view="list" aria-pressed="false">sessões</button>
+          <button type="button" data-view="new" aria-pressed="false">nova</button>
         </div>
       </div>
       <div class="group">
@@ -160,6 +161,15 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
           <button type="button" data-state="listening" aria-pressed="false">ouvindo</button>
           <button type="button" data-state="thinking" aria-pressed="false">pensando</button>
           <button type="button" data-state="speaking" aria-pressed="false">falando</button>
+          <button type="button" data-state="working" aria-pressed="false">trabalhando</button>
+          <button type="button" data-state="alert" aria-pressed="false">alerta</button>
+        </div>
+      </div>
+      <div class="group">
+        <span class="label">simular</span>
+        <div class="seg" id="simSeg" role="group" aria-label="Simulações">
+          <button type="button" id="askBtn">pedido de permissão</button>
+          <button type="button" id="resetBtn">reiniciar</button>
         </div>
       </div>
       <div class="group">
@@ -181,6 +191,8 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         <div class="state"><div class="name">idle</div><p>Pisca a cada 3–6 s e olha para os lados de vez em quando. Rodapé: "segure para falar".</p></div>
         <div class="state"><div class="name">listening</div><p>Entra ao tocar e segurar. Olhos arregalados, barras de áudio e a transcrição aparecendo no rodapé.</p></div>
         <div class="state"><div class="name">thinking</div><p>Entra ao soltar. Olha para o lado, três pontos ao lado da cabeça. Sem texto.</p></div>
+        <div class="state"><div class="name">working</div><p>A sessão está rodando. Olha para o lado e os três pontos ficam piscando ao lado da cabeça. Rodapé: a última atividade da sessão.</p></div>
+        <div class="state"><div class="name">alert</div><p>A sessão pediu permissão. Olhos arregalados, boca pequena aberta e um "!" âmbar piscando. Na sessão, aparecem o comando exato e os botões Aprovar e Recusar.</p></div>
         <div class="state"><div class="name">speaking</div><p>Boca abre e fecha no ritmo da fala e a resposta sai no rodapé. Tocar aqui interrompe e volta a ouvir.</p></div>
       </div>
       <p class="fixed">O mascote não muda de lugar em nenhum estado. Só olhos, boca e rodapé mudam.</p>
@@ -188,11 +200,13 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     <section>
       <h2>Sessões</h2>
       <div class="states">
-        <div class="state"><div class="name">entrar</div><p>Toque na faixa de cima. Ela mostra "N aguardando aprovação" em âmbar quando alguma sessão precisa de você, ou "ponte ok" em verde.</p></div>
-        <div class="state"><div class="name">lista</div><p>Uma sessão por linha, 58 px: ícone de estado, título, repositório e branch, tempo e estado. Quem precisa de você vem primeiro, com fundo âmbar. Arraste para rolar.</p></div>
-        <div class="state"><div class="name">detalhe</div><p>Toque numa linha. Mostra a última atividade e, se a sessão pede permissão, o comando exato num quadro âmbar.</p></div>
-        <div class="state"><div class="name">voltar</div><p>Seta no canto superior esquerdo, ou Esc no teclado. As sessões desta tela são exemplos.</p></div>
+        <div class="state"><div class="name">lista</div><p>Toque na faixa de cima. Uma sessão por linha: ícone, título, repositório e branch, tempo e estado. Quem precisa de você vem primeiro, em âmbar. Arraste para rolar.</p></div>
+        <div class="state"><div class="name">filtro</div><p>O botão "repo" no cabeçalho abre a lista de repositórios, com a contagem de sessões de cada um, mais "Avulsas".</p></div>
+        <div class="state"><div class="name">abrir</div><p>Toque numa linha. O mascote abre dentro da sessão: o cabeçalho mostra título e branch, segurar a tela fala com aquela sessão e o rodapé mostra a última atividade.</p></div>
+        <div class="state"><div class="name">aprovar</div><p>Se a sessão pede permissão, o mascote reage e os botões aparecem embaixo dele. Se outra sessão pedir enquanto você está numa, um selo "!1" aparece no cabeçalho.</p></div>
+        <div class="state"><div class="name">nova</div><p>O botão "+" da lista. Escolha repositório e branch, ou "Sessão avulsa". Ao criar, a sessão abre no mascote.</p></div>
       </div>
+      <p class="fixed">As sessões desta tela são exemplos. Use "simular pedido de permissão" para ver a reação do mascote.</p>
     </section>
     <section>
       <h2>Para portar ao firmware (LVGL)</h2>
@@ -200,8 +214,8 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>15×30 px</code> na tela (1:2, como a célula do terminal). Os olhos e a boca são buracos no corpo, como no original.</li>
         <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão. O corpo não tem faixas internas.</li>
         <li>O sprite fica sempre na mesma posição. Cada pose (olhos, boca) é um frame, sem interpolação.</li>
-        <li>Paleta fixa de 15 cores, todas representáveis em RGB565 sem perda visível.</li>
-        <li>Tela do mascote: topo (ponte, sessões, relógio) e rodapé (texto) são faixas; o mascote fica entre elas. Lista de sessões: cabeçalho de 36 px e linhas de 58 px.</li>
+        <li>Paleta fixa de 18 cores, todas representáveis em RGB565 sem perda visível.</li>
+        <li>Tela do mascote: topo (ponte, sessões, relógio) e rodapé (texto) são faixas; o mascote fica entre elas. Listas: cabeçalho de 36 px, linhas de 58 px (sessões) e 48 px (menus). Botões Aprovar/Recusar: 40 px de altura.</li>
         <li>A máquina de estados em <code>update()</code> é o contrato: a ponte na VPS vai mandar só o estado e o texto.</li>
       </ul>
     </section>
@@ -220,9 +234,9 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     hi: '#f0a07c', mid: '#e5896a',           // luz: topo e borda esquerda
     body: '#d97757',
     lo: '#bf6446', deep: '#8f4731',          // sombra: borda direita/baixo, pernas
-    fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73',
-    warn: '#e6b450', warnBg: '#231b0f',      // aguardando aprovacao
-    panel: '#1a1613', line: '#2a2420'        // cabecalho e divisorias das listas
+    fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73', bad: '#e0675a',
+    warn: '#e6b450', warnHi: '#f6d27e', warnBg: '#231b0f',   // aguardando aprovacao
+    panel: '#1a1613', line: '#2a2420'        // cabecalhos e divisorias
   };
   // O Clawd do terminal, " ▐▛███▜▌ / ▝▜█████▛▘ / ▘▘ ▝▝ ", lido em quadrantes:
   // 18 pixels de largura por 5 de altura. Os olhos sao os quadrantes que
@@ -239,45 +253,66 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   const MOUTH_X = 8, MOUTH_Y = 2.5;          // boca: 2 px de largura, entre os olhos e a barriga
   const BODY_X = (W - BODY_W * PW) / 2;      // 105
   const BODY_Y = 68;                         // fixo: o mascote nunca sai daqui
-  const TOP_BAR = 28, TOP_HIT = 40, FOOT_Y = H - 44;  // faixas da tela do mascote
-  const HDR = 36, RH = 58;                   // cabecalho e altura de cada linha da lista
+  const TOP_BAR = 28, TOP_HIT = 40, FOOT_Y = H - 44;  // tela do mascote (home)
+  const HDR = 36, HDR_S = 46;                // cabecalho das listas / da tela da sessao
+  const RH = 58, MH = 48;                    // altura da linha de sessao / de menu
+  const BTN_Y = 272, BTN_H = 40;             // botoes Aprovar e Recusar
 
-  const SAMPLE_ASK = 'Como está a sessão do mascote?';
-  const SAMPLE_REPLY = 'A sessão mascote-claude está parada, esperando você. Nenhuma permissão pendente.';
-
-  // Sessoes de exemplo (a ponte vai mandar as reais). Ordem: o que precisa de
-  // voce primeiro (aguardando), depois o que esta rodando, depois o resto por recencia.
+  // ---- dados de exemplo ------------------------------------------------------
+  // Na ponte real: repo/branch vem de session_context.sources[0].git_repository
+  // (url + revision), status de status_bucket (WORKING / BLOCKED / COMPLETED) e
+  // post_turn_summary.status_category (need_input), last de post_turn_summary.
   const STATUS = {
     waiting: { label: 'aguardando',  color: PAL.warn },
     working: { label: 'trabalhando', color: PAL.body },
     idle:    { label: 'parada',      color: PAL.dim },
     done:    { label: 'concluída',   color: PAL.ok }
   };
-  const SESSIONS = [
+  const RANK = { waiting: 0, working: 1, idle: 2, done: 3 };
+  const REPO_BRANCHES = {
+    'mascote-claude':  ['main', 'bridge'],
+    'testes':          ['main'],
+    'lookvision-site': ['main', 'fix/build', 'dev'],
+    'api-pagamentos':  ['main', 'dev'],
+    'dotfiles':        ['main']
+  };
+  const seed = () => [
     { title: 'Corrigir build do site', repo: 'lookvision-site', branch: 'fix/build', status: 'waiting', ago: '4 min',
       last: 'O build quebrava no passo de lint. Corrigi 3 erros e o build passou local.',
-      ask: 'Rodar: npm run deploy' },
+      ask: { tool: 'Bash', text: 'npm run deploy' } },
     { title: 'UI do mascote', repo: 'testes', branch: 'main', status: 'working', ago: 'agora',
-      last: 'Editando software/ui-proto/index.html: fixando a posição do mascote em todos os estados.' },
+      last: 'Editando software/ui-proto/index.html: tela de sessões com filtro por repositório.' },
     { title: 'Ponte das sessões', repo: 'mascote-claude', branch: 'bridge', status: 'idle', ago: '1 h',
       last: 'Esqueleto da ponte pronto. Falta ler as sessões do cc.remote.' },
     { title: 'Guia de compras', repo: 'testes', branch: 'main', status: 'done', ago: 'ontem',
       last: 'PDF gerado com marcas, lojas e preços estimados.' },
     { title: 'Revisar PR 214', repo: 'api-pagamentos', branch: 'main', status: 'done', ago: '2 d',
       last: 'Revisão enviada com 2 comentários bloqueantes.' },
-    { title: 'Atualizar zsh', repo: 'dotfiles', branch: 'main', status: 'idle', ago: '3 d',
+    { title: 'Dúvida sobre Tailwind', repo: null, branch: null, status: 'done', ago: '3 d',
+      last: 'Expliquei a diferença entre utilitários e componentes.' },
+    { title: 'Atualizar zsh', repo: 'dotfiles', branch: 'main', status: 'idle', ago: '4 d',
       last: 'Aliases migrados. Falta testar no servidor.' }
   ];
+  const ASK_POOL = [
+    { tool: 'Bash', text: 'git push origin main' },
+    { tool: 'Edit', text: 'software/bridge/server.js' },
+    { tool: 'Bash', text: 'rm -rf node_modules && npm ci' }
+  ];
+  let SESSIONS = seed(), askN = 0;
 
   const canvas = document.getElementById('screen');
   const ctx = canvas.getContext('2d');
   const readout = document.getElementById('readout');
 
   // ---- estado -------------------------------------------------------------
-  let view = 'mascot';              // 'mascot' | 'list' | 'detail'
-  let scroll = 0, sel = 0;          // rolagem da lista e sessao aberta
+  let view = 'mascot';              // 'mascot' | 'list' | 'session' | 'menu' | 'new'
+  let cur = null;                   // sessao aberta no mascote
+  let filter = 'all';               // 'all' | '__none__' (avulsas) | nome do repo
+  let menu = null;                  // { title, items:[{label, sub}], active, pick(i), back() }
+  let form = { repo: null, branch: null };   // formulario de nova sessao
+  const sc = { list: 0, menu: 0 };  // rolagem de cada lista
   const m = {
-    state: 'idle', t: 0,          // estado atual e tempo nele (s)
+    state: 'idle', t: 0,          // estado do mascote e tempo nele (s)
     eyeH: 1, eyeDx: 0, eyeDy: 0,  // olhos (pixels do sprite)
     mouth: 0,                     // altura da boca (meios pixels, 0 = fechada)
     blinkAt: 2.5, blinkT: -1,     // proximo piscar / tempo no piscar
@@ -289,31 +324,50 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     pressedAt: 0, manual: false
   };
 
+  const waitingCount = () => SESSIONS.filter(s => s.status === 'waiting').length;
+  const visible = () => SESSIONS.map((s, i) => [s, i])
+    .filter(([s]) => filter === 'all' || (filter === '__none__' ? !s.repo : s.repo === filter))
+    .sort((a, b) => RANK[a[0].status] - RANK[b[0].status] || a[1] - b[1]).map(x => x[0]);
+  const repoLabel = s => s.repo ? s.repo + ' · ' + s.branch : 'avulsa';
+  const filterLabel = () => filter === 'all' ? 'todas' : filter === '__none__' ? 'avulsas' : filter;
+
+  // estado em que o mascote descansa na tela atual
+  function restState() {
+    if (view === 'session') return cur.status === 'waiting' ? 'alert' : cur.status === 'working' ? 'working' : 'idle';
+    if (view === 'mascot') return waitingCount() ? 'alert' : 'idle';
+    return 'idle';
+  }
+
   function setState(s) {
     m.state = s; m.t = 0;
     m.eyeH = 1; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0;
     m.typed = 0; m.caption = '';
-    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 1.5; m.eyeDy = -0.5; }
-    if (s === 'thinking')  { m.eyeDx = 1; }
-    if (s === 'speaking')  { m.caption = SAMPLE_REPLY; }
+    if (s === 'listening') { m.caption = view === 'session' ? 'O que você está fazendo?' : 'Como está a sessão do mascote?'; m.eyeH = 1.5; m.eyeDy = -0.5; }
+    if (s === 'thinking' || s === 'working') { m.eyeDx = 1; }
+    if (s === 'speaking')  { m.caption = view === 'session' ? cur.last : 'Tenho 1 sessão esperando sua aprovação e outra trabalhando.'; }
+    if (s === 'alert')     { m.eyeH = 1.5; m.eyeDy = -0.5; m.mouth = 1; }
     document.querySelectorAll('#stateSeg button').forEach(b =>
       b.setAttribute('aria-pressed', String(b.dataset.state === s)));
   }
 
-  function setView(v) {
+  function setView(v, s) {
     view = v;
-    if (v === 'list') scroll = Math.min(scroll, listMax());
-    if (v !== 'mascot' && m.state !== 'idle') setState('idle');
-    document.querySelectorAll('#viewSeg button').forEach(b =>
-      b.setAttribute('aria-pressed', String((b.dataset.view === 'mascot') === (v === 'mascot'))));
+    if (s) cur = s;
+    m.manual = false;
+    if (v === 'session') { m.hint = 'segure para falar com esta sessão'; m.hintUntil = performance.now() + 2500; }
+    setState(restState());
+    document.querySelectorAll('#viewSeg button').forEach(b => {
+      const k = b.dataset.view;
+      b.setAttribute('aria-pressed', String(k === 'mascot' ? v === 'mascot' : k === 'list' ? v === 'list' || v === 'session' : v === 'new'));
+    });
   }
 
   function update(dt) {
     m.t += dt;
     const t = m.t;
 
-    // piscar: comum a todos os estados menos pensando (olha fixo)
-    if (m.state !== 'thinking') {
+    // piscar: comum a todos os estados menos pensando e alerta (olhar fixo)
+    if (m.state !== 'thinking' && m.state !== 'alert') {
       if (m.blinkT < 0 && t >= m.blinkAt) { m.blinkT = 0; }
       if (m.blinkT >= 0) {
         m.blinkT += dt;
@@ -358,7 +412,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         }
       } else {
         m.mouth = 0;
-        if (t > m.caption.length / 22 + 1.2 && !m.manual) setState('idle');
+        if (t > m.caption.length / 22 + 1.2 && !m.manual) setState(restState());
       }
     }
   }
@@ -370,6 +424,12 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     ctx.fillRect(cx, cy, w * PW, h * PH);
   };
   const solid = (x, y) => y >= 0 && y < BODY_H && x >= 0 && x < BODY_W && SPRITE[y][x] === '#';
+  const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+  // setas em pixels 3x3
+  const chev = (pts, x, y, c) => { ctx.fillStyle = c; pts.forEach(([dx, dy]) => ctx.fillRect(x + dx, y + dy, 3, 3)); };
+  const CHEV_R = [[0, -6], [3, -3], [6, 0], [3, 3], [0, 6]];
+  const CHEV_D = [[-6, -3], [-3, 0], [0, 3], [3, 0], [6, -3]];
+  const CHEV_L = [[6, -6], [3, -3], [0, 0], [3, 3], [6, 6]];
 
   // chao: brilho quente + sombra, fixos como o mascote
   function drawFloor() {
@@ -388,14 +448,13 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     for (let y = 0; y < BODY_H; y++) {
       for (let x = 0; x < BODY_W; x++) {
         if (!solid(x, y)) continue;
-        const px = ox + x * PW, py = oy + y * PH;
+        const X = ox + x * PW, Y = oy + y * PH;
         const leg = y === BODY_H - 1;
-        ctx.fillStyle = leg ? PAL.lo : PAL.body;
-        ctx.fillRect(px, py, PW, PH);
-        if (!solid(x - 1, y)) { ctx.fillStyle = leg ? PAL.body : PAL.mid; ctx.fillRect(px, py, 4, PH); }
-        if (!solid(x, y - 1)) { ctx.fillStyle = PAL.hi; ctx.fillRect(px, py, PW, 6); }
-        if (!solid(x + 1, y)) { ctx.fillStyle = leg ? PAL.deep : PAL.lo; ctx.fillRect(px + PW - 4, py, 4, PH); }
-        if (!solid(x, y + 1)) { ctx.fillStyle = leg ? PAL.deep : PAL.lo; ctx.fillRect(px, py + PH - 8, PW, 8); }
+        px(X, Y, PW, PH, leg ? PAL.lo : PAL.body);
+        if (!solid(x - 1, y)) px(X, Y, 4, PH, leg ? PAL.body : PAL.mid);
+        if (!solid(x, y - 1)) px(X, Y, PW, 6, PAL.hi);
+        if (!solid(x + 1, y)) px(X + PW - 4, Y, 4, PH, leg ? PAL.deep : PAL.lo);
+        if (!solid(x, y + 1)) px(X, Y + PH - 8, PW, 8, leg ? PAL.deep : PAL.lo);
       }
     }
     // olhos sao buracos no corpo (cor do fundo) com a borda de cima em sombra.
@@ -405,25 +464,28 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
       [EYE_L, EYE_R].forEach(ex => {
         const x = ox + (ex + m.eyeDx) * PW, y = oy + eyeTop * PH;
         cell(x, y, PAL.bg, 1, m.eyeH);
-        ctx.fillStyle = PAL.deep; ctx.fillRect(x, y - 4, PW, 4);           // aresta de cima
+        px(x, y - 4, PW, 4, PAL.deep);                                   // aresta de cima
       });
     }
     // boca: buraco entre os olhos e a barriga. 1 = meia altura, 2 = altura cheia
     if (m.mouth > 0) {
       const x = ox + MOUTH_X * PW, y = oy + MOUTH_Y * PH, h = m.mouth * PH / 2;
-      ctx.fillStyle = PAL.bg;  ctx.fillRect(x, y, 2 * PW, h);
-      ctx.fillStyle = PAL.deep; ctx.fillRect(x, y - 4, 2 * PW, 4);
+      px(x, y, 2 * PW, h, PAL.bg);
+      px(x, y - 4, 2 * PW, 4, PAL.deep);
     }
   }
 
-  function drawThinkingDots() {
+  function drawDots() {                                // pensando / trabalhando
     const step = Math.floor(m.t * 4) % 4;
     const d = 12;                                      // tamanho do ponto (px)
     const x0 = BODY_X + 15 * PW + 10, y0 = BODY_Y - d; // a direita da cabeca
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = i < step ? PAL.fg : PAL.dim;
-      ctx.fillRect(x0 + i * (d + 8), y0 - i * 10, d, d);
-    }
+    for (let i = 0; i < 3; i++) px(x0 + i * (d + 8), y0 - i * 10, d, d, i < step ? PAL.fg : PAL.dim);
+  }
+
+  function drawAlertMark() {                           // "!" ao lado da cabeca
+    const c = Math.floor(m.t * 3) % 2 ? PAL.warnHi : PAL.warn;
+    const x = BODY_X + 15 * PW + 14;
+    px(x, BODY_Y, 12, 26, c); px(x, BODY_Y + 34, 12, 12, c);
   }
 
   function drawBars() {
@@ -432,24 +494,22 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     const x0 = (W - total) / 2, base = FOOT_Y - 6;
     for (let i = 0; i < n; i++) {
       const h = Math.max(2, Math.round(m.bars[i] * 14) * 2);
-      ctx.fillStyle = m.bars[i] > 0.05 ? PAL.body : PAL.dim;
-      ctx.fillRect(x0 + i * (bw + gap), base - h, bw, h);
+      px(x0 + i * (bw + gap), base - h, bw, h, m.bars[i] > 0.05 ? PAL.body : PAL.dim);
     }
   }
 
   function drawTopBar() {
-    const waiting = SESSIONS.filter(s => s.status === 'waiting').length;
+    const waiting = waitingCount();
     ctx.font = '11px Silkscreen, monospace';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = waiting ? PAL.warn : PAL.ok;
+    const pulse = waiting && Math.floor(performance.now() / 500) % 2;
+    ctx.fillStyle = waiting ? (pulse ? PAL.warnHi : PAL.warn) : PAL.ok;
     ctx.fillRect(12, TOP_BAR / 2 - 3, 6, 6);
     const label = waiting ? waiting + ' aguardando aprovação' : 'ponte ok · ' + SESSIONS.length + ' sessões';
     ctx.fillStyle = waiting ? PAL.warn : PAL.dim;
     ctx.textAlign = 'left';
     ctx.fillText(label, 26, TOP_BAR / 2 + 1);
-    // seta: avisa que o topo e tocavel e leva a lista
-    const ax = 26 + ctx.measureText(label).width + 10, ay = TOP_BAR / 2;
-    [[0, -6], [3, -3], [6, 0], [3, 3], [0, 6]].forEach(([dx, dy]) => ctx.fillRect(ax + dx, ay + dy - 1, 3, 3));
+    chev(CHEV_R, 26 + ctx.measureText(label).width + 10, TOP_BAR / 2 - 1, ctx.fillStyle);   // topo e tocavel
     ctx.fillStyle = PAL.dim;
     ctx.textAlign = 'right';
     const now = new Date();
@@ -469,13 +529,47 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     return lines;
   }
 
+  function truncate(text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    while (text.length && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+    return text + '…';
+  }
+
+  // quadro de aprovacao: o comando exato e os dois botoes. Fica abaixo do
+  // mascote, que nao sai do lugar.
+  let pressedBtn = null;
+  function drawApproval() {
+    const a = cur.ask;
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = '10px Silkscreen, monospace'; ctx.fillStyle = PAL.warn;
+    ctx.fillText('PEDE PERMISSÃO · ' + a.tool.toUpperCase(), 16, 247);
+    ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.fg;
+    ctx.fillText(truncate(a.text, W - 32), 16, 262);
+    const bw = (W - 32 - 12) / 2;
+    // Recusar: contorno vermelho
+    const no = pressedBtn === 'no';
+    px(16, BTN_Y, bw, BTN_H, no ? PAL.bad : PAL.bg);
+    [[16, BTN_Y, bw, 2], [16, BTN_Y + BTN_H - 2, bw, 2], [16, BTN_Y, 2, BTN_H], [16 + bw - 2, BTN_Y, 2, BTN_H]]
+      .forEach(([x, y, w, h]) => px(x, y, w, h, PAL.bad));
+    ctx.font = '13px Silkscreen, monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = no ? PAL.bg : PAL.bad;
+    ctx.fillText('Recusar', 16 + bw / 2, BTN_Y + BTN_H / 2 + 1);
+    // Aprovar: verde cheio
+    px(16 + bw + 12, BTN_Y, bw, BTN_H, pressedBtn === 'ok' ? '#9ad69d' : PAL.ok);
+    ctx.fillStyle = PAL.bg;
+    ctx.fillText('Aprovar', 16 + bw + 12 + bw / 2, BTN_Y + BTN_H / 2 + 1);
+  }
+
   function drawFooter() {
+    if (view === 'session' && m.state === 'alert') return drawApproval();
     ctx.font = '12px Silkscreen, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     let text = '', color = PAL.dim;
-    if (m.hint && performance.now() < m.hintUntil) { text = m.hint; }
-    else if (m.state === 'idle') text = 'segure para falar';
+    const resting = m.state === 'idle' || m.state === 'working';
+    if (m.hint && performance.now() < m.hintUntil) text = m.hint;
+    else if (resting) text = view === 'session' ? cur.last : (m.state === 'idle' ? 'segure para falar' : '');
+    else if (m.state === 'alert') { text = waitingCount() + ' aguardando · toque no topo'; color = PAL.warn; }
     else if (m.state === 'listening') {
       text = m.caption.slice(0, m.typed); color = PAL.fg;
       if (m.typed < m.caption.length && Math.floor(m.t * 3) % 2 === 0) text += '▁';
@@ -484,118 +578,237 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     else if (m.state === 'speaking') { text = m.caption.slice(0, m.typed); color = PAL.fg; }
     if (!text) return;
     ctx.fillStyle = color;
-    const lines = wrapText(text, W - 48).slice(-2);
+    let lines = wrapText(text, W - 48);
+    if (resting && lines.length > 2) { lines = lines.slice(0, 2); lines[1] = truncate(lines[1] + '…', W - 48); }
+    else lines = lines.slice(-2);
     lines.forEach((l, i) => ctx.fillText(l, W / 2, FOOT_Y + 4 + i * 16));
   }
 
-  // ---- desenho: sessoes ----------------------------------------------------
-  const listMax = () => Math.max(0, SESSIONS.length * RH - (H - HDR));
-
-  function truncate(text, maxW) {
-    if (ctx.measureText(text).width <= maxW) return text;
-    while (text.length && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
-    return text + '…';
-  }
+  // ---- desenho: listas e formulario ---------------------------------------
+  const listMax = () => Math.max(0, visible().length * RH - (H - HDR));
+  const menuMax = () => Math.max(0, (menu ? menu.items.length : 0) * MH - (H - HDR));
+  const scrollKey = () => view === 'menu' ? 'menu' : 'list';
+  const scrollMax = () => view === 'menu' ? menuMax() : view === 'list' ? listMax() : 0;
 
   // icone de estado, 16x16, em pixels como o resto da tela
   function drawGlyph(status, x, y) {
     const c = STATUS[status].color;
     if (status === 'idle') {                           // anel vazio
-      ctx.fillStyle = c;
-      ctx.fillRect(x, y, 16, 3); ctx.fillRect(x, y + 13, 16, 3);
-      ctx.fillRect(x, y, 3, 16); ctx.fillRect(x + 13, y, 3, 16);
+      px(x, y, 16, 3, c); px(x, y + 13, 16, 3, c); px(x, y, 3, 16, c); px(x + 13, y, 3, 16, c);
       return;
     }
-    ctx.fillStyle = status === 'working' && Math.floor(performance.now() / 600) % 2 ? PAL.hi : c;
-    ctx.fillRect(x, y, 16, 16);
+    px(x, y, 16, 16, status === 'working' && Math.floor(performance.now() / 600) % 2 ? PAL.hi : c);
     ctx.fillStyle = PAL.bg;
     if (status === 'waiting') { ctx.fillRect(x + 6, y + 3, 4, 7); ctx.fillRect(x + 6, y + 11, 4, 3); }
     if (status === 'done') [[3, 8], [5, 10], [7, 8], [9, 6], [11, 4]].forEach(([dx, dy]) => ctx.fillRect(x + dx, y + dy, 3, 3));
   }
 
-  function drawHeader(title, right) {
-    ctx.fillStyle = PAL.panel; ctx.fillRect(0, 0, W, HDR);
-    ctx.fillStyle = PAL.line;  ctx.fillRect(0, HDR - 1, W, 1);
-    ctx.fillStyle = PAL.fg;                            // seta de voltar
-    [[21, 8], [18, 12], [15, 16], [18, 20], [21, 24]].forEach(([x, y]) => ctx.fillRect(x, y, 4, 4));
-    ctx.font = '13px Silkscreen, monospace';
+  function headerBase(h) {
+    px(0, 0, W, h, PAL.panel); px(0, h - 1, W, 1, PAL.line);
+    chev(CHEV_L, 15, h / 2 - 1, PAL.fg);               // seta de voltar
+  }
+  function drawHeader(title) {
+    headerBase(HDR);
+    ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = PAL.fg;
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-    ctx.fillText(truncate(title, W - 44 - 110), 44, HDR / 2 + 1);
-    if (right) {
-      ctx.font = '11px Silkscreen, monospace';
-      ctx.fillStyle = PAL.dim; ctx.textAlign = 'right';
-      ctx.fillText(right, W - 14, HDR / 2 + 1);
-    }
+    ctx.fillText(title, 44, HDR / 2 + 1);
   }
 
   function drawList() {
+    const rows = visible(), max = listMax();
     ctx.save();
     ctx.beginPath(); ctx.rect(0, HDR, W, H - HDR); ctx.clip();
-    SESSIONS.forEach((s, i) => {
-      const y = HDR + i * RH - scroll;
+    rows.forEach((s, i) => {
+      const y = HDR + i * RH - sc.list;
       if (y > H || y + RH < HDR) return;
       const st = STATUS[s.status];
-      if (s.status === 'waiting') { ctx.fillStyle = PAL.warnBg; ctx.fillRect(0, y, W, RH - 1); }
-      ctx.fillStyle = PAL.line; ctx.fillRect(0, y + RH - 1, W, 1);
+      if (s.status === 'waiting') px(0, y, W, RH - 1, PAL.warnBg);
+      px(0, y + RH - 1, W, 1, PAL.line);
       drawGlyph(s.status, 14, y + 21);
       ctx.textBaseline = 'middle';
       ctx.font = '13px Silkscreen, monospace'; ctx.textAlign = 'left'; ctx.fillStyle = PAL.fg;
       ctx.fillText(truncate(s.title, W - 44 - 110), 44, y + 20);
       ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
-      ctx.fillText(truncate(s.repo + ' · ' + s.branch, W - 44 - 110), 44, y + 40);
+      ctx.fillText(truncate(repoLabel(s), W - 44 - 110), 44, y + 40);
       ctx.textAlign = 'right';
       ctx.fillText(s.ago, W - 14, y + 20);
       ctx.fillStyle = st.color; ctx.fillText(st.label, W - 14, y + 40);
     });
     ctx.restore();
-    const max = listMax();
-    if (max > 0) {                                     // barra de rolagem
-      const trackH = H - HDR - 8, thumbH = Math.max(24, trackH * (H - HDR) / (SESSIONS.length * RH));
-      ctx.fillStyle = PAL.line; ctx.fillRect(W - 4, HDR + 4, 2, trackH);
-      ctx.fillStyle = PAL.dim;  ctx.fillRect(W - 4, HDR + 4 + (trackH - thumbH) * scroll / max, 2, thumbH);
+    if (!rows.length) {                                // filtro sem resultado
+      ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('nenhuma sessão em ' + filterLabel(), W / 2, 150);
+      ctx.fillText('toque em + para criar', W / 2, 172);
     }
-    drawHeader('Sessões', SESSIONS.length + ' no total');
+    if (max > 0) {                                     // barra de rolagem
+      const trackH = H - HDR - 8, thumbH = Math.max(24, trackH * (H - HDR) / (rows.length * RH));
+      px(W - 4, HDR + 4, 2, trackH, PAL.line);
+      px(W - 4, HDR + 4 + (trackH - thumbH) * sc.list / max, 2, thumbH, PAL.dim);
+    }
+    drawHeader('Sessões');
+    // filtro por repositorio (chip) e criar sessao (+)
+    const on = filter !== 'all';
+    const bx = 236, bw = 178;
+    px(bx, 6, bw, 24, PAL.bg);
+    [[bx, 6, bw, 2], [bx, 28, bw, 2], [bx, 6, 2, 24], [bx + bw - 2, 6, 2, 24]].forEach(([x, y, w, h]) => px(x, y, w, h, on ? PAL.body : PAL.line));
+    ctx.font = '11px Silkscreen, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = on ? PAL.fg : PAL.dim;
+    ctx.fillText('repo: ' + truncate(filterLabel(), bw - 78), bx + 10, 19);
+    chev(CHEV_D, bx + bw - 18, 17, on ? PAL.body : PAL.dim);
+    px(424, 4, 44, 28, PAL.body);
+    px(437, 16, 18, 4, PAL.bg); px(444, 9, 4, 18, PAL.bg);
   }
 
-  function drawDetail() {
-    const s = SESSIONS[sel], st = STATUS[s.status];
-    drawHeader(s.title, '');
-    drawGlyph(s.status, 16, 54);
+  function drawMenu() {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, HDR, W, H - HDR); ctx.clip();
+    menu.items.forEach((it, i) => {
+      const y = HDR + i * MH - sc.menu;
+      if (y > H || y + MH < HDR) return;
+      px(0, y + MH - 1, W, 1, PAL.line);
+      const act = i === menu.active;
+      if (act) px(16, y + 17, 14, 14, PAL.body);
+      else { px(16, y + 17, 14, 2, PAL.dim); px(16, y + 29, 14, 2, PAL.dim); px(16, y + 17, 2, 14, PAL.dim); px(28, y + 17, 2, 14, PAL.dim); }
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = act ? PAL.fg : PAL.fg;
+      ctx.fillText(truncate(it.label, W - 40 - 120), 44, y + MH / 2);
+      if (it.sub) {
+        ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim; ctx.textAlign = 'right';
+        ctx.fillText(it.sub, W - 16, y + MH / 2);
+      }
+    });
+    ctx.restore();
+    const max = menuMax();
+    if (max > 0) {
+      const trackH = H - HDR - 8, thumbH = Math.max(24, trackH * (H - HDR) / (menu.items.length * MH));
+      px(W - 4, HDR + 4, 2, trackH, PAL.line);
+      px(W - 4, HDR + 4 + (trackH - thumbH) * sc.menu / max, 2, thumbH, PAL.dim);
+    }
+    drawHeader(menu.title);
+  }
+
+  // formulario de nova sessao
+  const ROW_A = 48, ROW_B = 104, ROW_H = 52, NEW_Y = 250, NEW_H = 56;
+  function drawNew() {
+    drawHeader('Nova sessão');
+    const avulsa = !form.repo;
+    const rows = [
+      ['REPOSITÓRIO', form.repo || 'Sessão avulsa (sem repositório)', ROW_A, true],
+      ['BRANCH', avulsa ? 'não se aplica' : form.branch, ROW_B, !avulsa]
+    ];
+    rows.forEach(([label, value, y, enabled]) => {
+      px(0, y + ROW_H - 1, W, 1, PAL.line);
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.font = '10px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
+      ctx.fillText(label, 16, y + 13);
+      ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = enabled ? PAL.fg : PAL.dim;
+      ctx.fillText(truncate(value, W - 70), 16, y + 33);
+      if (enabled) chev(CHEV_R, W - 26, y + 26, PAL.dim);
+    });
+    ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim; ctx.textBaseline = 'top';
+    wrapText('Depois de criar, a sessão abre no mascote. Segure a tela e diga o que ela deve fazer.', W - 32)
+      .forEach((l, i) => ctx.fillText(l, 16, 176 + i * 16));
+    px(16, NEW_Y, W - 32, NEW_H, pressedBtn === 'new' ? PAL.hi : PAL.body);
+    ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = PAL.bg;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(truncate(avulsa ? 'Criar sessão avulsa' : 'Criar em ' + form.repo + ' · ' + form.branch, W - 56), W / 2, NEW_Y + NEW_H / 2 + 1);
+  }
+
+  // tela da sessao: o mascote "dentro" daquela sessao
+  function drawSessionHeader() {
+    headerBase(HDR_S);
+    const st = STATUS[cur.status], others = SESSIONS.filter(s => s.status === 'waiting' && s !== cur).length;
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-    ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = st.color;
-    ctx.fillText(st.label, 44, 63);
-    ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
-    ctx.textAlign = 'right'; ctx.fillText('há ' + s.ago, W - 16, 63);
-    ctx.textAlign = 'left';
-    ctx.fillText(truncate(s.repo + ' · ' + s.branch, W - 32), 16, 92);
-    ctx.fillStyle = PAL.line; ctx.fillRect(16, 108, W - 32, 1);
+    ctx.font = '13px Silkscreen, monospace'; ctx.fillStyle = PAL.fg;
+    ctx.fillText(truncate(cur.title, W - 44 - 90), 44, 17);
     ctx.font = '10px Silkscreen, monospace'; ctx.fillStyle = PAL.dim;
-    ctx.fillText('ÚLTIMA ATIVIDADE', 16, 124);
-    ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.fg; ctx.textBaseline = 'top';
-    wrapText(s.last, W - 32).slice(0, 4).forEach((l, i) => ctx.fillText(l, 16, 138 + i * 18));
-    if (s.ask) {                                       // pedido de permissao pendente
-      const by = H - 78;
-      ctx.fillStyle = PAL.warnBg; ctx.fillRect(16, by, W - 32, 62);
-      ctx.fillStyle = PAL.warn;
-      ctx.fillRect(16, by, W - 32, 2); ctx.fillRect(16, by + 60, W - 32, 2);
-      ctx.fillRect(16, by, 2, 62); ctx.fillRect(W - 18, by, 2, 62);
-      ctx.font = '10px Silkscreen, monospace'; ctx.fillText('PEDE PERMISSÃO', 28, by + 12);
-      ctx.font = '12px Silkscreen, monospace'; ctx.fillStyle = PAL.fg;
-      wrapText(s.ask, W - 56).slice(0, 2).forEach((l, i) => ctx.fillText(l, 28, by + 30 + i * 16));
+    ctx.fillText(truncate(repoLabel(cur), W - 44 - 90), 44, 35);
+    drawGlyph(cur.status, W - 30, 15);
+    if (others) {                                      // outra sessao esta pedindo algo
+      px(W - 66, 14, 24, 18, PAL.warn);
+      ctx.font = '11px Silkscreen, monospace'; ctx.fillStyle = PAL.bg; ctx.textAlign = 'center';
+      ctx.fillText('!' + others, W - 54, 24);
     }
   }
 
   function draw() {
-    ctx.fillStyle = PAL.bg;
-    ctx.fillRect(0, 0, W, H);
+    px(0, 0, W, H, PAL.bg);
     if (view === 'list') return drawList();
-    if (view === 'detail') return drawDetail();
-    drawTopBar();
+    if (view === 'menu') return drawMenu();
+    if (view === 'new') return drawNew();
+    if (view === 'session') drawSessionHeader(); else drawTopBar();
     drawFloor();
     if (m.state === 'listening') drawBars();
     drawMascot();
-    if (m.state === 'thinking') drawThinkingDots();
+    if (m.state === 'thinking' || m.state === 'working') drawDots();
+    if (m.state === 'alert') drawAlertMark();
     drawFooter();
+  }
+
+  // ---- acoes -----------------------------------------------------------------
+  function openMenu(cfg) { menu = cfg; sc.menu = 0; view = 'menu'; setState('idle'); }
+
+  function openFilterMenu() {
+    const repos = [...new Set(SESSIONS.map(s => s.repo).filter(Boolean))].sort();
+    const keys = ['all', ...repos, '__none__'];
+    const count = k => SESSIONS.filter(s => k === 'all' || (k === '__none__' ? !s.repo : s.repo === k)).length;
+    openMenu({
+      title: 'Filtrar por repositório',
+      items: keys.map(k => ({ label: k === 'all' ? 'Todas' : k === '__none__' ? 'Avulsas (sem repositório)' : k, sub: String(count(k)) })),
+      active: keys.indexOf(filter),
+      pick: i => { filter = keys[i]; sc.list = 0; setView('list'); },
+      back: () => setView('list')
+    });
+  }
+
+  function openNew() {
+    const repos = Object.keys(REPO_BRANCHES);
+    const r = filter !== 'all' && filter !== '__none__' && REPO_BRANCHES[filter] ? filter : repos[0];
+    form = { repo: r, branch: REPO_BRANCHES[r][0] };
+    setView('new');
+  }
+  function openRepoMenu() {
+    const repos = Object.keys(REPO_BRANCHES);
+    openMenu({
+      title: 'Repositório',
+      items: [{ label: 'Sessão avulsa', sub: 'sem repositório' }, ...repos.map(r => ({ label: r, sub: REPO_BRANCHES[r].length + ' branches' }))],
+      active: form.repo ? repos.indexOf(form.repo) + 1 : 0,
+      pick: i => { form = i === 0 ? { repo: null, branch: null } : { repo: repos[i - 1], branch: REPO_BRANCHES[repos[i - 1]][0] }; setView('new'); },
+      back: () => setView('new')
+    });
+  }
+  function openBranchMenu() {
+    const bs = REPO_BRANCHES[form.repo];
+    openMenu({
+      title: 'Branch de ' + form.repo,
+      items: [...bs.map((b, i) => ({ label: b, sub: i === 0 ? 'padrão' : '' })), { label: 'Nova branch automática', sub: 'claude/…' }],
+      active: Math.max(0, bs.indexOf(form.branch)),
+      pick: i => { form.branch = i < bs.length ? bs[i] : 'nova (automática)'; setView('new'); },
+      back: () => setView('new')
+    });
+  }
+  function createSession() {
+    const s = { title: 'Nova sessão', repo: form.repo, branch: form.branch, status: 'idle', ago: 'agora',
+                last: 'Sessão criada. Segure a tela e diga o que fazer.' };
+    SESSIONS.push(s);
+    setView('session', s);
+  }
+
+  function resolveAsk(ok) {
+    cur.ask = null;
+    cur.status = ok ? 'working' : 'idle';
+    cur.ago = 'agora';
+    cur.last = ok ? 'Aprovado por você. Continuando…' : 'Recusado por você. Aguardando nova instrução.';
+    setState(restState());
+  }
+
+  // simula a ponte avisando que uma sessao pediu permissao
+  function simulateAsk() {
+    const s = SESSIONS.find(x => x.status === 'working') || SESSIONS.find(x => x.status === 'idle' || x.status === 'done');
+    if (!s) return;
+    s.status = 'waiting'; s.ago = 'agora'; s.ask = ASK_POOL[askN++ % ASK_POOL.length];
+    if (['idle', 'working', 'alert'].includes(m.state) && (view === 'mascot' || (view === 'session' && cur === s))) setState(restState());
   }
 
   // ---- toque ---------------------------------------------------------------
@@ -605,83 +818,125 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   };
   let drag = null;
   const hitBack = p => p.y < HDR && p.x < 80;
+  const btnAt = p => p.y >= BTN_Y && p.y <= BTN_Y + BTN_H ? (p.x < W / 2 ? 'no' : 'ok') : null;
+  const talkStates = ['idle', 'working', 'alert', 'speaking'];
+
+  function startTalk() {
+    m.pressedAt = performance.now();
+    m.manual = false;
+    if (talkStates.includes(m.state)) setState('listening');
+  }
+  function endTalk() {
+    if (m.state !== 'listening') return;
+    if (performance.now() - m.pressedAt < 300) {
+      setState(restState());
+      m.hint = 'segure o dedo enquanto fala'; m.hintUntil = performance.now() + 1800;
+    } else setState('thinking');
+  }
 
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     const p = toCanvas(e);
-    drag = { x: p.x, y: p.y, scroll, moved: false, top: false };
-    if (view !== 'mascot') return;
-    if (p.y < TOP_HIT) { drag.top = true; return; }    // topo: abre as sessoes
-    m.pressedAt = performance.now();
-    m.manual = false;
-    if (m.state === 'idle' || m.state === 'speaking') setState('listening');
+    drag = { x: p.x, y: p.y, scroll: sc[scrollKey()], moved: false, kind: null };
+    if (view === 'mascot') {
+      if (p.y < TOP_HIT) drag.kind = 'top'; else startTalk();
+    } else if (view === 'session') {
+      if (p.y < HDR_S) drag.kind = 'hdr';
+      else if (m.state === 'alert' && btnAt(p)) { drag.kind = btnAt(p); pressedBtn = drag.kind; }
+      else startTalk();
+    } else if (view === 'new' && p.y >= NEW_Y && p.y <= NEW_Y + NEW_H) {
+      drag.kind = 'new'; pressedBtn = 'new';
+    }
   });
   canvas.addEventListener('pointermove', e => {
-    if (!drag || view !== 'list') return;
+    if (!drag || (view !== 'list' && view !== 'menu')) return;
     const dy = toCanvas(e).y - drag.y;
     if (Math.abs(dy) > 6) drag.moved = true;
-    if (drag.moved) scroll = Math.max(0, Math.min(listMax(), drag.scroll - dy));
+    if (drag.moved) sc[scrollKey()] = Math.max(0, Math.min(scrollMax(), drag.scroll - dy));
   });
   canvas.addEventListener('pointerup', e => {
-    const d = drag; drag = null;
+    const d = drag; drag = null; pressedBtn = null;
     if (!d) return;
     const p = toCanvas(e);
     if (view === 'mascot') {
-      if (d.top) { if (p.y < TOP_HIT) setView('list'); return; }
-      if (m.state !== 'listening') return;
-      const held = performance.now() - m.pressedAt;
-      if (held < 300) {
-        setState('idle');
-        m.hint = 'segure o dedo enquanto fala'; m.hintUntil = performance.now() + 1800;
-      } else {
-        setState('thinking');
-      }
+      if (d.kind === 'top') { if (p.y < TOP_HIT) setView('list'); return; }
+      endTalk();
+    } else if (view === 'session') {
+      if (d.kind === 'hdr') {
+        if (p.y < HDR_S && p.x < 80) setView('list');
+        else if (p.y < HDR_S && p.x > W - 80 && SESSIONS.some(s => s.status === 'waiting' && s !== cur)) setView('list');
+      } else if (d.kind === 'ok' || d.kind === 'no') {
+        if (btnAt(p) === d.kind) resolveAsk(d.kind === 'ok');
+      } else endTalk();
     } else if (view === 'list') {
       if (d.moved) return;
       if (hitBack(p)) { setView('mascot'); return; }
-      const i = Math.floor((p.y - HDR + scroll) / RH);
-      if (p.y >= HDR && i >= 0 && i < SESSIONS.length) { sel = i; setView('detail'); }
-    } else if (hitBack(p)) {
-      setView('list');
+      if (p.y < HDR) {
+        if (p.x >= 420) openNew();
+        else if (p.x >= 236 && p.x < 414) openFilterMenu();
+        return;
+      }
+      const s = visible()[Math.floor((p.y - HDR + sc.list) / RH)];
+      if (s) setView('session', s);
+    } else if (view === 'menu') {
+      if (d.moved) return;
+      if (hitBack(p)) { menu.back(); return; }
+      const i = Math.floor((p.y - HDR + sc.menu) / MH);
+      if (p.y >= HDR && i >= 0 && i < menu.items.length) menu.pick(i);
+    } else if (view === 'new') {
+      if (hitBack(p)) { setView('list'); return; }
+      if (d.kind === 'new') { if (p.y >= NEW_Y && p.y <= NEW_Y + NEW_H) createSession(); return; }
+      if (p.y >= ROW_A && p.y < ROW_A + ROW_H) openRepoMenu();
+      else if (p.y >= ROW_B && p.y < ROW_B + ROW_H && form.repo) openBranchMenu();
     }
   });
   canvas.addEventListener('pointercancel', () => {
-    drag = null;
-    if (view === 'mascot' && m.state === 'listening') setState('idle');
+    drag = null; pressedBtn = null;
+    if (m.state === 'listening') setState(restState());
   });
   canvas.addEventListener('wheel', e => {
-    if (view !== 'list') return;
+    if (view !== 'list' && view !== 'menu') return;
     e.preventDefault();
-    scroll = Math.max(0, Math.min(listMax(), scroll + e.deltaY));
+    sc[scrollKey()] = Math.max(0, Math.min(scrollMax(), sc[scrollKey()] + e.deltaY));
   }, { passive: false });
   canvas.addEventListener('keydown', e => {
-    if (view === 'mascot') {
+    if (view === 'mascot' || view === 'session') {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        if (m.state === 'idle') { m.pressedAt = performance.now() - 1000; setState('listening'); }
+        if (talkStates.includes(m.state) && m.state !== 'speaking') { m.pressedAt = performance.now() - 1000; setState('listening'); }
         else if (m.state === 'listening') setState('thinking');
       }
-      if (e.key === 'ArrowUp') { e.preventDefault(); setView('list'); }
-    } else if (e.key === 'Escape' || e.key === 'Backspace') {
-      e.preventDefault(); setView(view === 'detail' ? 'list' : 'mascot');
-    } else if (view === 'list' && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      if (view === 'mascot' && e.key === 'ArrowUp') { e.preventDefault(); setView('list'); }
+      if (view === 'session' && m.state === 'alert' && e.key.toLowerCase() === 'a') resolveAsk(true);
+      if (view === 'session' && m.state === 'alert' && e.key.toLowerCase() === 'r') resolveAsk(false);
+    }
+    if (e.key === 'Escape' || e.key === 'Backspace') {
       e.preventDefault();
-      scroll = Math.max(0, Math.min(listMax(), scroll + (e.key === 'ArrowDown' ? RH : -RH)));
+      if (view === 'session' || view === 'new') setView('list');
+      else if (view === 'list') setView('mascot');
+      else if (view === 'menu') menu.back();
+    } else if ((view === 'list' || view === 'menu') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      sc[scrollKey()] = Math.max(0, Math.min(scrollMax(), sc[scrollKey()] + (e.key === 'ArrowDown' ? RH : -RH)));
     }
   });
 
   // ---- controles da bancada ----------------------------------------------
   document.getElementById('stateSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    setView('mascot');
+    if (view !== 'mascot' && view !== 'session') setView('mascot');
     m.manual = true;                 // nao avanca sozinho quando escolhido a mao
     setState(b.dataset.state);
     if (b.dataset.state === 'listening') { m.t = 0.6; }
   });
   document.getElementById('viewSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    setView(b.dataset.view);
+    if (b.dataset.view === 'new') openNew(); else setView(b.dataset.view);
+  });
+  document.getElementById('askBtn').addEventListener('click', simulateAsk);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    SESSIONS = seed(); askN = 0; filter = 'all'; sc.list = 0; setView('mascot');
   });
   const device = document.getElementById('device');
   document.getElementById('zoomSeg').addEventListener('click', e => {
@@ -697,6 +952,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   } catch (_) {}
 
   // ---- loop ----------------------------------------------------------------
+  setView('mascot');
   let last = performance.now(), acc = 0;
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
@@ -704,10 +960,9 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     acc += dt;
     if (acc > 0.2) {
       acc = 0;
-      readout.innerHTML = view === 'mascot'
-        ? 'estado <b>' + m.state + '</b> · ' + m.t.toFixed(1).replace('.', ',') + ' s'
-        : view === 'list' ? 'tela <b>sessões</b> · rolagem ' + Math.round(scroll) + ' px'
-        : 'sessão <b>' + SESSIONS[sel].repo + '</b>';
+      readout.innerHTML = view === 'mascot' || view === 'session'
+        ? (view === 'session' ? '<b>' + cur.title + '</b> · ' : '') + 'estado <b>' + m.state + '</b>'
+        : 'tela <b>' + (view === 'list' ? 'sessões' : view === 'menu' ? 'escolher' : 'nova sessão') + '</b>';
     }
     requestAnimationFrame(frame);
   }
