@@ -31,3 +31,6 @@ Nota de compra: preferir controlador ST7796 (RGB565, mais rápido) ao ILI9488 (1
 ## 8. O que acontece quando fala com ele?
 **B) Claude do mascote que lê e responde, e também envia comandos e aprova permissões nas sessões.**
 Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitigação a definir na decisão 9.
+
+## 9. Confirmação antes de agir
+**Toque na tela para confirmar, por enquanto (provisório).** Tela mostra exatamente a ação; só executa quando o Pedro toca em Aprovar. Rever o nível de confirmação (sempre vs só ações de risco) antes da v1 final.
