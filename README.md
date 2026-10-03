@@ -13,6 +13,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `hardware/` — esquemáticos, fotos, modelos 3D da carcaça (Bambu A1)
 - `firmware/` — código do microcontrolador
 - `software/bridge/` — ponte entre as sessões do Claude e o mascote
+- `software/ui-proto/` — protótipo web da tela (480x320): mascote animado e push-to-talk
 
 ## Próximos passos
 1. Fechar decisões em `docs/decisoes.md`
