@@ -50,3 +50,6 @@ Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertenc
 
 ## 14. Orçamento da v1
 **Sem teto definido.** Priorizar qualidade (touch capacitivo, controlador ST7796, alto-falante decente) e comprar peças reserva.
+
+## 15. Onde comprar
+**Tudo online com entrega rápida** (Mercado Livre e similares), em vez da Santa Ifigênia, porque o Pedro está na Zona Sul e não há loja física confirmada aberta no sábado. Conferir na página do anúncio: N16R8, controlador ST7796, I2S, vendedor bem avaliado e prazo de entrega para o CEP.
