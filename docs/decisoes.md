@@ -37,3 +37,6 @@ Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitig
 
 ## 10. Alimentação
 **USB-C na tomada na v1.** Bateria fica para uma v2; carcaça da v1 não precisa reservar espaço.
+
+## 11. Voz (STT e TTS)
+**Decidir depois.** Não afeta a compra de hardware. Sugestão para a ponte: manter STT e TTS atrás de uma interface simples, para trocar de provedor sem reescrever.
