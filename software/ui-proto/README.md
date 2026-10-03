@@ -42,7 +42,8 @@ Tocar durante `speaking` interrompe e volta a ouvir.
   8–9) são buracos no corpo, como no original.
 - Sombreamento por vizinhança, sem gradiente: pixel de borda sem vizinho em cima
   ganha luz (`hi`), sem vizinho à esquerda `mid`, sem vizinho embaixo ou à
-  direita `lo`; as pernas são mais escuras (`lo`/`deep`). Há ainda uma sombra
+  direita `lo`; as pernas são mais escuras (`lo`/`deep`). O corpo não tem
+  faixas internas. Há ainda uma sombra
   no chão que encolhe quando ele sobe. Dá para gerar tudo isso offline como
   sprite pré-renderizado, sem custo de CPU no ESP32.
 - Movimento em passos inteiros (sem interpolação): cada pose é um frame de sprite.

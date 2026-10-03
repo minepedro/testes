@@ -180,7 +180,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
       <h2>Para portar ao firmware (LVGL)</h2>
       <ul>
         <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>15×30 px</code> na tela (1:2, como a célula do terminal). Os olhos e a boca são buracos no corpo, como no original.</li>
-        <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão, que encolhe quando ele sobe.</li>
+        <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão, que encolhe quando ele sobe. O corpo não tem faixas internas.</li>
         <li>Movimento é discreto (passos de 4 px), sem interpolação: cada pose é um frame.</li>
         <li>Paleta fixa de 11 cores, todas representáveis em RGB565 sem perda visível.</li>
         <li>Topo (ponte, sessões, relógio) e rodapé (texto) são duas faixas de 28 px; o mascote fica entre elas.</li>
@@ -354,9 +354,6 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         if (!solid(x, y + 1)) { ctx.fillStyle = leg ? PAL.deep : PAL.lo; ctx.fillRect(px, py + PH - 8, PW, 8); }
       }
     }
-    // sombra projetada pela cabeca sobre a fileira dos bracos
-    ctx.fillStyle = PAL.lo;
-    for (let x = 3; x <= 14; x++) if (solid(x, 2) && solid(x, 1)) ctx.fillRect(ox + x * PW, oy + 2 * PH, PW, 5);
     // olhos sao buracos no corpo (cor do fundo) com a borda de cima em sombra.
     // Piscar fecha o buraco; arregalar cresce para cima; olhar desloca 1 px.
     if (m.blinkT < 0) {
@@ -365,7 +362,6 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
         const x = ox + (ex + m.eyeDx) * PW, y = oy + eyeTop * PH;
         cell(x, y, PAL.bg, 1, m.eyeH);
         ctx.fillStyle = PAL.deep; ctx.fillRect(x, y - 4, PW, 4);           // aresta de cima
-        ctx.fillStyle = PAL.hi;   ctx.fillRect(x, y + m.eyeH * PH, PW, 3); // aresta de baixo
       });
     }
     // boca: buraco entre os olhos e a barriga. 1 = meia altura, 2 = altura cheia
