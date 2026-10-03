@@ -8,3 +8,9 @@ Formato: pergunta, resposta, motivo.
 ## 2. Onde roda a inteligência?
 **ESP32-S3 como terminal + ponte rodando na VPS (nuvem).** O mascote só cuida de tela, touch, mic e alto-falante; a ponte conversa com o Claude, lê as sessões e faz fala/transcrição.
 Motivo: já existe servidor ligado 24h, então não precisa de Raspberry Pi (mais caro, esquenta).
+
+## 3. Quais sessões o mascote mostra?
+**As duas: Claude Code (cc.remote) e chats do claude.ai.**
+- Claude Code: a ponte lê direto na VPS (fonte oficial/estável).
+- claude.ai: fonte de dados ainda em aberto. Não há API oficial para conta pessoal; a Compliance API é só Enterprise. Alternativas: wrapper não oficial por cookie (frágil), export manual, extensão de Chrome.
+- A fonte dos chats é software (ponte), não muda o hardware.
