@@ -59,6 +59,6 @@ Marque com [x] ao comprar. Preencha preço na loja. Comprar 1 reserva dos itens 
 
 ## Pendente para depois da compra
 
-- Mapa de pinos (ESP32-S3 com PSRAM octal usa os GPIO 35, 36 e 37 internamente, então eles não podem ser usados nos periféricos)
+- Mapa de pinos: proposto em `docs/montagem.md` (ESP32-S3 com PSRAM octal usa os GPIO 35, 36 e 37 internamente, então eles não podem ser usados nos periféricos). Falta confirmar com a tela que chegar.
 - Esquema de ligação do I2S (mic e amplificador compartilham o clock)
 - Modelo 3D da carcaça
