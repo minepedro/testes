@@ -29,10 +29,12 @@ etapa que você acabou de fazer.
 | SDI (MOSI) | GPIO 11 | |
 | SDO (MISO) | GPIO 13 | Pode ficar sem ligar se a tela não for ler dados |
 | DC (RS) | GPIO 14 | |
-| RESET | GPIO 21 | |
-| LED (backlight) | GPIO 47 | Ou direto no 3V3 se você não quer controlar o brilho |
+| RESET | GPIO 6 | |
+| LED (backlight) | GPIO 7 | Ou direto no 3V3 se você não quer controlar o brilho |
 
-Os GPIO 10 a 13 são os pinos padrão do SPI rápido do ESP32-S3, por isso foram escolhidos.
+Os GPIO 10 a 13 são os pinos padrão do SPI rápido do ESP32-S3, por isso foram escolhidos. Todos os sinais ficam no conector **esquerdo** da placa, então os jumpers saem de um lado só.
+
+O esquema desenhado, com cada fio colorido, está em `hardware/esquema-ligacoes.html`.
 
 ### Touch capacitivo (FT6336 ou GT911, I2C)
 

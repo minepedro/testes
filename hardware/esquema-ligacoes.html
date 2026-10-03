@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ligações do Mascote</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura (explicacao) com duas figuras largas que rolam
+   de lado no celular. O esquema nasce de uma lista de fios em JS, para que o
+   desenho e as tabelas nunca discordem. As cores dos fios identificam o
+   barramento: laranja SPI, azul I2C, verde I2S, vermelho 3V3, cinza GND. */
+:root {
+  --bg: #e9ebee;
+  --surface: #f6f7f9;
+  --fg: #1d2024;
+  --muted: #5f6670;
+  --line: #cfd3d9;
+  --accent: #d97757;
+  --accent-fg: #ffffff;
+  --w-spi: #c4561f;
+  --w-i2c: #2a63c4;
+  --w-i2s: #23864f;
+  --w-pwr: #c93030;
+  --w-gnd: #4b525b;
+  --bad: #c93030;
+  --pcb: #1d2b2a;
+  --pcb-edge: #0f1818;
+  --pcb-fg: #e8efe9;
+  --pcb-dim: #7f918c;
+  --gold: #d6b25e;
+  --chip: #aeb4ba;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+    --accent: #e08562; --accent-fg: #1a0e08;
+    --w-spi: #ef8a5a; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-pwr: #f26b6b; --w-gnd: #aab1ba;
+    --bad: #f26b6b; --pcb: #16211f; --pcb-edge: #050a0a; --chip: #8d949b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+  --accent: #e08562; --accent-fg: #1a0e08;
+  --w-spi: #ef8a5a; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-pwr: #f26b6b; --w-gnd: #aab1ba;
+  --bad: #f26b6b; --pcb: #16211f; --pcb-edge: #050a0a; --chip: #8d949b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 40px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 30px/1.1 var(--font-display); letter-spacing: .01em; text-wrap: balance; }
+h2 { margin: 0 0 6px; font-size: 20px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+h3 { margin: 0; font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 14px; min-width: 0; }
+.sub { color: var(--muted); max-width: 64ch; }
+code, .mono { font-family: var(--font-mono); font-size: 13px; }
+code { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.scroller svg { display: block; width: 100%; height: auto; min-width: 760px; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 70ch; }
+
+/* texto dentro dos SVG */
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .t-body { font-family: var(--font-body); font-size: 12px; }
+svg .t-dim { fill: var(--muted); }
+svg .t-pcb { fill: var(--pcb-fg); }
+svg .t-pcbdim { fill: var(--pcb-dim); }
+svg .t-bad { fill: var(--bad); text-decoration: line-through; }
+svg .t-used { font-weight: 500; }
+svg .t-title { font-family: var(--font-body); font-size: 12px; font-weight: 600; }
+svg .flag-t { font-size: 10px; font-weight: 500; }
+.node { fill: var(--surface); stroke: var(--fg); stroke-width: 1.5; }
+.net { stroke-dasharray: 5 4; fill: none; stroke: var(--muted); stroke-width: 1.6; }
+
+/* filtros do esquema */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 14px; font: 500 13px/1 var(--font-body);
+}
+.chip i { width: 18px; height: 4px; border-radius: 2px; background: var(--c, var(--muted)); display: inline-block; }
+.chip[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.chip:focus-visible, .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.diagram[data-focus]:not([data-focus="all"]) .wire { opacity: .1; }
+.diagram[data-focus="spi"] .wire[data-bus="spi"],
+.diagram[data-focus="i2c"] .wire[data-bus="i2c"],
+.diagram[data-focus="i2s"] .wire[data-bus="i2s"],
+.diagram[data-focus="pwr"] .wire[data-bus="pwr"] { opacity: 1; }
+.wire { transition: opacity .15s; }
+
+/* cartoes e tabelas */
+.cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card.on { border-color: var(--fg); }
+.card .bar { height: 4px; border-radius: 2px; background: var(--c); width: 44px; }
+.card p { color: var(--muted); font-size: 14px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font: 500 11px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.pin, td.gpio { font-family: var(--font-mono); white-space: nowrap; }
+td.gpio { font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+
+.res { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.res div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding-block: 9px; border-bottom: 1px solid var(--line); }
+.res b { font: 500 13px/1.5 var(--font-mono); color: var(--bad); }
+.res span { color: var(--muted); font-size: 14px; }
+
+.checks { display: grid; gap: 4px; }
+.check { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+.check span { min-width: 0; }
+.check small { display: block; color: var(--muted); font-size: 13px; }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--fg); max-width: 70ch; }
+.steps li::marker { color: var(--muted); font-family: var(--font-mono); }
+.hint { font: 500 12px/1.4 var(--font-mono); color: var(--muted); }
+@media (max-width: 560px) { .res div { grid-template-columns: 1fr; gap: 2px; } h1 { font-size: 24px; } }
+@media (prefers-reduced-motion: reduce) { .wire { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">hardware · v1 · protoboard</div>
+    <h1>Ligações do Mascote</h1>
+    <p class="lead">Quatro peças e 14 fios de sinal. A regra que vale para tudo: as peças trabalham em 3,3 V. Esta página mostra quem liga em quem, por qual fio e para quê.</p>
+  </header>
+
+  <section id="fluxo">
+    <h2>O caminho de uma conversa</h2>
+    <p class="sub">Antes dos fios, veja o que cada peça faz. Os fios que você vai montar são os traços coloridos. As setas tracejadas são rede e software, que não precisam de fio.</p>
+    <figure>
+      <div class="scroller"><svg id="flow" viewBox="0 0 880 300" role="img" aria-label="Você segura a tela e fala. O microfone leva o som ao ESP32 por 3 fios I2S. O ESP32 manda o áudio por Wi-Fi para a ponte na VPS, que transcreve e envia o texto à sessão do Claude Code. A resposta volta em texto pela ponte e pelo Wi-Fi, e o ESP32 desenha na tela por 7 fios SPI. O toque na tela chega ao ESP32 por 4 fios I2C."></svg></div>
+      <figcaption>Segurar a tela (I2C) avisa o ESP32 para ouvir. O som entra pelo microfone (I2S), vai por Wi-Fi até a ponte e vira texto na sessão. A resposta volta como texto e o ESP32 a desenha na tela (SPI).</figcaption>
+    </figure>
+  </section>
+
+  <section id="esquema">
+    <h2>O esquema de ligação</h2>
+    <p class="sub">Escolha um grupo para destacar só os fios dele. Todos os sinais saem do <strong>mesmo lado</strong> da placa, o da esquerda, então os jumpers ficam de um lado só na protoboard.</p>
+    <div class="chips" id="chips" role="group" aria-label="Destacar fios">
+      <button class="chip" type="button" data-focus="all" aria-pressed="true">Tudo</button>
+      <button class="chip" type="button" data-focus="spi" aria-pressed="false" style="--c:var(--w-spi)"><i></i>Tela · SPI</button>
+      <button class="chip" type="button" data-focus="i2c" aria-pressed="false" style="--c:var(--w-i2c)"><i></i>Touch · I2C</button>
+      <button class="chip" type="button" data-focus="i2s" aria-pressed="false" style="--c:var(--w-i2s)"><i></i>Microfone · I2S</button>
+      <button class="chip" type="button" data-focus="pwr" aria-pressed="false" style="--c:var(--w-pwr)"><i></i>Energia</button>
+    </div>
+    <figure>
+      <div class="scroller"><svg id="diagram" class="diagram" data-focus="all" viewBox="0 40 830 660" role="img" aria-label="Esquema de ligação: a tela ST7796 com touch, à esquerda no alto, e o microfone INMP441, à esquerda embaixo, ligam nos pinos do lado esquerdo do ESP32-S3-DevKitC-1, à direita. Sete fios SPI, quatro I2C, três I2S, mais 3V3 e GND."></svg></div>
+      <figcaption>Cada fio tem o nome do pino nas duas pontas. Os rótulos <b>3V3</b> e <b>GND</b> mostram pontos que se ligam ao mesmo trilho de alimentação da protoboard, em vez de um fio desenhado para cada um. Pinos riscados em vermelho não devem ser usados. O GPIO18 fica livre para o amplificador opcional. A ordem dos pinos do módulo da tela é a mais comum; confira a serigrafia do seu antes de ligar. <span class="hint">No celular, arraste o desenho para o lado.</span></figcaption>
+    </figure>
+  </section>
+
+  <section id="explica">
+    <h2>O que cada grupo de fios faz</h2>
+    <p class="sub">Um barramento é um conjunto de fios que trabalham juntos para mover dados entre duas peças.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section id="proibidos">
+    <h2>Pinos do ESP32-S3 que você não pode usar</h2>
+    <p class="sub">Eles já têm função dentro da placa. Ligar algo neles faz a placa não ligar, não gravar ou travar.</p>
+    <div class="res">
+      <div><b>GPIO 35, 36, 37</b><span>Presos à memória PSRAM de 8 MB do modelo N16R8. Ficam sem uso externo.</span></div>
+      <div><b>GPIO 26 a 32</b><span>Memória flash interna. Nem aparecem nos conectores.</span></div>
+      <div><b>GPIO 0, 3, 45, 46</b><span>Definem como a placa liga (modo de boot). Um nível errado na hora de ligar impede de gravar.</span></div>
+      <div><b>GPIO 19, 20</b><span>É o USB nativo da placa.</span></div>
+      <div><b>GPIO 43, 44 (TX, RX)</b><span>Porta serial pela qual você grava e vê as mensagens.</span></div>
+      <div><b>GPIO 38 ou 48</b><span>LED colorido da placa. Qual dos dois depende da versão.</span></div>
+    </div>
+  </section>
+
+  <section id="antes">
+    <h2>Antes de ligar o USB</h2>
+    <p class="sub">Cinco conferências que evitam queimar uma peça. Marque conforme faz; o estado fica salvo neste navegador.</p>
+    <div class="checks" id="checks"></div>
+  </section>
+
+  <section id="protoboard">
+    <h2>Como isso fica na protoboard</h2>
+    <ol class="steps">
+      <li>Encaixe o ESP32-S3 na protoboard com as duas portas USB para fora. Como os sinais usados estão todos no conector esquerdo, os jumpers saem de um lado só.</li>
+      <li>Use os trilhos laterais da protoboard como barramentos: um para o <b>3V3</b> e outro para o <b>GND</b>. Ligue o pino 3V3 do ESP32 ao trilho 3V3 e o pino GND ao trilho GND.</li>
+      <li>A tela fica fora da protoboard, ao lado. Use jumpers macho-fêmea do conector dela até a protoboard ou direto aos pinos do ESP32.</li>
+      <li>O microfone é pequeno e pode ficar encaixado na própria protoboard. Mantenha os fios dele curtos, porque o ruído entra pelos fios compridos.</li>
+      <li>Monte e teste uma peça por vez, na ordem do guia <code>docs/montagem.md</code>: ESP32, tela, touch, microfone.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  // ---- dados: uma lista de fios alimenta o desenho e as tabelas -----------------
+  const BUS = {
+    spi: { name: 'Tela · SPI', c: 'var(--w-spi)', blurb: 'A tela recebe os pixels em série, um bit por pulso de relógio. O ESP32 manda e a tela só escuta, por isso o fio de volta (MISO) pode ficar sem ligar. Sete fios cobrem tudo: três de dados e relógio, um que escolhe a tela, um que diz se é comando ou pixel, um de reinício e um de luz de fundo.' },
+    i2c: { name: 'Touch · I2C', c: 'var(--w-i2c)', blurb: 'O chip do touch usa só dois fios compartilhados, um de dados e um de relógio. Os outros dois ajudam: ele avisa que houve toque e pode ser reiniciado. Ao ser tocado, o chip puxa o fio INT, e o ESP32 vai ler a coordenada. Assim não precisa perguntar o tempo todo.' },
+    i2s: { name: 'Microfone · I2S', c: 'var(--w-i2s)', blurb: 'Três fios levam o som digital do microfone ao ESP32. Um dá o ritmo dos bits, outro marca o início de cada amostra (esquerda ou direita) e o terceiro carrega os dados. O amplificador opcional de voz usaria os mesmos GPIO 15 e 16 e mais o GPIO 18, mas ele está fora da v1.' },
+    pwr: { name: 'Energia', c: 'var(--w-pwr)', blurb: 'Tudo funciona em 3,3 V, que sai do pino 3V3 do ESP32 (ele recebe 5 V do USB e baixa para 3,3 V). O GND é comum a todos: sem ele, os sinais não têm ponto de referência e nada funciona. O 5 V não é usado na v1.' }
+  };
+  // gpio: numero do GPIO; net: ponto de alimentacao; k: posicao do pino no modulo
+  const WIRES = [
+    { mod: 'tela', k: 0,  pin: 'VCC',      net: '3V3', bus: 'pwr', what: 'Alimentação da tela e do touch' },
+    { mod: 'tela', k: 1,  pin: 'GND',      net: 'GND', bus: 'pwr', what: 'Terra comum' },
+    { mod: 'tela', k: 2,  pin: 'CS',       gpio: 10,   bus: 'spi', what: 'Avisa à tela que a conversa é com ela (nível baixo enquanto o ESP32 fala)' },
+    { mod: 'tela', k: 3,  pin: 'RESET',    gpio: 6,    bus: 'spi', what: 'Reinicia a tela por software' },
+    { mod: 'tela', k: 4,  pin: 'DC',       gpio: 14,   bus: 'spi', what: 'Diz se o byte seguinte é comando ou pixel' },
+    { mod: 'tela', k: 5,  pin: 'SDI',      gpio: 11,   bus: 'spi', what: 'MOSI: leva pixels e comandos do ESP32 à tela' },
+    { mod: 'tela', k: 6,  pin: 'SCK',      gpio: 12,   bus: 'spi', what: 'Relógio: cada pulso marca um bit' },
+    { mod: 'tela', k: 7,  pin: 'LED',      gpio: 7,    bus: 'spi', what: 'Luz de fundo. Com PWM controla o brilho; no 3V3 fica sempre no máximo' },
+    { mod: 'tela', k: 8,  pin: 'SDO',      gpio: 13,   bus: 'spi', what: 'MISO: volta da tela ao ESP32. Pode ficar sem ligar' },
+    { mod: 'tela', k: 9,  pin: 'CTP_SCL',  gpio: 9,    bus: 'i2c', what: 'Relógio do I2C' },
+    { mod: 'tela', k: 10, pin: 'CTP_RST',  gpio: 5,    bus: 'i2c', what: 'Reinicia o chip do touch' },
+    { mod: 'tela', k: 11, pin: 'CTP_SDA',  gpio: 8,    bus: 'i2c', what: 'Dados do I2C (vão e voltam)' },
+    { mod: 'tela', k: 12, pin: 'CTP_INT',  gpio: 4,    bus: 'i2c', what: 'O chip avisa que houve toque' },
+    { mod: 'mic',  k: 0,  pin: 'SCK',      gpio: 15,   bus: 'i2s', what: 'Relógio dos bits do áudio (BCLK)' },
+    { mod: 'mic',  k: 1,  pin: 'WS',       gpio: 16,   bus: 'i2s', what: 'Marca esquerda e direita de cada amostra' },
+    { mod: 'mic',  k: 2,  pin: 'SD',       gpio: 17,   bus: 'i2s', what: 'Dados do som, do microfone ao ESP32' },
+    { mod: 'mic',  k: 3,  pin: 'L/R',      net: 'GND', bus: 'pwr', what: 'No GND escolhe o canal esquerdo. Solto, o microfone pode ficar mudo' },
+    { mod: 'mic',  k: 4,  pin: 'VDD',      net: '3V3', bus: 'pwr', what: 'Alimentação do microfone' },
+    { mod: 'mic',  k: 5,  pin: 'GND',      net: 'GND', bus: 'pwr', what: 'Terra comum' }
+  ];
+  // conector esquerdo (J1) e direito (J3) do ESP32-S3-DevKitC-1, de cima para baixo
+  const LEFT  = ['3V3','3V3','RST','4','5','6','7','15','16','17','18','8','3','46','9','10','11','12','13','14','5V','GND'];
+  const RIGHT = ['GND','TX','RX','1','2','42','41','40','39','38','37','36','35','0','45','48','47','21','20','19','GND','GND'];
+  const RES = { left: ['3','46'], right: ['TX','RX','38','37','36','35','0','45','48','20','19'] };
+  const MOD = { tela: { y0: 84 }, mic: { y0: 444 } };
+  const PITCH = 24, ESP_Y0 = 96, ESP_XL = 600, MOD_X = 300, LANE0 = 360, LANE_STEP = 14;
+  const espY = g => ESP_Y0 + PITCH * LEFT.indexOf(String(g));
+  const modY = w => MOD[w.mod].y0 + PITCH * w.k;
+  const label = g => /^\d+$/.test(g) ? 'GPIO' + g : g;
+
+  // ---- faixas: escolhe a ordem das faixas verticais que minimiza cruzamentos ------
+  const sig = WIRES.filter(w => w.gpio);
+  function cost(order) {
+    const lane = new Map(order.map((w, i) => [w, LANE0 + LANE_STEP * i]));
+    let n = 0;
+    sig.forEach(a => sig.forEach(b => {
+      if (a === b) return;
+      const xa = lane.get(a), ya = modY(a), ye = espY(a.gpio);
+      const xb = lane.get(b), yb1 = Math.min(modY(b), espY(b.gpio)), yb2 = Math.max(modY(b), espY(b.gpio));
+      // horizontais de A cruzando a vertical de B
+      if (xb > MOD_X && xb < xa && modY(a) > yb1 && modY(a) < yb2) n++;
+      if (xb > xa && xb < ESP_XL && ye > yb1 && ye < yb2) n++;
+    }));
+    return n;
+  }
+  function pickOrder() {
+    let seed = 7;
+    const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    let best = sig.slice().sort((a, b) => espY(a.gpio) - espY(b.gpio)), bestC = cost(best);
+    for (let r = 0; r < 30; r++) {
+      let cur = best.slice();
+      for (let i = cur.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cur[i], cur[j]] = [cur[j], cur[i]]; }
+      let c = cost(cur);
+      for (let it = 0; it < 1500; it++) {
+        const i = Math.floor(rnd() * cur.length), j = Math.floor(rnd() * cur.length);
+        if (i === j) continue;
+        [cur[i], cur[j]] = [cur[j], cur[i]];
+        const c2 = cost(cur);
+        if (c2 <= c) c = c2; else [cur[i], cur[j]] = [cur[j], cur[i]];
+      }
+      if (c < bestC) { best = cur.slice(); bestC = c; }
+    }
+    return best;
+  }
+
+  // ---- desenho do esquema -------------------------------------------------------
+  const SPRITE = ['...############...', '...############...', '.################.', '...############...', '....#.#....#.#....'];
+  function mascot(x, y, px, py) {
+    let s = '';
+    SPRITE.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === '#') s += `<rect x="${x + c * px}" y="${y + r * py}" width="${px}" height="${py}" fill="#d97757" shape-rendering="crispEdges"/>`; });
+    return s + [5, 12].map(c => `<rect x="${x + c * px}" y="${y + py}" width="${px}" height="${py}" fill="#141210" shape-rendering="crispEdges"/>`).join('');
+  }
+  const flag = (x, y, net, dir) => {                       // rotulo de rede: 3V3 ou GND
+    const col = net === '3V3' ? 'var(--w-pwr)' : 'var(--w-gnd)', w = 30;
+    const x0 = dir > 0 ? x : x - w;
+    return `<rect x="${x0}" y="${y - 8}" width="${w}" height="16" rx="3" fill="${col}"/><text class="flag-t" x="${x0 + w / 2}" y="${y + 3.5}" text-anchor="middle" style="fill:var(--surface)">${net}</text>`;
+  };
+
+  function drawDiagram() {
+    const order = pickOrder(), lane = new Map(order.map((w, i) => [w, LANE0 + LANE_STEP * i]));
+    let s = '';
+    // modulo da tela
+    s += `<rect x="24" y="60" width="276" height="336" rx="8" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<rect x="40" y="96" width="186" height="120" rx="3" fill="#141210"/>` + mascot(79, 126, 6, 12);
+    s += `<text class="t-title t-pcb" x="40" y="80">Tela 3,5″ ST7796</text>`;
+    s += `<text class="t-pcbdim" x="40" y="238">480×320 · SPI</text><text class="t-pcbdim" x="40" y="254">touch capacitivo · I2C</text>`;
+    s += `<text class="t-pcbdim" x="40" y="360">13 pinos: 9 da tela</text><text class="t-pcbdim" x="40" y="376">+ 4 do touch</text>`;
+    // modulo do microfone
+    s += `<rect x="150" y="424" width="150" height="168" rx="8" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<rect x="176" y="470" width="44" height="44" rx="4" fill="var(--chip)"/><circle cx="198" cy="492" r="8" fill="#141210"/>`;
+    s += `<text class="t-title t-pcb" x="166" y="446">Microfone</text><text class="t-pcbdim" x="166" y="540">INMP441</text><text class="t-pcbdim" x="166" y="556">I2S, 1 canal</text>`;
+    // placa ESP32
+    s += `<rect x="600" y="60" width="200" height="582" rx="8" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    s += `<text class="t-title t-pcb" x="700" y="80" text-anchor="middle">ESP32-S3-DevKitC-1</text>`;
+    s += `<rect x="672" y="120" width="56" height="210" rx="3" fill="var(--chip)"/><text x="700" y="225" text-anchor="middle" transform="rotate(-90 700 225)" style="fill:#1d2024;font-size:11px">WROOM-1 N16R8</text>`;
+    s += `<rect x="636" y="642" width="40" height="22" rx="3" fill="var(--chip)"/><rect x="724" y="642" width="40" height="22" rx="3" fill="var(--chip)"/>`;
+    s += `<text class="t-dim" x="656" y="684" text-anchor="middle">USB-C UART</text><text class="t-dim" x="744" y="684" text-anchor="middle">USB-C nativa</text>`;
+    const usedL = new Set(sig.map(w => String(w.gpio)));
+    LEFT.forEach((p, i) => {
+      const y = ESP_Y0 + PITCH * i, used = usedL.has(p) || p === '3V3' || p === 'GND', res = RES.left.includes(p);
+      s += `<circle cx="${ESP_XL}" cy="${y}" r="3.5" fill="var(--gold)"/>`;
+      s += `<text class="${res ? 't-bad' : used ? 't-pcb t-used' : 't-pcbdim'}" x="${ESP_XL + 12}" y="${y + 3.5}">${label(p)}</text>`;
+    });
+    RIGHT.forEach((p, i) => {
+      const y = ESP_Y0 + PITCH * i, res = RES.right.includes(p);
+      s += `<circle cx="800" cy="${y}" r="3.5" fill="var(--gold)"/>`;
+      s += `<text class="${res ? 't-bad' : 't-pcbdim'}" x="788" y="${y + 3.5}" text-anchor="end">${label(p)}</text>`;
+    });
+    s += `<text class="t-pcbdim" x="${ESP_XL + 12}" y="${espY(18) + 3.5 + 0}" style="display:none"></text>`;
+    // fios de sinal (primeiro o halo, para os cruzamentos ficarem legiveis)
+    let wires = '';
+    sig.forEach(w => {
+      const ym = modY(w), ye = espY(w.gpio), x = lane.get(w);
+      const d = `M${MOD_X} ${ym} H${x} V${ye} H${ESP_XL - 3}`;
+      wires += `<g class="wire" data-bus="${w.bus}"><path d="${d}" fill="none" stroke="var(--surface)" stroke-width="6" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${BUS[w.bus].c}" stroke-width="2.4" stroke-linejoin="round"/></g>`;
+    });
+    s += wires;
+    // pinos dos modulos e rotulos
+    WIRES.forEach(w => {
+      const y = modY(w);
+      s += `<circle cx="${MOD_X}" cy="${y}" r="3.5" fill="var(--gold)"/>`;
+      s += `<text class="t-pcb t-used" x="${MOD_X - 12}" y="${y + 3.5}" text-anchor="end">${w.pin}</text>`;
+      if (w.net) s += `<g class="wire" data-bus="pwr"><path d="M${MOD_X} ${y} H${MOD_X + 18}" stroke="var(--surface)" stroke-width="6" fill="none"/><path d="M${MOD_X} ${y} H${MOD_X + 18}" stroke="${w.net === '3V3' ? 'var(--w-pwr)' : 'var(--w-gnd)'}" stroke-width="2.4" fill="none"/>${flag(MOD_X + 18, y, w.net, 1)}</g>`;
+    });
+    // alimentacao no ESP32
+    [[0, '3V3'], [1, '3V3'], [21, 'GND']].forEach(([i, net]) => {
+      const y = ESP_Y0 + PITCH * i, col = net === '3V3' ? 'var(--w-pwr)' : 'var(--w-gnd)';
+      if (i === 1) return;
+      s += `<g class="wire" data-bus="pwr"><path d="M${ESP_XL - 3} ${y} H${ESP_XL - 22}" stroke="var(--surface)" stroke-width="6" fill="none"/><path d="M${ESP_XL - 3} ${y} H${ESP_XL - 22}" stroke="${col}" stroke-width="2.4" fill="none"/>${flag(ESP_XL - 22, y, net, -1)}</g>`;
+    });
+    // nota do GPIO 18 e do 5V (nao usados na v1)
+    s += `<text class="t-dim" x="${ESP_XL - 10}" y="${espY('5V') + 3.5}" text-anchor="end">5V: não usado na v1</text>`;
+    document.getElementById('diagram').innerHTML = s;
+  }
+
+  // ---- figura 1: quem fala com quem -----------------------------------------------
+  function drawFlow() {
+    const n = (x, y, w, h, t1, t2) => `<rect class="node" x="${x}" y="${y}" width="${w}" height="${h}" rx="8"/><text class="t-title" x="${x + w / 2}" y="${y + 22}" text-anchor="middle">${t1}</text>` + (t2 ? `<text class="t-dim" x="${x + w / 2}" y="${y + 38}" text-anchor="middle">${t2}</text>` : '');
+    const arrow = (x1, x2, y, color, dashed, txt) => {
+      const dir = x2 > x1 ? 1 : -1, tip = x2;
+      return `<path d="M${x1} ${y} H${x2 - dir * 2}" class="${dashed ? 'net' : ''}" ${dashed ? '' : `fill="none" stroke="${color}" stroke-width="3"`}/>` +
+        `<path d="M${tip} ${y} l${-dir * 9} -5 v10 z" fill="${dashed ? 'var(--muted)' : color}"/>` +
+        `<text class="${dashed ? 't-dim' : ''}" x="${(x1 + x2) / 2}" y="${y - 8}" text-anchor="middle">${txt}</text>`;
+    };
+    let s = '';
+    s += n(20, 40, 120, 60, 'Microfone', 'INMP441');
+    s += n(20, 160, 120, 100, 'Tela', 'ST7796 + touch');
+    s += n(260, 40, 120, 220, 'ESP32-S3', 'terminal');
+    s += n(500, 40, 120, 220, 'Ponte', 'na sua VPS');
+    s += n(740, 40, 120, 220, 'Sessão', 'Claude Code');
+    s += `<text class="t-dim" x="80" y="26" text-anchor="middle">você fala</text><text class="t-dim" x="80" y="282" text-anchor="middle">você toca e lê</text>`;
+    s += arrow(140, 260, 70, 'var(--w-i2s)', false, 'I2S · 3 fios');
+    s += arrow(260, 140, 190, 'var(--w-spi)', false, 'SPI · 7 fios');
+    s += arrow(140, 260, 232, 'var(--w-i2c)', false, 'I2C · 4 fios');
+    s += arrow(380, 500, 70, '', true, 'Wi-Fi · áudio');
+    s += arrow(500, 380, 190, '', true, 'Wi-Fi · texto');
+    s += arrow(620, 740, 70, '', true, 'texto falado');
+    s += arrow(740, 620, 190, '', true, 'resposta');
+    document.getElementById('flow').innerHTML = s;
+  }
+
+  // ---- cartoes (tabelas geradas dos mesmos fios) -------------------------------------
+  function drawCards() {
+    const html = Object.entries(BUS).map(([k, b]) => {
+      const rows = WIRES.filter(w => w.bus === k).map(w => {
+        const mod = w.mod === 'tela' ? 'Tela' : 'Microfone';
+        const dest = w.gpio ? 'GPIO ' + w.gpio : w.net;
+        return `<tr><td class="pin">${mod} · ${w.pin}</td><td class="gpio">${dest}</td><td>${w.what}</td></tr>`;
+      }).join('');
+      return `<article class="card" data-card="${k}" style="--c:${b.c}"><div class="bar"></div><h3>${b.name}</h3><p>${b.blurb}</p><div class="tbl"><table><thead><tr><th>Pino</th><th>Liga em</th><th>Para quê</th></tr></thead><tbody>${rows}</tbody></table></div></article>`;
+    }).join('');
+    document.getElementById('cards').innerHTML = html;
+  }
+
+  // ---- lista "antes de ligar" -----------------------------------------------------------
+  const CHECKS = [
+    ['Cabo USB-C é de dados', 'Cabos só de carga alimentam a placa, mas o computador não a reconhece.'],
+    ['Desliguei o USB antes de mexer nos fios', 'Nunca ligue ou desligue jumper com a placa energizada.'],
+    ['Medi 3,3 V entre o pino 3V3 e o GND do ESP32', 'Multímetro em tensão contínua. Se der 0 V ou perto de 5 V, pare e me conte o valor.'],
+    ['Não há curto entre 3V3 e GND', 'Multímetro em continuidade, com o USB desligado: não pode apitar.'],
+    ['Conferi o nome dos pinos na serigrafia da tela', 'A ordem dos pinos muda de fabricante. O nome impresso na placa vale mais que o desenho.']
+  ];
+  function drawChecks() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem('mascote.ligacoes.checks') || '[]'); } catch (_) {}
+    const box = document.getElementById('checks');
+    box.innerHTML = CHECKS.map((c, i) => `<label class="check"><input type="checkbox" id="chk${i}" ${saved.includes(i) ? 'checked' : ''}><span>${c[0]}<small>${c[1]}</small></span></label>`).join('');
+    box.addEventListener('change', () => {
+      const on = CHECKS.map((_, i) => i).filter(i => document.getElementById('chk' + i).checked);
+      try { localStorage.setItem('mascote.ligacoes.checks', JSON.stringify(on)); } catch (_) {}
+    });
+  }
+
+  // ---- filtro do esquema ----------------------------------------------------------------
+  function wireChips() {
+    const svg = document.getElementById('diagram');
+    document.getElementById('chips').addEventListener('click', e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      svg.dataset.focus = b.dataset.focus;
+      document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      document.querySelectorAll('.card').forEach(c => c.classList.toggle('on', c.dataset.card === b.dataset.focus));
+    });
+  }
+
+  drawFlow(); drawDiagram(); drawCards(); drawChecks(); wireChips();
+})();
+</script>
+</body>
+</html>
