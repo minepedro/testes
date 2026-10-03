@@ -40,3 +40,7 @@ Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitig
 
 ## 11. Voz (STT e TTS)
 **Decidir depois.** Não afeta a compra de hardware. Sugestão para a ponte: manter STT e TTS atrás de uma interface simples, para trocar de provedor sem reescrever.
+
+## 12. Como o mascote é fisicamente?
+**É o mascote do Claude** (assumido: o bichinho laranja pixelado do Claude Code, conhecido como Clawd; confirmar). Personagem com corpo impresso na A1, tela 3,5" exibindo o personagem animado.
+Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertence à Anthropic.
