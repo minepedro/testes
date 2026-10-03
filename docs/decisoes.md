@@ -24,3 +24,6 @@ Motivo: já existe servidor ligado 24h, então não precisa de Raspberry Pi (mai
 ## 6. Qual tela?
 **3,5" touch, 480x320.** Maior e mais legível para lista de sessões.
 Nota de compra: preferir controlador ST7796 (RGB565, mais rápido) ao ILI9488 (18 bits, mais lento no SPI). Confirmar o tipo de touch (resistivo XPT2046 ou capacitivo) na loja.
+
+## 7. Como acorda o mascote?
+**Toque na tela (push-to-talk) na v1; palavra de ativação depois.** O ESP32-S3 suporta as duas, então o hardware não muda.
