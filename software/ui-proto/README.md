@@ -20,7 +20,7 @@ Abra `index.html` no navegador. Não precisa de servidor.
 | `idle`      | ligou / terminou de falar | Pisca e olha para os lados. Rodapé "segure para falar".          |
 | `listening` | toque e segurar           | Olhos arregalados, barras de áudio, transcrição no rodapé.       |
 | `thinking`  | soltou o dedo             | Olha para o lado, três pontos ao lado da cabeça.                 |
-| `speaking`  | resposta chegou           | Boca abre e fecha, texto da resposta no rodapé.                  |
+| `speaking`  | resposta chegou           | Responde só por texto: a boca mexe enquanto a resposta é escrita no rodapé. |
 | `working`   | abriu uma sessão rodando  | Olha para o lado, três pontos piscando. Rodapé: última atividade. |
 | `alert`     | sessão pediu permissão    | Olhos arregalados, boca pequena, "!" âmbar. Aparecem os botões.  |
 
@@ -28,6 +28,21 @@ Toque curto demais (< 300 ms) volta ao `idle` com a dica "segure o dedo enquanto
 Tocar durante `speaking` interrompe e volta a ouvir.
 
 O mascote não muda de lugar em nenhum estado: só olhos, boca e rodapé mudam.
+
+## Respostas em texto
+
+O mascote responde só por texto (decisão 16), sem som.
+
+- **Enquanto escreve:** o rodapé mostra as duas últimas linhas, a 40 caracteres
+  por segundo, e a boca do mascote mexe.
+- **Ao terminar:** o rodapé fica com o começo da resposta e uma seta à direita.
+- **Ler tudo:** toque curto no rodapé abre a resposta inteira, com a sua pergunta
+  em cima. Arraste para rolar; a seta do canto volta.
+- **Histórico:** cada sessão guarda a última troca (`exchange: {q, a}`); fora de
+  sessão, o mascote guarda uma à parte. Fora de sessão a resposta resume o que
+  precisa de você.
+- **Entrada:** continua por voz (segurar a tela). Teclado na tela e respostas
+  rápidas por botão (por exemplo "continuar", "resumir") ficam como possibilidade.
 
 ## Sessões
 

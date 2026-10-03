@@ -21,11 +21,11 @@ Marque com [x] ao comprar. Preencha preço na loja. Comprar 1 reserva dos itens 
   - **Evitar:** microfone analógico (MAX9814, módulo "KY-038"), não é I2S.
   - Preço: ______
 
-- [ ] **Amplificador I2S MAX98357A** — qtd 2 (R)
+- [ ] **Amplificador I2S MAX98357A** — qtd 2 (R) — *opcional na v1: o mascote responde só por texto (decisão 16)*
   - **Evitar:** PAM8403 (é analógico, não recebe I2S).
   - Preço: ______
 
-- [ ] **Alto-falante 4 Ω ou 8 Ω, 3 W, ~40 mm** — qtd 2 (R)
+- [ ] **Alto-falante 4 Ω ou 8 Ω, 3 W, ~40 mm** — qtd 2 (R) — *opcional na v1: o mascote responde só por texto (decisão 16)*
   - Quanto maior o cone, melhor o grave, mas a carcaça cresce. 40 a 50 mm é bom ponto.
   - Preço: ______
 

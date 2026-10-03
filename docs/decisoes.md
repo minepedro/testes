@@ -40,6 +40,7 @@ Risco registrado: erro de transcrição de voz pode aprovar ação errada. Mitig
 
 ## 11. Voz (STT e TTS)
 **Decidir depois.** Não afeta a compra de hardware. Sugestão para a ponte: manter STT e TTS atrás de uma interface simples, para trocar de provedor sem reescrever.
+Atualização: a saída por voz (TTS) foi descartada na decisão 16. Só a entrada (STT) segue em aberto.
 
 ## 12. Como o mascote é fisicamente?
 **É o mascote do Claude** (assumido: o bichinho laranja pixelado do Claude Code, conhecido como Clawd; confirmar). Personagem com corpo impresso na A1, tela 3,5" exibindo o personagem animado.
@@ -53,3 +54,7 @@ Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertenc
 
 ## 15. Onde comprar
 **Tudo online com entrega rápida** (Mercado Livre e similares), em vez da Santa Ifigênia, porque o Pedro está na Zona Sul e não há loja física confirmada aberta no sábado. Conferir na página do anúncio: N16R8, controlador ST7796, I2S, vendedor bem avaliado e prazo de entrega para o CEP.
+
+## 16. Como o mascote responde?
+**Por texto, na tela.** Sem voz de saída (TTS) na v1. A resposta é escrita no rodapé com a boca do mascote mexendo; um toque abre a resposta inteira para ler e rolar. Cada sessão guarda a última troca.
+Impacto: o alto-falante e o amplificador MAX98357A deixam de ser necessários na v1 (ficam opcionais, para uma v2 com voz). O microfone continua, porque a entrada segue sendo por voz (push-to-talk).
