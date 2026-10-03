@@ -3,7 +3,7 @@
 Mascote de mesa com tela que mostra minhas sessões do Claude e permite conversar com ele.
 
 ## Status
-Fase 0: definição (grill-me). Nada comprado ainda.
+Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada comprado ainda.
 
 ## Estrutura
 - `docs/decisoes.md` — decisões tomadas (uma por pergunta do grill-me)
