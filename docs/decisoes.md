@@ -14,3 +14,6 @@ Motivo: já existe servidor ligado 24h, então não precisa de Raspberry Pi (mai
 - Claude Code: a ponte lê direto na VPS (fonte oficial/estável).
 - claude.ai: fonte de dados ainda em aberto. Não há API oficial para conta pessoal; a Compliance API é só Enterprise. Alternativas: wrapper não oficial por cookie (frágil), export manual, extensão de Chrome.
 - A fonte dos chats é software (ponte), não muda o hardware.
+
+## 4. Como tratar os chats do claude.ai?
+**v1 só Claude Code; claude.ai fica para a v2.** Método da v2 (cookie, export, extensão ou Compliance API) será escolhido depois, sem impacto no hardware.
