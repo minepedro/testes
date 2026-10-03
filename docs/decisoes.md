@@ -17,3 +17,6 @@ Motivo: já existe servidor ligado 24h, então não precisa de Raspberry Pi (mai
 
 ## 4. Como tratar os chats do claude.ai?
 **v1 só Claude Code; claude.ai fica para a v2.** Método da v2 (cookie, export, extensão ou Compliance API) será escolhido depois, sem impacto no hardware.
+
+## 5. Placa pronta ou peças avulsas?
+**Peças avulsas, compradas na Santa Ifigênia.** ESP32-S3 (com PSRAM) + tela touch + microfone I2S + amplificador + alto-falante. Carcaça impressa na Bambu A1.
