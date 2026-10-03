@@ -179,9 +179,10 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     <section>
       <h2>Para portar ao firmware (LVGL)</h2>
       <ul>
-        <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>18 px</code> na tela. Os olhos e a boca são buracos no corpo, como no original.</li>
-        <li>Movimento é discreto (passos de 4 px, olho em pixels inteiros), sem interpolação: cada pose é um frame.</li>
-        <li>Paleta fixa de 5 cores, todas representáveis em RGB565 sem perda visível.</li>
+        <li>O sprite é o Clawd do terminal (<code>▐▛███▜▌</code>) lido em quadrantes: 18×5 pixels, cada um com <code>15×30 px</code> na tela (1:2, como a célula do terminal). Os olhos e a boca são buracos no corpo, como no original.</li>
+        <li>Sombreamento por vizinhança: borda sem vizinho em cima ganha luz, sem vizinho embaixo ou à direita ganha sombra. Mais a sombra no chão, que encolhe quando ele sobe.</li>
+        <li>Movimento é discreto (passos de 4 px), sem interpolação: cada pose é um frame.</li>
+        <li>Paleta fixa de 11 cores, todas representáveis em RGB565 sem perda visível.</li>
         <li>Topo (ponte, sessões, relógio) e rodapé (texto) são duas faixas de 28 px; o mascote fica entre elas.</li>
         <li>A máquina de estados em <code>update()</code> é o contrato: a ponte na VPS vai mandar só o estado e o texto.</li>
       </ul>
@@ -192,9 +193,15 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
 <script>
 (() => {
   'use strict';
-  const W = 480, H = 320, C = 18;            // tela e tamanho do pixel do sprite (px)
+  // Pixel do sprite: 15 x 30 px. Um quadrante de bloco do terminal e duas
+  // vezes mais alto que largo (a celula do terminal e ~1:2), entao pixels
+  // quadrados deixam o mascote achatado.
+  const W = 480, H = 320, PW = 15, PH = 30;
   const PAL = {                              // paleta da tela (RGB565-friendly)
-    bg: '#141210', body: '#d97757',
+    bg: '#141210', floor: '#1b1613', shadow: '#0b0908',
+    hi: '#f0a07c', mid: '#e5896a',           // luz: topo e borda esquerda
+    body: '#d97757',
+    lo: '#bf6446', deep: '#8f4731',          // sombra: borda direita/baixo, pernas
     fg: '#ede6dc', dim: '#8a8178', ok: '#6fbf73'
   };
   // O Clawd do terminal, " ▐▛███▜▌ / ▝▜█████▛▘ / ▘▘ ▝▝ ", lido em quadrantes:
@@ -209,9 +216,9 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   ];
   const BODY_W = 18, BODY_H = 5;
   const EYE_L = 5, EYE_R = 12, EYE_ROW = 1;  // posicao dos olhos (pixels)
-  const MOUTH_X = 8, MOUTH_ROW = 3;          // boca: 2 px de largura, centro
-  const BODY_X = (W - BODY_W * C) / 2;       // 78
-  const BODY_Y = 108;                        // topo da cabeca em repouso
+  const MOUTH_X = 8, MOUTH_Y = 2.5;          // boca: 2 px de largura, entre os olhos e a barriga
+  const BODY_X = (W - BODY_W * PW) / 2;      // 105
+  const BODY_Y = 68;                         // topo da cabeca em repouso
   const TOP_BAR = 28, FOOT_Y = H - 44;       // faixas de texto
 
   const SAMPLE_ASK = 'Como está a sessão do mascote?';
@@ -241,7 +248,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     m.state = s; m.t = 0;
     m.eyeH = 1; m.eyeDx = 0; m.eyeDy = 0; m.mouth = 0; m.lean = 0; m.bob = 0;
     m.typed = 0; m.caption = '';
-    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 2; m.lean = 6; }
+    if (s === 'listening') { m.caption = SAMPLE_ASK; m.eyeH = 1.5; m.eyeDy = -0.5; m.lean = 6; }
     if (s === 'thinking')  { m.eyeDx = 1; }
     if (s === 'speaking')  { m.caption = SAMPLE_REPLY; }
     document.querySelectorAll('#stateSeg button').forEach(b =>
@@ -310,36 +317,69 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
   }
 
   // ---- desenho -----------------------------------------------------------
+  // unidades do sprite (pixels PW x PH) -> retangulo na tela
   const cell = (cx, cy, color, w = 1, h = 1) => {
     ctx.fillStyle = color;
-    ctx.fillRect(cx, cy, w * C, h * C);
+    ctx.fillRect(cx, cy, w * PW, h * PH);
   };
+  const solid = (x, y) => y >= 0 && y < BODY_H && x >= 0 && x < BODY_W && SPRITE[y][x] === '#';
+
+  // chao: brilho quente fixo + sombra que encolhe quando o corpo sobe
+  function drawFloor() {
+    const cx = BODY_X + (BODY_W * PW) / 2, fy = BODY_Y + BODY_H * PH;
+    const lift = -m.bob / 4;                           // 0 ou 1
+    const rows = [[300, 0], [240, 6], [180, 12]];
+    ctx.fillStyle = PAL.floor;
+    rows.forEach(([w, dy]) => ctx.fillRect(cx - w / 2, fy + 3 + dy, w, 6));
+    ctx.fillStyle = PAL.shadow;
+    const sw = [210, 150, 90].map(w => w - lift * 30);
+    sw.forEach((w, i) => ctx.fillRect(cx - w / 2 + m.lean / 2, fy + 3 + i * 6, w, 6));
+  }
 
   function drawMascot() {
     const ox = BODY_X + m.lean, oy = BODY_Y + m.bob;
-    // corpo: o sprite do terminal, pixel a pixel, chapado como o original
+    // corpo: o sprite do terminal pixel a pixel, com luz vinda de cima e da
+    // esquerda. A sombra e decidida pelos vizinhos: borda sem vizinho em cima
+    // ganha luz, borda sem vizinho embaixo ou a direita ganha sombra.
     for (let y = 0; y < BODY_H; y++) {
       for (let x = 0; x < BODY_W; x++) {
-        if (SPRITE[y][x] === '#') cell(ox + x * C, oy + y * C, PAL.body);
+        if (!solid(x, y)) continue;
+        const px = ox + x * PW, py = oy + y * PH;
+        const leg = y === BODY_H - 1;
+        ctx.fillStyle = leg ? PAL.lo : PAL.body;
+        ctx.fillRect(px, py, PW, PH);
+        if (!solid(x - 1, y)) { ctx.fillStyle = leg ? PAL.body : PAL.mid; ctx.fillRect(px, py, 4, PH); }
+        if (!solid(x, y - 1)) { ctx.fillStyle = PAL.hi; ctx.fillRect(px, py, PW, 6); }
+        if (!solid(x + 1, y)) { ctx.fillStyle = leg ? PAL.deep : PAL.lo; ctx.fillRect(px + PW - 4, py, 4, PH); }
+        if (!solid(x, y + 1)) { ctx.fillStyle = leg ? PAL.deep : PAL.lo; ctx.fillRect(px, py + PH - 8, PW, 8); }
       }
     }
-    // olhos sao buracos no corpo (cor do fundo). Piscar fecha o buraco;
-    // arregalar desce uma fileira; olhar para o lado desloca 1 px.
+    // sombra projetada pela cabeca sobre a fileira dos bracos
+    ctx.fillStyle = PAL.lo;
+    for (let x = 3; x <= 14; x++) if (solid(x, 2) && solid(x, 1)) ctx.fillRect(ox + x * PW, oy + 2 * PH, PW, 5);
+    // olhos sao buracos no corpo (cor do fundo) com a borda de cima em sombra.
+    // Piscar fecha o buraco; arregalar cresce para cima; olhar desloca 1 px.
     if (m.blinkT < 0) {
       const eyeTop = EYE_ROW + m.eyeDy;
-      cell(ox + (EYE_L + m.eyeDx) * C, oy + eyeTop * C, PAL.bg, 1, m.eyeH);
-      cell(ox + (EYE_R + m.eyeDx) * C, oy + eyeTop * C, PAL.bg, 1, m.eyeH);
+      [EYE_L, EYE_R].forEach(ex => {
+        const x = ox + (ex + m.eyeDx) * PW, y = oy + eyeTop * PH;
+        cell(x, y, PAL.bg, 1, m.eyeH);
+        ctx.fillStyle = PAL.deep; ctx.fillRect(x, y - 4, PW, 4);           // aresta de cima
+        ctx.fillStyle = PAL.hi;   ctx.fillRect(x, y + m.eyeH * PH, PW, 3); // aresta de baixo
+      });
     }
-    // boca: buraco na fileira de baixo. 1 = 2x1, 2 = 2x2 (sobe uma fileira)
+    // boca: buraco entre os olhos e a barriga. 1 = meia altura, 2 = altura cheia
     if (m.mouth > 0) {
-      cell(ox + MOUTH_X * C, oy + (MOUTH_ROW - (m.mouth - 1)) * C, PAL.bg, 2, m.mouth);
+      const x = ox + MOUTH_X * PW, y = oy + MOUTH_Y * PH, h = m.mouth * PH / 2;
+      ctx.fillStyle = PAL.bg;  ctx.fillRect(x, y, 2 * PW, h);
+      ctx.fillStyle = PAL.deep; ctx.fillRect(x, y - 4, 2 * PW, 4);
     }
   }
 
   function drawThinkingDots() {
     const step = Math.floor(m.t * 4) % 4;
     const d = 12;                                      // tamanho do ponto (px)
-    const x0 = BODY_X + 15 * C + 10, y0 = BODY_Y - d;  // a direita da cabeca
+    const x0 = BODY_X + 15 * PW + 10, y0 = BODY_Y - d; // a direita da cabeca
     for (let i = 0; i < 3; i++) {
       ctx.fillStyle = i < step ? PAL.fg : PAL.dim;
       ctx.fillRect(x0 + i * (d + 8), y0 - i * 10, d, d);
@@ -353,7 +393,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     ctx.strokeStyle = PAL.body;
     ctx.lineWidth = 2;
     const pad = 10 + Math.floor((reduceMotion ? 0 : Math.abs(Math.sin(m.t * 3))) * 4) * 2;
-    ctx.strokeRect(BODY_X - pad + m.lean, BODY_Y - pad, BODY_W * C + pad * 2, BODY_H * C + pad * 2);
+    ctx.strokeRect(BODY_X - pad + m.lean, BODY_Y - pad, BODY_W * PW + pad * 2, BODY_H * PH + pad * 2);
     ctx.globalAlpha = 1;
     // barras de audio acima do rodape
     const n = m.bars.length, bw = 6, gap = 4, total = n * bw + (n - 1) * gap;
@@ -414,6 +454,7 @@ code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px
     ctx.fillStyle = PAL.bg;
     ctx.fillRect(0, 0, W, H);
     drawTopBar();
+    drawFloor();
     if (m.state === 'listening') drawListening();
     drawMascot();
     if (m.state === 'thinking') drawThinkingDots();

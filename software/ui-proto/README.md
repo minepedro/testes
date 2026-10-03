@@ -36,10 +36,17 @@ Tocar durante `speaking` interrompe e volta a ouvir.
                   ....#.#....#.#....
   ```
 
-  18×5 pixels, cada um com 18 px na tela. Olhos (fileira 1, colunas 5 e 12)
-  e boca (fileira 3, colunas 8–9) são buracos no corpo, como no original.
+  18×5 pixels, cada um com **15×30 px** na tela. A proporção 1:2 é a da célula
+  do terminal; com pixels quadrados o mascote fica achatado.
+  Olhos (fileira 1, colunas 5 e 12) e boca (entre os olhos e a barriga, colunas
+  8–9) são buracos no corpo, como no original.
+- Sombreamento por vizinhança, sem gradiente: pixel de borda sem vizinho em cima
+  ganha luz (`hi`), sem vizinho à esquerda `mid`, sem vizinho embaixo ou à
+  direita `lo`; as pernas são mais escuras (`lo`/`deep`). Há ainda uma sombra
+  no chão que encolhe quando ele sobe. Dá para gerar tudo isso offline como
+  sprite pré-renderizado, sem custo de CPU no ESP32.
 - Movimento em passos inteiros (sem interpolação): cada pose é um frame de sprite.
-- Paleta de 5 cores, todas representáveis em RGB565.
+- Paleta de 11 cores, todas representáveis em RGB565.
 - Faixas de texto: topo 28 px (ponte, sessões, relógio) e rodapé 44 px.
 - A ponte na VPS só precisa mandar `{estado, texto}`; a máquina de estados
   em `update()` dentro do `index.html` é o contrato.
