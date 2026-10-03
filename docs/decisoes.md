@@ -2,4 +2,5 @@
 
 Formato: pergunta, resposta, motivo.
 
-_(vazio — preenchido conforme o grill-me avança)_
+## 1. Como conversa com o mascote?
+**Voz + tela touch.** Microfone e alto-falante para conversar, tela touch para navegar nas sessões.
