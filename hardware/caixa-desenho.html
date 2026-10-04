@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caixa do Mascote</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura com desenhos tecnicos largos (rolam de lado no
+   celular). Os desenhos sao gerados por JS a partir de poucas medidas de projeto,
+   para a vista de frente, o corte e a vista por tras nunca discordarem. */
+:root {
+  --bg: #e9ebee; --surface: #f6f7f9; --fg: #1d2024; --muted: #5f6670; --line: #cfd3d9;
+  --accent: #d97757; --accent-fg: #ffffff; --good: #23864f; --bad: #c93030; --dim: #2a63c4;
+  --case: #2d3036; --case-edge: #14161a; --case-in: #3b4048; --glass: #141210; --perf: #3f7d59; --chip: #aeb4ba; --gold: #d6b25e;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+    --accent: #e08562; --accent-fg: #1a0e08; --good: #5cc58a; --bad: #f26b6b; --dim: #6fa3f2;
+    --case: #4a4f58; --case-edge: #0b0c0e; --case-in: #2f3339; --perf: #4f9970; --chip: #8d949b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+  --accent: #e08562; --accent-fg: #1a0e08; --good: #5cc58a; --bad: #f26b6b; --dim: #6fa3f2;
+  --case: #4a4f58; --case-edge: #0b0c0e; --case-in: #2f3339; --perf: #4f9970; --chip: #8d949b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 30px/1.1 var(--font-display); text-wrap: balance; }
+h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+h3 { margin: 0; font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.lead, .sub { color: var(--muted); max-width: 66ch; }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+b { font-weight: 600; }
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.scroller svg { display: block; width: 100%; height: auto; min-width: 700px; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 72ch; }
+.hint { font: 500 12px/1.4 var(--font-mono); color: var(--muted); }
+
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .t-dim { fill: var(--muted); }
+svg .t-acc { fill: var(--accent); font-weight: 500; }
+svg .t-title { font-family: var(--font-body); font-size: 13px; font-weight: 600; }
+svg .t-w { fill: #ffffff; }
+.dimline { stroke: var(--muted); stroke-width: 1; fill: none; }
+.lead-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.pick { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.card .tag { font: 500 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.card.pick .tag { color: var(--accent); }
+.card p { color: var(--muted); font-size: 14px; }
+.card ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.card li::marker { color: var(--muted); }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font: 500 11px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); }
+td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.k { font-weight: 600; white-space: nowrap; }
+td.m { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 72ch; }
+.steps li::marker { color: var(--muted); font-family: var(--font-mono); }
+.callout { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 14px; border-radius: 0 8px 8px 0; max-width: 72ch; }
+.checks { display: grid; gap: 4px; }
+.check { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; align-items: start; }
+.check input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+.check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check small { display: block; color: var(--muted); font-size: 13px; }
+@media (max-width: 560px) { h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">hardware · caixa · só desenho</div>
+    <h1>Caixa do Mascote</h1>
+    <p class="lead">Desenhos e recomendações para a caixa que vai ser impressa na Bambu A1. Nada aqui é arquivo para imprimir. As medidas são propostas de projeto, para você confirmar com paquímetro quando as peças chegarem.</p>
+  </header>
+
+  <section id="resumo">
+    <h2>A recomendação em quatro linhas</h2>
+    <div class="callout">
+      <p><b>Uma caixa em cunha, de duas peças:</b> uma moldura frontal inclinada 15° que segura a tela, e uma tampa traseira que guarda a placa universal com o ESP32. Moldura escura, quatro pés laranja que lembram as pernas do Clawd, microfone num furo no topo, cabo USB saindo pela lateral por um plugue em L.</p>
+    </div>
+    <p class="sub">A tela de 3,5″ aparece em paisagem (480×320). Fica com 102 × 70 mm de frente e uns 34 mm de profundidade, bem dentro dos 256 mm da mesa de impressão da A1.</p>
+  </section>
+
+  <section id="conceitos">
+    <h2>Três formatos possíveis</h2>
+    <p class="sub">O que muda entre eles é onde a eletrônica fica em relação à tela. A tela inclinada (traço laranja) é a mesma nos três.</p>
+    <figure>
+      <div class="scroller"><svg id="fig1" viewBox="0 0 900 290" role="img" aria-label="Três perfis laterais lado a lado. A: cunha, com a eletrônica atrás da tela inclinada e uma base. B: moldura fina com um pé atrás, e a eletrônica pendurada atrás da moldura. C: tela sobre um pescoço, com a eletrônica numa base."></svg></div>
+      <figcaption>Perfis vistos de lado. A mesa é a linha de baixo, o olho mostra de onde você olha.</figcaption>
+    </figure>
+    <div class="cards">
+      <article class="card pick"><span class="tag">A · recomendada</span><h3>Cunha de duas peças</h3>
+        <ul><li>Mais simples de modelar e imprimir, sem suportes</li><li>Estável: o peso fica baixo e dentro da base</li><li>A eletrônica cabe na própria cunha</li></ul></article>
+      <article class="card"><span class="tag">B</span><h3>Moldura com pé</h3>
+        <p>Parece um porta-retrato, mas a eletrônica precisa de uns 30 mm de profundidade e vira uma caixa pendurada atrás. Fica mais alta e mais fácil de tombar.</p></article>
+      <article class="card"><span class="tag">C</span><h3>Tela num pescoço</h3>
+        <p>Tem mais personalidade e é boa para uma versão futura com bateria na base. Exige passar os fios pelo pescoço e uma base pesada. É mais difícil de acertar na primeira.</p></article>
+    </div>
+  </section>
+
+  <section id="frente">
+    <h2>Vista de frente</h2>
+    <p class="sub">A janela mostra só a área ativa da tela. O vidro (tracejado) fica preso por trás da moldura.</p>
+    <figure>
+      <div class="scroller"><svg id="fig2" viewBox="0 0 860 560" role="img" aria-label="Vista de frente da caixa: moldura de 102 por 70 milímetros com uma janela de 74,5 por 50 milímetros mostrando o mascote em paisagem."></svg></div>
+      <figcaption>O mascote desenhado na escala real da janela: o corpo tem uns 42 × 23 mm. As medidas do vidro (85,6 × 56,1 mm) vêm da especificação do módulo mais 0,3 mm de folga por lado.</figcaption>
+    </figure>
+  </section>
+
+  <section id="corte">
+    <h2>Corte lateral: o que fica empilhado</h2>
+    <p class="sub">A caixa vista de lado, cortada ao meio. As camadas, de frente para trás, são as mesmas que você vai montar.</p>
+    <figure>
+      <div class="scroller"><svg id="fig3" viewBox="0 0 900 520" role="img" aria-label="Corte lateral da caixa inclinada 15 graus. De frente para trás: moldura, módulo da tela, conectores, placa universal, soquetes e ESP32, tampa traseira. Quatro pés laranja sob a base."></svg></div>
+      <figcaption>As espessuras são estimativas somadas a partir de peças comuns (barras de pinos de 8,5 mm, placa de 1,6 mm). A profundidade total de 34 mm só se confirma com as peças reais na mão.</figcaption>
+    </figure>
+  </section>
+
+  <section id="dentro">
+    <h2>Por dentro, vista por trás</h2>
+    <p class="sub">Sem a tampa, olhando para a parte de trás da tela. A placa universal de 6 × 8 cm fica presa em quatro colunas, e o ESP32 fica no fundo, com o USB para o lado direito.</p>
+    <figure>
+      <div class="scroller"><svg id="fig4" viewBox="0 0 1020 500" role="img" aria-label="Vista por trás, sem tampa: placa universal de 80 por 60 milímetros com o ESP32 na parte de baixo e o conector USB virado para uma fenda na parede direita. A coluna de pinos da tela fica à esquerda e o microfone fica no alto, sob um furo no topo. Quatro parafusos nos cantos prendem a tampa."></svg></div>
+      <figcaption>Posições de projeto. O lado em que o módulo da tela tem o conector muda com a rotação do software; escolha a rotação que deixa o conector à esquerda.</figcaption>
+    </figure>
+  </section>
+
+  <section id="recomenda">
+    <h2>Recomendações de impressão e montagem</h2>
+    <div class="tbl"><table><thead><tr><th>Assunto</th><th>Recomendação</th></tr></thead><tbody>
+      <tr><td class="k">Material</td><td>PETG, ou PLA se a caixa ficar só em ambiente interno. O ESP32 esquenta pouco; o risco do PLA é um carro ao sol, não a eletrônica.</td></tr>
+      <tr><td class="k">Cor</td><td>Moldura e tampa em preto ou grafite fosco: a tela some na moldura e o mascote laranja se destaca. Só os quatro pés em laranja.</td></tr>
+      <tr><td class="k">Camadas</td><td>0,16 a 0,2 mm, 3 perímetros, 15% de preenchimento. Paredes de 2 a 2,4 mm.</td></tr>
+      <tr><td class="k">Como imprimir</td><td>A moldura <b>com a frente para baixo</b> na mesa (a face visível sai lisa). A tampa <b>com o fundo para baixo</b>. Assim nada precisa de suporte.</td></tr>
+      <tr><td class="k">Folgas</td><td>0,3 mm por lado no bolso do vidro, 0,2 mm nos furos de parafuso. Antes da peça final, imprima um <b>gabarito de encaixe</b>: uma placa de 3 mm só com o bolso e a janela, para provar o vidro real. Leva uma hora e poupa a caixa inteira.</td></tr>
+      <tr><td class="k">Parafusos</td><td>Quatro M3 nos cantos prendem a tampa a insertos de latão na moldura. Mais quatro colunas na tampa seguram a placa universal. O furo do inserto segue a ficha do seu inserto (em geral 4,0 a 4,2 mm).</td></tr>
+      <tr><td class="k">Microfone</td><td>Furo de 2,5 mm no topo, alinhado ao furinho do som do módulo. Cole 1 mm de espuma entre o módulo e a parede, para o som entrar só pelo furo e não vazar ruído de dentro.</td></tr>
+      <tr><td class="k">Cabo USB</td><td>Fenda de uns 16 × 9 mm na lateral direita, perto do fundo, alinhada ao conector. Use um cabo com <b>plugue em L</b> (90°) para o fio correr rente atrás da caixa. Prenda o cabo com uma lingueta impressa para a força não ir toda no conector.</td></tr>
+      <tr><td class="k">Botões BOOT e RESET</td><td>Dois furos de 2,2 mm na tampa, na altura dos botões, para um clipe. A porta UART costuma gravar sozinha, mas quando não grava você precisa deles.</td></tr>
+      <tr><td class="k">Estabilidade</td><td>O centro de massa precisa cair dentro da base, com o cabo puxando para trás. Faça a base uns 15 mm mais comprida atrás e, se tombar, cole arruelas de aço (M3) no fundo.</td></tr>
+      <tr><td class="k">Ventilação</td><td>Não precisa. Se quiser, seis fendas de 1,5 × 18 mm na parte de baixo da tampa, longe do microfone.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section id="medir">
+    <h2>O que medir quando as peças chegarem</h2>
+    <p class="sub">Tudo acima assume o módulo típico. Meça estas oito coisas com o paquímetro e anote; elas decidem as medidas finais.</p>
+    <div class="checks" id="medidas"></div>
+  </section>
+
+  <section id="ordem">
+    <h2>Ordem de montagem</h2>
+    <ol class="steps">
+      <li>Insira os quatro insertos de latão nos cantos da moldura, com o ferro de solda quente.</li>
+      <li>Encaixe o módulo da tela no bolso da moldura. A frente do vidro olha para a janela.</li>
+      <li>Prenda a placa universal, já soldada com os soquetes, nas quatro colunas da tampa, com o ESP32 e o microfone encaixados.</li>
+      <li>Encaixe o conector da tela nos pinos da placa universal enquanto fecha a tampa sobre a moldura.</li>
+      <li>Passe o cabo USB-C pela fenda lateral, conecte, e aperte os quatro parafusos M3.</li>
+      <li>Cole os quatro pés laranja.</li>
+    </ol>
+  </section>
+
+  <section id="proximo">
+    <h2>Próximo passo</h2>
+    <p class="sub">Com as medidas confirmadas, eu te guio peça por peça para modelar isto no <b>Tinkercad 3D</b>: caixa, janela, bolso do vidro, colunas, furos e pés, e exportar para a Bambu A1. Até lá, esses desenhos são o projeto.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const rad = a => a * Math.PI / 180;
+  const f = n => (Math.round(n * 100) / 100).toString();
+  const pt = n => (Math.round(n * 10) / 10).toString().replace('.', ',');        // numero em portugues
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // ---- medidas de projeto (mm) -------------------------------------------------------
+  const CASE_W = 102, CASE_H = 70, DEPTH = 34, TILT = 15;       // frente, altura (ao longo da face), profundidade, inclinacao
+  const GLASS_W = 85.6, GLASS_H = 56.1;                          // vidro 84,96 x 55,5 + folga
+  const WIN_W = 74.5, WIN_H = 50;                                // janela (area ativa 73,44 x 48,96)
+  const FEET = 3;                                                // altura dos pes
+
+  // ---- geometria de uma placa inclinada ---------------------------------------------------
+  // u: ao longo da face da tela, de baixo para cima. d: para tras, perpendicular a face.
+  function slab(alpha, L, T) {
+    const a = rad(alpha), U = [Math.sin(a), Math.cos(a)], N = [Math.cos(a), -Math.sin(a)];
+    const P = (u, d) => [u * U[0] + d * N[0], u * U[1] + d * N[1]];
+    const u0 = T * Math.tan(a);                                   // onde a face de tras toca a mesa
+    return { P, u0, poly: [P(0, 0), P(L, 0), P(L, T), P(u0, T)] };
+  }
+  const pts = (arr, tx) => arr.map(p => tx(p).map(f).join(',')).join(' ');
+  const el = (t, a, c) => `<${t} ${Object.entries(a).map(([k, v]) => `${k}="${v}"`).join(' ')}${c === undefined ? '/>' : `>${c}</${t}>`}`;
+
+  // ---- figura 1: tres formatos --------------------------------------------------------------
+  function fig1() {
+    const s = 1.9, deskY = 248;
+    let out = '';
+    const panel = (x0, title) => `<line x1="${x0}" y1="${deskY}" x2="${x0 + 270}" y2="${deskY}" stroke="var(--muted)" stroke-width="1.5"/><text class="t-title" x="${x0}" y="22">${title}</text>`;
+    const eye = (x, y) => `<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="var(--fg)" stroke-width="1.5"/><circle cx="${x}" cy="${y}" r="1.8" fill="var(--fg)"/>`;
+    const disp = (a, b) => `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/>`;
+
+    // A: cunha
+    {
+      const x0 = 20, S = slab(TILT, CASE_H, DEPTH), tx = p => [x0 + 110 + p[0] * s, deskY - FEET * s - p[1] * s];
+      out += panel(x0, 'A · Cunha (recomendada)');
+      out += `<polygon points="${pts(S.poly, tx)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+      out += disp(tx(S.P(0, 0)), tx(S.P(CASE_H, 0)));
+      [[3, 11], [S.u0 + 4, 11 + 0]].forEach(([x]) => { out += `<rect x="${x0 + 110 + x * s}" y="${deskY - FEET * s}" width="${9 * s}" height="${FEET * s}" fill="var(--accent)"/>`; });
+      const m = tx(S.P(CASE_H / 2, 0)); out += eye(m[0] - 95, m[1] - 20) + `<line x1="${m[0] - 88}" y1="${m[1] - 18}" x2="${m[0] - 12}" y2="${m[1] - 2}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+      out += `<text class="t-dim" x="${x0 + 196}" y="${deskY - 60}">eletrônica</text><text class="t-dim" x="${x0 + 196}" y="${deskY - 46}">dentro</text>`;
+    }
+    // B: moldura fina com pe
+    {
+      const x0 = 320, S = slab(12, CASE_H, 6), tx = p => [x0 + 50 + p[0] * s, deskY - p[1] * s];
+      out += panel(x0, 'B · Moldura com pé');
+      out += `<polygon points="${pts([S.P(0, 0), S.P(CASE_H, 0), S.P(CASE_H, 6), S.P(0, 6)], tx)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+      out += disp(tx(S.P(0, 0)), tx(S.P(CASE_H, 0)));
+      const top = tx(S.P(CASE_H * .8, 6)), foot = [x0 + 50 + 70 * s, deskY];
+      out += `<polygon points="${f(top[0])},${f(top[1])} ${f(top[0] + 8)},${f(top[1])} ${f(foot[0])},${f(foot[1])} ${f(foot[0] - 14)},${f(foot[1])}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="1.5"/>`;
+      const b0 = tx(S.P(8, 6)), b1 = tx(S.P(CASE_H - 8, 6 + 30));
+      out += `<rect x="${f(Math.min(b0[0], b1[0]) + 0)}" y="${f(Math.min(b0[1], b1[1]) + 8)}" width="${f(30 * s)}" height="${f(50 * s)}" fill="none" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+      out += `<text class="t-dim" x="${x0 + 196}" y="${deskY - 40}">eletrônica</text><text class="t-dim" x="${x0 + 196}" y="${deskY - 26}">atrás</text>`;
+      const m = tx(S.P(CASE_H / 2, 0)); out += eye(m[0] - 95, m[1] - 20) + `<line x1="${m[0] - 88}" y1="${m[1] - 18}" x2="${m[0] - 12}" y2="${m[1] - 2}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+    }
+    // C: pescoco e base
+    {
+      const x0 = 620, baseH = 16, neckH = 26, S = slab(TILT, 62, 26);
+      const bx = x0 + 20, by = deskY - baseH * s;
+      out += panel(x0, 'C · Tela num pescoço');
+      out += `<rect x="${bx}" y="${by}" width="${f(70 * s)}" height="${f(baseH * s)}" rx="4" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+      out += `<rect x="${f(bx + 22 * s)}" y="${f(by - neckH * s)}" width="${f(14 * s)}" height="${f(neckH * s)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+      const tx = p => [bx + 8 * s + p[0] * s, by - neckH * s - p[1] * s + 10];
+      out += `<polygon points="${pts([S.P(0, 0), S.P(62, 0), S.P(62, 26), S.P(0, 26)], tx)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+      out += disp(tx(S.P(0, 0)), tx(S.P(62, 0)));
+      out += `<text class="t-dim" x="${bx + 8}" y="${by + 2 * s + 6}" style="fill:#fff">eletrônica na base</text>`;
+      const m = tx(S.P(31, 0)); out += eye(m[0] - 80, m[1] - 10) + `<line x1="${m[0] - 73}" y1="${m[1] - 8}" x2="${m[0] - 12}" y2="${m[1] + 2}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+    }
+    document.getElementById('fig1').innerHTML = out;
+  }
+
+  // ---- cotas ------------------------------------------------------------------------------------
+  const dimH = (x1, x2, y, label, up = true) => `<path class="dimline" d="M${f(x1)} ${y - 5} V${y + 5} M${f(x2)} ${y - 5} V${y + 5} M${f(x1)} ${y} H${f(x2)}"/><text class="t-dim" x="${f((x1 + x2) / 2)}" y="${y + (up ? -8 : 17)}" text-anchor="middle">${label}</text>`;
+  const dimV = (y1, y2, x, label, side = 1) => `<path class="dimline" d="M${x - 5} ${f(y1)} H${x + 5} M${x - 5} ${f(y2)} H${x + 5} M${x} ${f(y1)} V${f(y2)}"/><text class="t-dim" transform="translate(${x + side * 14} ${f((y1 + y2) / 2)}) rotate(-90)" text-anchor="middle">${label}</text>`;
+
+  // ---- figura 2: vista de frente ---------------------------------------------------------------------
+  const SPRITE = ['...############...', '...############...', '.################.', '...############...', '....#.#....#.#....'];
+  function fig2() {
+    const s = 5.2, x0 = 110, y0 = 80, W = CASE_W * s, H = CASE_H * s;
+    let o = `<rect x="${x0}" y="${y0}" width="${f(W)}" height="${f(H)}" rx="${f(4 * s)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+    const gx = x0 + (W - GLASS_W * s) / 2, gy = y0 + (H - GLASS_H * s) / 2;
+    o += `<rect x="${f(gx)}" y="${f(gy)}" width="${f(GLASS_W * s)}" height="${f(GLASS_H * s)}" fill="none" stroke="var(--muted)" stroke-dasharray="5 4"/>`;
+    const wx = x0 + (W - WIN_W * s) / 2, wy = y0 + (H - WIN_H * s) / 2;
+    o += `<rect x="${f(wx)}" y="${f(wy)}" width="${f(WIN_W * s)}" height="${f(WIN_H * s)}" fill="var(--glass)"/>`;
+    // mascote na escala da janela: 480 px = 74,5 mm
+    const k = WIN_W / 480 * s;                                   // px de tela -> px de desenho
+    const mx = wx + 105 * k, my = wy + 68 * k;
+    SPRITE.forEach((row, r) => { for (let c = 0; c < 18; c++) if (row[c] === '#') o += `<rect x="${f(mx + c * 15 * k)}" y="${f(my + r * 30 * k)}" width="${f(15 * k + .4)}" height="${f(30 * k + .4)}" fill="#d97757"/>`; });
+    [5, 12].forEach(c => { o += `<rect x="${f(mx + c * 15 * k)}" y="${f(my + 30 * k)}" width="${f(15 * k + .4)}" height="${f(30 * k + .4)}" fill="#141210"/>`; });
+    o += `<rect x="${f(wx + 12 * k)}" y="${f(wy + 8 * k)}" width="${f(120 * k)}" height="${f(6 * k)}" fill="#8a8178"/><rect x="${f(wx + 410 * k)}" y="${f(wy + 8 * k)}" width="${f(60 * k)}" height="${f(6 * k)}" fill="#8a8178"/>`;
+    o += `<rect x="${f(wx + 120 * k)}" y="${f(wy + 280 * k)}" width="${f(240 * k)}" height="${f(7 * k)}" fill="#ede6dc" opacity=".85"/>`;
+    // cotas
+    o += dimH(x0, x0 + W, y0 - 22, `${CASE_W} mm`);
+    o += dimV(y0, y0 + H, x0 + W + 30, `${CASE_H} mm`);
+    o += dimH(wx, wx + WIN_W * s, y0 + H + 28, `janela ${pt(WIN_W)} × ${WIN_H} mm`, false);
+    o += dimV(wy, wy + WIN_H * s, x0 - 30, `${WIN_H} mm`, -1);
+    o += dimH(gx, gx + GLASS_W * s, y0 + H + 62, `vidro ${pt(GLASS_W)} × ${pt(GLASS_H)} mm (tracejado)`, false);
+    // chamadas
+    o += `<line class="lead-line" x1="${f(x0 + W - 4 * s)}" y1="${f(y0 + 4 * s)}" x2="${f(x0 + W + 90)}" y2="${f(y0 + 40)}"/><text x="${f(x0 + W + 94)}" y="${f(y0 + 44)}">canto</text><text class="t-dim" x="${f(x0 + W + 94)}" y="${f(y0 + 58)}">raio 4 mm</text>`;
+    o += `<text class="t-dim" x="${x0 + W / 2}" y="${y0 + H + 100}" text-anchor="middle">moldura de ${pt((CASE_W - GLASS_W) / 2)} mm nas laterais e ${pt((CASE_H - GLASS_H) / 2)} mm em cima e embaixo</text>`;
+    document.getElementById('fig2').innerHTML = o;
+  }
+
+  // ---- figura 3: corte lateral -------------------------------------------------------------------------
+  function fig3() {
+    const s = 6, ox = 140, deskY = 480, S = slab(TILT, CASE_H, DEPTH);
+    const tx = p => [ox + p[0] * s, deskY - (p[1] + FEET) * s];
+    const Q = (u1, u2, d1, d2) => [S.P(u1, d1), S.P(u2, d1), S.P(u2, d2), S.P(u1, d2)];
+    const poly = (a, fill, extra = '') => `<polygon points="${pts(a, tx)}" fill="${fill}" ${extra}/>`;
+    let o = `<defs><clipPath id="above"><rect x="0" y="0" width="820" height="${f(deskY - (2.2 + FEET) * s)}"/></clipPath></defs>`;
+    o += `<line x1="20" y1="${deskY}" x2="500" y2="${deskY}" stroke="var(--muted)" stroke-width="1.5"/>`;
+    // casca e cavidade
+    o += poly(S.poly, 'var(--case)', 'stroke="var(--case-edge)" stroke-width="2"');
+    o += `<g clip-path="url(#above)">` + poly(Q(2.2, CASE_H - 2.2, 6.5, DEPTH - 2.2), 'var(--case-in)') + poly(Q((CASE_H - GLASS_H) / 2, (CASE_H + GLASS_H) / 2, 2, 6.5), 'var(--case-in)') + `</g>`;
+    // janela na moldura (vao)
+    o += poly(Q((CASE_H - WIN_H) / 2, (CASE_H + WIN_H) / 2, 0, 2), 'var(--surface)');
+    // camadas
+    const layer = (u1, u2, d1, d2, fill, st) => poly(Q(u1, u2, d1, d2), fill, st || '');
+    const gu1 = (CASE_H - GLASS_H) / 2, gu2 = (CASE_H + GLASS_H) / 2;
+    o += `<g clip-path="url(#above)">`;
+    o += layer(gu1, gu2, 2, 2.8, '#7aa7d9') + layer(gu1, gu2, 2.8, 6.5, '#1f2a36');                          // vidro + TFT
+    o += layer(20, 24, 6.5, 15, 'var(--gold)') + layer(20, 24, 15, 16.6, 'var(--gold)');                       // conectores empilhados
+    o += layer(5, 65, 15, 16.6, 'var(--perf)');                                                               // placa universal
+    o += layer(7, 7 + 25.4, 16.6, 25.1, '#222', 'stroke="var(--case-edge)"');                                 // soquetes
+    o += layer(7, 7 + 25.4, 25.1, 26.7, '#1d6b52') + layer(10, 30, 26.7, 30.2, 'var(--chip)');               // ESP32
+    o += layer(52, 62, 17.5, 24, '#1d6b52') ;                                                                 // microfone
+    o += `</g>`;
+    // base mais comprida atras
+    const bx = S.P(S.u0, DEPTH);
+    o += `<rect x="${f(ox + bx[0] * s)}" y="${f(deskY - (FEET + 0) * s - 2)}" width="${f(15 * s)}" height="2" fill="none"/>`;
+    // pes
+    [[2, 9], [S.P(S.u0, DEPTH)[0] - 12, S.P(S.u0, DEPTH)[0] - 3]].forEach(([a, b]) => { o += `<rect x="${f(ox + a * s)}" y="${f(deskY - FEET * s)}" width="${f((b - a) * s)}" height="${f(FEET * s)}" fill="var(--accent)"/>`; });
+    // olhar
+    const m = tx(S.P(CASE_H / 2, 0));
+    o += `<circle cx="${f(m[0] - 130)}" cy="${f(m[1] - 36)}" r="6" fill="none" stroke="var(--fg)" stroke-width="1.5"/><circle cx="${f(m[0] - 130)}" cy="${f(m[1] - 36)}" r="2" fill="var(--fg)"/><line x1="${f(m[0] - 122)}" y1="${f(m[1] - 33)}" x2="${f(m[0] - 12)}" y2="${f(m[1] - 4)}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+    // angulo
+    const a0 = tx(S.P(0, 0)), top = tx(S.P(CASE_H, 0));
+    o += `<line x1="${f(a0[0])}" y1="${f(a0[1])}" x2="${f(a0[0])}" y2="${f(top[1])}" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+    o += `<text class="t-acc" x="${f(a0[0] + 14)}" y="${f(top[1] + 44)}">${TILT}°</text>`;
+    // legendas a direita, em ordem de altura para as linhas nao se cruzarem
+    const items = [
+      [CASE_H - 3, 1, 'Moldura frontal', '2 mm, janela de 74,5 × 50 mm'],
+      [48, 4.2, 'Vidro com touch e TFT', '≈ 4,5 mm (a confirmar)'],
+      [22, 11, 'Conectores empilhados', 'pinos da tela + soquete, ≈ 8,5 mm'],
+      [40, 15.8, 'Placa universal 6 × 8 cm', '1,6 mm, presa em 4 colunas da tampa'],
+      [22, 21, 'Soquetes do ESP32', '≈ 8,5 mm'],
+      [14, 28, 'ESP32-S3', 'placa 1,6 mm + componentes ≈ 3,5 mm'],
+      [57, 21, 'Microfone', 'em pé, voltado para o furo do topo'],
+      [40, DEPTH - 1, 'Tampa traseira', '2,2 mm, presa por 4 parafusos M3']
+    ].map(it => ({ it, p: tx(S.P(it[0], it[1])) })).sort((a, b) => a.p[1] - b.p[1]);
+    items.forEach(({ it, p }, i) => {
+      const y = 56 + i * 52;
+      o += `<line class="lead-line" x1="${f(p[0])}" y1="${f(p[1])}" x2="520" y2="${y - 4}"/><text x="526" y="${y}">${it[2]}</text><text class="t-dim" x="526" y="${y + 14}">${it[3]}</text>`;
+    });
+    // cotas
+    const t0 = tx(S.P(0, DEPTH)), t1 = tx(S.P(0, 0));
+    o += `<text class="t-dim" x="${f(ox + 4)}" y="${f(deskY + 28)}">profundidade ${DEPTH} mm (medida perpendicular à tela)</text>`;
+    o += `<text class="t-acc" x="526" y="470">4 pés laranja de ${FEET} mm</text>`;
+    document.getElementById('fig3').innerHTML = o;
+  }
+
+  // ---- figura 4: por tras ----------------------------------------------------------------------------------
+  function fig4() {
+    const s = 5.6, cx = 510, cy = 250, W = CASE_W * s, H = CASE_H * s;
+    const X = x => cx + x * s, Y = y => cy - y * s;                       // mm do centro, y para cima
+    let o = '';
+    o += `<rect x="${f(X(-CASE_W / 2))}" y="${f(Y(CASE_H / 2))}" width="${f(W)}" height="${f(H)}" rx="${f(4 * s)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="2"/>`;
+    o += `<rect x="${f(X(-CASE_W / 2 + 2.2))}" y="${f(Y(CASE_H / 2 - 2.2))}" width="${f((CASE_W - 4.4) * s)}" height="${f((CASE_H - 4.4) * s)}" rx="${f(2 * s)}" fill="var(--case-in)"/>`;
+    o += `<rect x="${f(X(-GLASS_W / 2))}" y="${f(Y(GLASS_H / 2))}" width="${f(GLASS_W * s)}" height="${f(GLASS_H * s)}" fill="none" stroke="var(--muted)" stroke-dasharray="5 4"/>`;
+    // cantos: parafusos da tampa
+    [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([a, b]) => {
+      const px = a * (CASE_W / 2 - 2.2 - 3.7), py = b * (CASE_H / 2 - 2.2 - 3.7);
+      o += `<circle cx="${f(X(px))}" cy="${f(Y(py))}" r="${f(3.7 * s)}" fill="var(--case)" stroke="var(--case-edge)" stroke-width="1.5"/><circle cx="${f(X(px))}" cy="${f(Y(py))}" r="${f(1.5 * s)}" fill="var(--gold)"/>`;
+    });
+    // placa universal 80 x 60
+    o += `<rect x="${f(X(-40))}" y="${f(Y(30))}" width="${f(80 * s)}" height="${f(60 * s)}" fill="var(--perf)" opacity=".92" stroke="var(--case-edge)" stroke-width="1.5"/>`;
+    [[-37, 27], [37, 27], [-37, -27], [37, -27]].forEach(([px, py]) => { o += `<circle cx="${f(X(px))}" cy="${f(Y(py))}" r="${f(3.2 * s)}" fill="var(--case)" stroke="var(--case-edge)"/><circle cx="${f(X(px))}" cy="${f(Y(py))}" r="${f(1.3 * s)}" fill="var(--bg)"/>`; });
+    // ESP32 no fundo, USB para a direita
+    const ex1 = 39, ex0 = ex1 - 70, ey0 = -27, ey1 = ey0 + 25.4;
+    o += `<rect x="${f(X(ex0))}" y="${f(Y(ey1))}" width="${f(70 * s)}" height="${f(25.4 * s)}" fill="#1d6b52" stroke="var(--case-edge)" stroke-width="1.5"/>`;
+    o += `<rect x="${f(X(ex0 + 2))}" y="${f(Y(ey1 - 2))}" width="${f(26 * s)}" height="${f(21.4 * s)}" fill="var(--chip)"/><text class="t-w" x="${f(X(ex0 + 15))}" y="${f(Y(ey0 + 12.7) + 4)}" text-anchor="middle" style="fill:#1d2024">N16R8</text>`;
+    [-6.4, 6.4].forEach(dy => { o += `<rect x="${f(X(ex1 - 0.5))}" y="${f(Y(ey0 + 12.7 + dy + 4.5))}" width="${f(9 * s)}" height="${f(9 * s * .4)}" fill="var(--chip)" stroke="var(--case-edge)"/>`; });
+    // fenda USB na parede direita
+    o += `<rect x="${f(X(CASE_W / 2 - 2.2))}" y="${f(Y(ey0 + 12.7 + 8))}" width="${f(2.4 * s)}" height="${f(16 * s)}" fill="var(--bg)" stroke="var(--case-edge)"/>`;
+    // coluna da tela (esquerda)
+    o += `<rect x="${f(X(-38))}" y="${f(Y(9.6))}" width="${f(2.54 * s * 1.6)}" height="${f(35.6 * s)}" fill="#222" stroke="var(--case-edge)"/>`;
+    for (let i = 0; i < 14; i++) o += `<circle cx="${f(X(-38) + 1.27 * s * 1.6)}" cy="${f(Y(9.6) + (i + .5) * 2.54 * s)}" r="${f(.5 * s)}" fill="var(--gold)"/>`;
+    // microfone
+    o += `<rect x="${f(X(4))}" y="${f(Y(26.5))}" width="${f(14 * s)}" height="${f(1.8 * s)}" fill="#1d6b52" stroke="var(--case-edge)"/><circle cx="${f(X(11))}" cy="${f(Y(26.5) + .9 * s)}" r="${f(.9 * s)}" fill="var(--glass)"/>`;
+    o += `<rect x="${f(X(10))}" y="${f(Y(CASE_H / 2))}" width="${f(2 * s)}" height="${f(2.2 * s)}" fill="var(--bg)" stroke="var(--case-edge)"/>`;
+    // chamadas
+    const call = (x, y, tx2, ty, a, b) => `<line class="lead-line" x1="${f(x)}" y1="${f(y)}" x2="${f(tx2)}" y2="${f(ty - 4)}"/><text x="${f(tx2 + 6)}" y="${f(ty)}">${a}</text><text class="t-dim" x="${f(tx2 + 6)}" y="${f(ty + 14)}">${b}</text>`;
+    o += call(X(14), Y(CASE_H / 2) + 2, X(CASE_W / 2) + 20, Y(CASE_H / 2) + 4, 'Furo do microfone', 'Ø 2,5 mm no topo');
+    o += call(X(ex1 + 6), Y(ey0 + 12.7), X(CASE_W / 2) + 20, Y(-2), 'Fenda do USB-C', '16 × 9 mm; plugue em L');
+    o += call(X(-36.5), Y(-6), 14, Y(22), 'Conector da tela', '14 pinos, do lado esquerdo');
+    o += call(X(-20), Y(-14), 14, Y(-30), 'ESP32-S3', '70 × 25,4 mm, no fundo');
+    o += call(X(CASE_W / 2 - 2.2 - 3.7), Y(CASE_H / 2 - 2.2 - 3.7), X(CASE_W / 2) + 20, Y(CASE_H / 2) + 52, 'Parafuso M3 + inserto', 'nos 4 cantos da moldura');
+    o += call(X(-37), Y(27), 14, Y(34), 'Coluna da placa', '4 colunas na tampa');
+    o += `<text class="t-dim" x="${f(cx)}" y="${f(Y(-CASE_H / 2) + 22)}" text-anchor="middle">placa universal 80 × 60 mm</text>`;
+    o += dimH(X(-CASE_W / 2), X(CASE_W / 2), Y(CASE_H / 2) - 26, `${CASE_W} mm`);
+    document.getElementById('fig4').innerHTML = o;
+  }
+
+  // ---- lista do que medir --------------------------------------------------------------------------------------
+  const MEDIDAS = [
+    ['Largura e altura do vidro do módulo da tela', 'A proposta usa 84,96 × 55,5 mm. Se for diferente, o bolso da moldura muda.'],
+    ['Posição e tamanho da área ativa dentro do vidro', 'Ela não fica centrada. Meça as quatro margens para posicionar a janela.'],
+    ['Espessura total do módulo (vidro, TFT e placa)', 'Define a profundidade do bolso e da caixa.'],
+    ['Onde fica o conector e quanto os pinos saem', 'Define o lado do conector (esquerdo) e a altura da pilha de conectores.'],
+    ['Comprimento real da placa ESP32-S3 e a posição dos dois conectores USB-C', 'A fenda do cabo e a posição do ESP32 dependem disso.'],
+    ['Altura dos pinos e do soquete que você comprou', 'A proposta soma 8,5 mm para cada. Mude se o seu for diferente.'],
+    ['De que lado do módulo do microfone fica o furinho do som', 'Define para onde o módulo deve olhar, em relação ao furo do topo.'],
+    ['Diâmetro do inserto de latão e do parafuso M3', 'Fecha o furo dos cantos e das colunas.']
+  ];
+  function medidas() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem('mascote.caixa.medidas') || '[]'); } catch (_) {}
+    const box = document.getElementById('medidas');
+    box.innerHTML = MEDIDAS.map((m, i) => `<label class="check"><input type="checkbox" id="med${i}" ${saved.includes(i) ? 'checked' : ''}><span>${m[0]}<small>${m[1]}</small></span></label>`).join('');
+    box.addEventListener('change', () => {
+      const on = MEDIDAS.map((_, i) => i).filter(i => document.getElementById('med' + i).checked);
+      try { localStorage.setItem('mascote.caixa.medidas', JSON.stringify(on)); } catch (_) {}
+    });
+  }
+
+  fig1(); fig2(); fig3(); fig4(); medidas();
+})();
+</script>
+</body>
+</html>
