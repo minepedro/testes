@@ -58,3 +58,8 @@ Nota: uso pessoal sem problema; se um dia for vender, a marca/personagem pertenc
 ## 16. Como o mascote responde?
 **Por texto, na tela.** Sem voz de saída (TTS) na v1. A resposta é escrita no rodapé com a boca do mascote mexendo; um toque abre a resposta inteira para ler e rolar. Cada sessão guarda a última troca.
 Impacto: o alto-falante e o amplificador MAX98357A deixam de ser necessários na v1 (ficam opcionais, para uma v2 com voz). O microfone continua, porque a entrada segue sendo por voz (push-to-talk).
+
+## 17. Formato da caixa
+**Opção A: cunha de duas peças** (moldura frontal inclinada 15° + tampa traseira, quatro pés laranja). Comparada com moldura com pé (B) e tela num pescoço (C); o pescoço com base fica como ideia para uma v2 com bateria.
+A modelagem fica para depois, quando as peças chegarem e as medidas forem confirmadas com o paquímetro. Os desenhos e as medidas de projeto estão em `hardware/caixa-desenho.html`. Para a caixa, a placa universal passa a ser de **6 × 8 cm** (a de 9 × 15 cm era grande demais).
+
