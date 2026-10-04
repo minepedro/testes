@@ -10,6 +10,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `docs/compras-online.md` — lista de compras com links (Mercado Livre)
 - `docs/montagem.md` — mapa de pinos e guia de montagem em etapas, com um teste por etapa
 - `hardware/esquema-ligacoes.html` — esquema visual das ligações (abra no navegador)
+- `hardware/entendendo-os-componentes.html` — o que é cada peça da lista, com desenhos (capacitor, resistor, botão, protoboard, multímetro)
 - `hardware/caixa-desenho.html` — desenhos e recomendações da caixa impressa (vistas, corte, layout interno, impressão)
 - `docs/bom.md` — lista de componentes (Santa Ifigênia)
 - `docs/guia-de-compras.pdf` — guia ilustrado: marcas, alternativas, onde achar, preço estimado, ferramentas extras

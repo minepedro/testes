@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entendendo os Componentes</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura. Cada peca ganha um bloco com desenho, a funcao em
+   uma frase e onde aparece no projeto. As cores dos desenhos seguem as do esquema
+   de ligacao: vermelho 3V3, cinza GND, azul I2C, verde I2S, laranja SPI. */
+:root {
+  --bg: #e9ebee; --surface: #f6f7f9; --fg: #1d2024; --muted: #5f6670; --line: #cfd3d9;
+  --accent: #d97757; --good: #23864f; --bad: #c93030; --warn: #b9770e;
+  --w-pwr: #c93030; --w-gnd: #4b525b; --w-i2c: #2a63c4; --w-i2s: #23864f; --w-spi: #c4561f;
+  --body: #2d3036; --body-edge: #14161a; --metal: #aeb4ba; --gold: #d6b25e; --pcb: #1d6b52;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+    --accent: #e08562; --good: #5cc58a; --bad: #f26b6b; --warn: #e0a64a;
+    --w-pwr: #f26b6b; --w-gnd: #aab1ba; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-spi: #ef8a5a;
+    --body: #4a4f58; --body-edge: #0b0c0e; --metal: #8d949b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1d2024; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+  --accent: #e08562; --good: #5cc58a; --bad: #f26b6b; --warn: #e0a64a;
+  --w-pwr: #f26b6b; --w-gnd: #aab1ba; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-spi: #ef8a5a;
+  --body: #4a4f58; --body-edge: #0b0c0e; --metal: #8d949b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 30px/1.1 var(--font-display); text-wrap: balance; }
+h2 { margin: 0; font-size: 21px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+h3 { margin: 0; font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.lead, .sub { color: var(--muted); max-width: 66ch; }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+code { font: 13px var(--font-mono); background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+b { font-weight: 600; }
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.scroller svg { display: block; width: 100%; height: auto; min-width: 640px; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 72ch; }
+.hint { font: 500 12px/1.4 var(--font-mono); color: var(--muted); }
+
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .t-dim { fill: var(--muted); }
+svg .t-title { font-family: var(--font-body); font-size: 13px; font-weight: 600; }
+svg .t-w { fill: #fff; }
+svg .t-bad { fill: var(--bad); font-weight: 500; }
+svg .t-good { fill: var(--good); font-weight: 500; }
+svg .t-pwr { fill: var(--w-pwr); font-weight: 500; }
+.ln { stroke: var(--fg); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.lead-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+
+.two .scroller svg { min-width: 0; }
+.two { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); align-items: start; }
+.callout { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 14px; border-radius: 0 8px 8px 0; max-width: 74ch; }
+.where { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+.badge { font: 500 11px/1 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.badge.need { color: var(--good); border-color: var(--good); }
+.badge.opt { color: var(--warn); border-color: var(--warn); }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font: 500 11px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); }
+td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.k { font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+ul.pl { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 72ch; }
+ul.pl li::marker { color: var(--muted); }
+@media (max-width: 560px) { h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">hardware · componentes · explicação visual</div>
+    <h1>Entendendo os Componentes</h1>
+    <p class="lead">Cada item da lista de compras, o que ele faz, onde ele aparece no projeto e por que está ali. Começamos pelo mapa geral e depois entramos nas peças que as figuras anteriores não explicaram, como o capacitor.</p>
+  </header>
+
+  <section id="mapa">
+    <h2>O mapa de todas as peças</h2>
+    <p class="sub">A coluna "Etapa" usa as mesmas etapas do guia de montagem: 1 é o ESP32 sozinho, 2 a tela, 3 o touch e 4 o microfone. "Fase 2" é a placa universal definitiva.</p>
+    <div class="tbl"><table><thead><tr><th>Peça</th><th>O que faz</th><th>Etapa</th><th>Compra?</th></tr></thead><tbody>
+      <tr><td class="k">ESP32-S3 N16R8</td><td>O cérebro. Roda o programa, fala Wi-Fi e desenha a tela.</td><td>todas</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Tela ST7796 + touch</td><td>Mostra o mascote e sente o seu dedo.</td><td>2 e 3</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Microfone INMP441</td><td>Escuta e entrega o som ao ESP32 já em números.</td><td>4</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Cabo USB-C de dados</td><td>Leva energia e também grava o programa na placa.</td><td>todas</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Fonte 5 V 2 A</td><td>Alimenta o mascote ligado na tomada. Carregador de celular serve.</td><td>uso diário</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Protoboard</td><td>Base de testes: liga as peças sem solda.</td><td>1 a 4</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Jumpers</td><td>Fios com pontas prontas para a protoboard.</td><td>2 a 4</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Multímetro</td><td>Confere tensão e procura curto antes de ligar.</td><td>todas</td><td><span class="badge need">sim</span></td></tr>
+      <tr><td class="k">Barra de pinos</td><td>Soquetes e conectores da placa universal.</td><td>fase 2</td><td><span class="badge need">sim, depois</span></td></tr>
+      <tr><td class="k">Placa universal, ferro, estanho, fluxo, malha</td><td>A versão definitiva, com solda, que vai dentro da caixa.</td><td>fase 2</td><td><span class="badge need">sim, depois</span></td></tr>
+      <tr><td class="k">Botão tátil</td><td>Botões extras de reset e boot.</td><td>opcional</td><td><span class="badge opt">opcional</span></td></tr>
+      <tr><td class="k">Capacitor 470 µF</td><td>Reservatório de energia do amplificador.</td><td>só com voz</td><td><span class="badge opt">v2</span></td></tr>
+      <tr><td class="k">Amplificador MAX98357A</td><td>Transforma o som digital em som com força.</td><td>só com voz</td><td><span class="badge opt">v2</span></td></tr>
+      <tr><td class="k">Alto-falante</td><td>Toca o som.</td><td>só com voz</td><td><span class="badge opt">v2</span></td></tr>
+      <tr><td class="k">Insertos, parafusos M3, fita</td><td>Prendem a caixa.</td><td>caixa</td><td><span class="badge need">sim, depois</span></td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section id="energia">
+    <h2>De onde vem a energia</h2>
+    <p class="sub">Antes de falar de capacitor, vale ver o caminho da energia. Ele explica por que o 3V3 e o GND são os fios mais importantes do projeto.</p>
+    <figure>
+      <div class="scroller"><svg id="fig-power" viewBox="0 0 900 290" role="img" aria-label="Caminho da energia: o cabo USB-C leva 5 volts do computador ou da fonte ao pino 5V da placa ESP32. Um regulador na placa baixa para 3,3 volts. O pino 3V3 alimenta o trilho 3V3 da protoboard, que alimenta a tela, o touch e o microfone. O GND volta de todas as peças."></svg></div>
+      <figcaption>O cabo traz 5 V. O regulador, que já vem na placa, baixa para 3,3 V, que é o que a tela, o touch e o microfone aguentam. A diferença vira calor, por isso o regulador esquenta um pouco.</figcaption>
+    </figure>
+  </section>
+
+  <section id="capacitor">
+    <h2>Capacitor: o reservatório de energia</h2>
+    <div class="callout"><p>Pense numa caixa-d'água ao lado de uma torneira. Quando o consumo sobe de repente, a caixa-d'água cobre o pico, e a pressão da rua não cai. O capacitor faz isso com a tensão elétrica: guarda um pouco de energia e entrega nos instantes em que a fonte não consegue acompanhar.</p></div>
+    <h3>Por que o ESP32 precisa disso</h3>
+    <p class="sub">Quando o Wi-Fi transmite, o ESP32 puxa uma corrente alta por alguns milésimos de segundo. Se a fonte, o cabo ou os fios finos não acompanham, a tensão cai por um instante. Se cair demais, a placa reinicia sozinha.</p>
+    <figure>
+      <div class="scroller"><svg id="fig-cap" viewBox="0 0 900 270" role="img" aria-label="Dois gráficos de tensão no tempo, ilustrativos. Sem capacitor, a tensão cai fundo em cada rajada de Wi-Fi e cruza a linha de reinício. Com capacitor, as quedas são pequenas e a tensão nunca chega ao limite."></svg></div>
+      <figcaption>Ilustração do princípio, não uma medição. Sem o capacitor (esquerda), cada rajada de Wi-Fi derruba a tensão até o limite em que a placa reinicia. Com ele (direita), a queda é pequena.</figcaption>
+    </figure>
+
+    <div class="two">
+      <figure>
+        <div class="scroller"><svg id="fig-cap-body" viewBox="0 0 440 304" role="img" aria-label="Um capacitor eletrolítico com a faixa clara marcando a perna negativa, a perna longa sendo a positiva, e um capacitor cerâmico pequeno sem polaridade."></svg></div>
+        <figcaption>O eletrolítico (esquerda) tem polaridade: a faixa clara marca a perna negativa, e a perna longa é a positiva. O cerâmico (direita) não tem.</figcaption>
+      </figure>
+      <figure>
+        <div class="scroller"><svg id="fig-cap-place" viewBox="0 0 440 280" role="img" aria-label="Esquema do capacitor ligado entre o 5V e o GND, bem perto dos pinos do amplificador. Ao lado, o erro de colocá-lo longe, com fios compridos."></svg></div>
+        <figcaption>O capacitor fica entre o 5V e o GND, <b>o mais perto possível</b> dos pinos da peça que ele protege. Fio comprido tira o efeito.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Como ler o que está escrito nele</h3>
+    <ul class="pl">
+      <li><b>470 µF</b> é a capacidade: quanta energia ele guarda. Número maior guarda mais.</li>
+      <li><b>10 V</b> é a tensão máxima que ele aguenta. O amplificador usa 5 V, então 10 V está certo (a regra é escolher o dobro).</li>
+      <li><b>Ligado ao contrário</b> o eletrolítico pode esquentar, inchar e estourar. Sempre perna longa no 5 V, faixa no GND.</li>
+      <li>O cerâmico pequeno marcado <b>104</b> vale 100 nF e serve para filtrar ruído rápido de uma peça.</li>
+    </ul>
+    <h3>Onde isto aparece no seu projeto</h3>
+    <ul class="pl">
+      <li>O <b>capacitor de 470 µF</b> da lista é para o amplificador do alto-falante. Como a v1 responde só por texto, ele fica para a v2.</li>
+      <li>O ESP32, a tela e o microfone <b>já trazem</b> capacitores soldados nas placas deles. Na v1 você não precisa adicionar nenhum.</li>
+      <li>Se o microfone chiar muito, um cerâmico de 100 nF entre o VDD e o GND, junto dele, é um primeiro remédio barato. É uma boa prática, mas só faça se o chiado aparecer no teste da etapa 4.</li>
+    </ul>
+    <div class="where"><span class="badge opt">v2, voz</span> <span>Não precisa comprar agora.</span></div>
+  </section>
+
+  <section id="resistor">
+    <h2>Resistor: o empurrãozinho</h2>
+    <p class="sub">Este não está na sua lista, mas é o componente mais comum que existe e está escondido dentro dos seus módulos. Vale entender porque explica um erro que você pode encontrar na etapa 3.</p>
+    <figure>
+      <div class="scroller"><svg id="fig-pull" viewBox="0 0 900 300" role="img" aria-label="Duas linhas de dados do I2C ligadas ao 3V3 por resistores de pull-up. Dois chips seguram cada linha no GND quando querem mandar um zero, soltam quando querem mandar um. Ao lado, o gráfico mostra a linha em nível alto por padrão e caindo para zero quando um chip a puxa."></svg></div>
+      <figcaption>As linhas do I2C (SDA e SCL) ficam no alto por padrão, empurradas para o 3V3 por um resistor de alguns kΩ, o "pull-up". Quando um chip quer dizer "zero", ele puxa a linha para o GND. Quando solta, o resistor a devolve ao alto.</figcaption>
+    </figure>
+    <ul class="pl">
+      <li>Sem esses resistores, a linha ficaria "solta" e o ESP32 não conseguiria falar com o chip do touch.</li>
+      <li>Os módulos de tela com touch costumam trazer os dois resistores. Se na etapa 3 o scanner não achar nada mesmo com os fios certos, este é um dos casos para investigar, e eu te ajudo a medir.</li>
+    </ul>
+  </section>
+
+  <section id="botao">
+    <h2>Botão tátil</h2>
+    <p class="sub">É o botão pequeno de quatro pernas. Ele só junta dois fios enquanto você aperta.</p>
+    <figure>
+      <div class="scroller"><svg id="fig-btn" viewBox="0 0 900 250" role="img" aria-label="Um botão tátil de quatro pernas visto de cima, com as pernas de cada lado ligadas entre si por dentro. Ao apertar, as duas metades se ligam. Ao lado, o símbolo do botão ligado entre um pino do ESP32 e o GND."></svg></div>
+      <figcaption>As quatro pernas são, na verdade, dois pares já ligados por dentro. Ao apertar, o botão liga um par ao outro. Para usar, basta um fio em cada lado.</figcaption>
+    </figure>
+    <ul class="pl">
+      <li>A sua placa ESP32 <b>já tem</b> os botões BOOT e RESET. Os botões extras da lista só servem se você quiser apertá-los de fora da caixa.</li>
+      <li>Para isso, um botão liga o pino <b>EN</b> (reset) ao GND, e outro liga o <b>GPIO 0</b> (boot) ao GND.</li>
+    </ul>
+    <div class="where"><span class="badge opt">opcional</span> <span>Dá para começar sem eles.</span></div>
+  </section>
+
+  <section id="pinos">
+    <h2>Barras de pinos e jumpers</h2>
+    <figure>
+      <div class="scroller"><svg id="fig-pins" viewBox="0 0 900 300" role="img" aria-label="Barra de pinos macho, com pinos dourados para cima, e barra fêmea, com furos. Embaixo, três jumpers: macho com macho, macho com fêmea e fêmea com fêmea."></svg></div>
+      <figcaption>Macho tem pino, fêmea tem furo. Um jumper é macho ou fêmea em cada ponta. Você vai usar <b>13 macho-fêmea</b> (tela) e <b>8 macho-macho</b> (protoboard).</figcaption>
+    </figure>
+    <ul class="pl">
+      <li>Na protoboard, as pontas macho entram nos furos e a ponta fêmea encaixa no pino do módulo.</li>
+      <li>Na placa universal (fase 2), você solda barras <b>fêmea</b> como soquetes, e os módulos encaixam nelas. Se um módulo queimar, troca sem dessoldar.</li>
+    </ul>
+  </section>
+
+  <section id="protoboard">
+    <h2>A protoboard por dentro</h2>
+    <p class="sub">Parece um tabuleiro de furos, mas há metal escondido ligando alguns deles. Saber quais é o que evita a maioria dos erros de montagem.</p>
+    <figure>
+      <div class="scroller"><svg id="fig-bb" viewBox="0 0 900 330" role="img" aria-label="Parte de uma protoboard com as ligações internas desenhadas por baixo: cada coluna de cinco furos está ligada entre si, as duas metades são separadas pelo canal do meio, e os trilhos de cima correm na horizontal."></svg></div>
+      <figcaption>As barras laranja mostram o metal que você não vê. Cada coluna de 5 furos é um só ponto elétrico. O canal do meio separa as duas metades. Os trilhos correm no comprimento.</figcaption>
+    </figure>
+    <ul class="pl">
+      <li>Por isso o ESP32 fica atravessando o canal: as duas fileiras de pinos dele ficam em metades diferentes, e cada pino ganha 4 furos ligados a ele para os jumpers.</li>
+      <li>Os trilhos servem para espalhar o 3V3 e o GND para todos sem repetir fios. Alguns modelos têm o trilho cortado ao meio; se o seu for assim, ligue as duas metades com um jumper.</li>
+    </ul>
+  </section>
+
+  <section id="multimetro">
+    <h2>Multímetro: seus olhos para a eletricidade</h2>
+    <figure>
+      <div class="scroller"><svg id="fig-mm" viewBox="0 0 900 345" role="img" aria-label="Um multímetro com o seletor em dois modos. No modo de tensão contínua, a ponta vermelha vai no 3V3 e a preta no GND e o visor mostra cerca de 3,3. No modo de continuidade, as duas pontas tocam dois pontos e o aparelho apita se eles estiverem ligados."></svg></div>
+      <figcaption>Dois modos resolvem quase tudo no projeto. Tensão contínua diz quanto há entre dois pontos. Continuidade apita quando dois pontos estão ligados por um fio.</figcaption>
+    </figure>
+    <div class="two">
+      <article class="callout"><h3>Antes de ligar: procurar curto</h3><p>Com o USB <b>desligado</b>, modo de continuidade, uma ponta no 3V3 e outra no GND. <b>Não pode apitar.</b> Se apitar, há um fio ou uma peça ligando os dois, e ligar o USB queima algo.</p></article>
+      <article class="callout"><h3>Depois de ligar: conferir a tensão</h3><p>USB <b>ligado</b>, modo de tensão contínua, ponta vermelha no 3V3 e preta no GND. Deve marcar perto de <b>3,3</b>. Se marcar 0 ou perto de 5, desligue e me conte o valor.</p></article>
+    </div>
+  </section>
+
+  <section id="voz">
+    <h2>Amplificador e alto-falante (v2)</h2>
+    <p class="sub">O ESP32 manda o som já em números (I2S). O MAX98357A recebe esses números, os converte em sinal elétrico e o amplifica com força para mexer o cone do alto-falante. Ele usa 5 V, porque precisa de energia para ter volume, e divide dois fios com o microfone (os GPIO 15 e 16). Como o mascote responde só por texto (decisão 16), nada disto entra na v1.</p>
+  </section>
+
+  <section id="solda">
+    <h2>As ferramentas de solda</h2>
+    <p class="sub">Só entram na fase 2, quando você passa da protoboard para a placa universal.</p>
+    <div class="tbl"><table><tbody>
+      <tr><td class="k">Ferro de solda</td><td>Aquece o ponto até o estanho derreter e grudar. Prefira um com temperatura regulável.</td></tr>
+      <tr><td class="k">Estanho 63/37</td><td>O metal que une as peças. A mistura 63/37 derrete numa temperatura única e fica brilhante e firme.</td></tr>
+      <tr><td class="k">Fluxo de solda</td><td>Limpa o metal na hora de soldar, para o estanho escorrer bem em vez de fazer bolinha.</td></tr>
+      <tr><td class="k">Malha dessoldadora</td><td>Suga o estanho de uma solda errada para você refazer.</td></tr>
+      <tr><td class="k">Terceira mão e alicates</td><td>Seguram a peça enquanto você solda e cortam as sobras das pernas.</td></tr>
+    </tbody></table></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const f = n => (Math.round(n * 100) / 100).toString();
+  const $ = id => document.getElementById(id);
+  const arrow = (x1, y1, x2, y2, c = 'var(--fg)') => {
+    const a = Math.atan2(y2 - y1, x2 - x1), h = 9;
+    return `<line x1="${x1}" y1="${y1}" x2="${f(x2 - Math.cos(a) * 4)}" y2="${f(y2 - Math.sin(a) * 4)}" stroke="${c}" stroke-width="2"/><polygon points="${x2},${y2} ${f(x2 - Math.cos(a - .45) * h)},${f(y2 - Math.sin(a - .45) * h)} ${f(x2 - Math.cos(a + .45) * h)},${f(y2 - Math.sin(a + .45) * h)}" fill="${c}"/>`;
+  };
+  const node = (x, y, w, h, t1, t2 = '', fill = 'var(--surface)') =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${fill}" stroke="var(--fg)" stroke-width="1.5"/><text class="t-title" x="${x + w / 2}" y="${y + (t2 ? h / 2 - 3 : h / 2 + 4)}" text-anchor="middle">${t1}</text>` +
+    (t2 ? `<text class="t-dim" x="${x + w / 2}" y="${y + h / 2 + 14}" text-anchor="middle">${t2}</text>` : '');
+  const resistor = (x, y1, y2, label) => {                       // resistor vertical em zigue-zague
+    const mid = (y1 + y2) / 2, h = 36, pts = [[x, y1], [x, mid - h / 2]];
+    for (let i = 0; i < 6; i++) pts.push([x + (i % 2 ? -7 : 7), mid - h / 2 + (i + .5) * h / 6]);
+    pts.push([x, mid + h / 2], [x, y2]);
+    return `<polyline class="ln" points="${pts.map(p => p.join(',')).join(' ')}"/><text class="t-dim" x="${x + 16}" y="${mid + 4}">${label}</text>`;
+  };
+
+  // ---- energia -------------------------------------------------------------------------------------
+  function power() {
+    let o = '';
+    o += node(14, 70, 140, 80, 'Fonte 5 V', 'ou USB do PC');
+    o += arrow(154, 110, 216, 110, 'var(--w-pwr)') + `<text class="t-pwr" x="185" y="98" text-anchor="middle">5 V</text>`;
+    o += node(220, 70, 130, 80, 'Cabo USB-C', 'de dados');
+    o += arrow(350, 110, 412, 110, 'var(--w-pwr)') + `<text class="t-pwr" x="381" y="98" text-anchor="middle">5 V</text>`;
+    o += `<rect x="416" y="30" width="260" height="170" rx="10" fill="var(--pcb)" stroke="var(--body-edge)" stroke-width="2"/><text class="t-title t-w" x="430" y="52">Placa ESP32-S3</text>`;
+    o += `<rect x="432" y="76" width="90" height="70" rx="6" fill="var(--surface)" stroke="var(--fg)"/><text class="t-title" x="477" y="106" text-anchor="middle">Regulador</text><text class="t-dim" x="477" y="124" text-anchor="middle">5 V → 3,3 V</text>`;
+    o += arrow(522, 110, 580, 110, 'var(--w-pwr)') + `<text class="t-pwr" x="551" y="98" text-anchor="middle">3,3 V</text>`;
+    o += `<rect x="584" y="94" width="76" height="32" rx="5" fill="var(--gold)"/><text class="t-title" x="622" y="115" text-anchor="middle" style="fill:#1d2024">pino 3V3</text>`;
+    o += `<rect x="432" y="162" width="90" height="26" rx="5" fill="var(--gold)"/><text class="t-title" x="477" y="180" text-anchor="middle" style="fill:#1d2024">pino GND</text>`;
+    o += `<line x1="660" y1="110" x2="716" y2="110" stroke="var(--w-pwr)" stroke-width="3"/><rect x="716" y="104" width="170" height="12" rx="3" fill="var(--w-pwr)"/><text class="t-title" x="801" y="98" text-anchor="middle">trilho 3V3</text>`;
+    o += `<line x1="432" y1="175" x2="404" y2="175" stroke="var(--w-gnd)" stroke-width="3"/><line x1="404" y1="175" x2="404" y2="236" stroke="var(--w-gnd)" stroke-width="3"/><line x1="404" y1="236" x2="716" y2="236" stroke="var(--w-gnd)" stroke-width="3"/><rect x="716" y="230" width="170" height="12" rx="3" fill="var(--w-gnd)"/><text class="t-title" x="801" y="260" text-anchor="middle">trilho GND</text>`;
+    ['Tela', 'Touch', 'Mic'].forEach((n, i) => {
+      const x = 726 + i * 56;
+      o += `<line x1="${x + 18}" y1="116" x2="${x + 18}" y2="150" stroke="var(--w-pwr)" stroke-width="2"/><rect x="${x}" y="150" width="40" height="58" rx="5" fill="var(--surface)" stroke="var(--fg)"/><text class="t-title" x="${x + 20}" y="184" text-anchor="middle">${n}</text><line x1="${x + 20}" y1="208" x2="${x + 20}" y2="230" stroke="var(--w-gnd)" stroke-width="2"/>`;
+    });
+    o += `<text class="t-dim" x="440" y="274">o GND é o caminho de volta de toda peça</text>`;
+    $('fig-power').innerHTML = o;
+  }
+
+  // ---- capacitor: tensao no tempo ------------------------------------------------------------------------------
+  function dips(x0, y0, w, centers, depth) {
+    let d = `M${x0} ${y0}`;
+    centers.forEach(c => { const x = x0 + c; d += ` L${x - 20} ${y0} C${x - 12} ${y0} ${x - 9} ${y0 + depth} ${x} ${y0 + depth} C${x + 9} ${y0 + depth} ${x + 16} ${y0} ${x + 32} ${y0}`; });
+    return d + ` L${x0 + w} ${y0}`;
+  }
+  function cap() {
+    let o = '';
+    [[70, 'Sem capacitor', 92, 'bad'], [500, 'Com capacitor', 14, 'good']].forEach(([x0, title, depth, cls]) => {
+      const w = 380;
+      o += `<text class="t-title" x="${x0}" y="24">${title}</text>`;
+      o += `<line x1="${x0}" y1="40" x2="${x0}" y2="210" stroke="var(--muted)"/><line x1="${x0}" y1="210" x2="${x0 + w}" y2="210" stroke="var(--muted)"/>`;
+      o += `<text class="t-dim" x="${x0 - 4}" y="62" text-anchor="end">3,3 V</text><text class="t-dim" x="${x0 + w}" y="228" text-anchor="end">tempo →</text>`;
+      o += `<line x1="${x0}" y1="168" x2="${x0 + w}" y2="168" stroke="var(--bad)" stroke-dasharray="6 4"/><text class="t-bad" x="${x0 + w}" y="184" text-anchor="end">abaixo desta linha a placa reinicia</text>`;
+      o += `<path d="${dips(x0, 58, w, [90, 220, 340], depth)}" fill="none" stroke="var(--w-pwr)" stroke-width="2.6" stroke-linejoin="round"/>`;
+      [90, 220, 340].forEach(c => { o += `<rect x="${x0 + c - 16}" y="236" width="32" height="8" rx="2" fill="var(--w-spi)"/>`; });
+      o += `<text class="t-dim" x="${x0}" y="262">rajadas de Wi-Fi</text>`;
+      if (cls === 'bad') o += `<text class="t-bad" x="${x0 + 126}" y="162">reinicia!</text>`;
+      else o += `<text class="t-good" x="${x0 + 130}" y="112">queda pequena: a tensão aguenta</text>`;
+    });
+    $('fig-cap').innerHTML = o;
+  }
+
+  // ---- capacitor: corpo e polaridade --------------------------------------------------------------------------------------
+  function capBody() {
+    let o = '';
+    // eletrolitico
+    o += `<line x1="86" y1="190" x2="86" y2="262" stroke="var(--metal)" stroke-width="4" stroke-linecap="round"/><line x1="124" y1="190" x2="124" y2="236" stroke="var(--metal)" stroke-width="4" stroke-linecap="round"/>`;
+    o += `<rect x="62" y="70" width="86" height="124" rx="6" fill="var(--body)" stroke="var(--body-edge)" stroke-width="2"/><ellipse cx="105" cy="70" rx="43" ry="9" fill="var(--body)" stroke="var(--body-edge)" stroke-width="2"/>`;
+    o += `<rect x="116" y="72" width="30" height="120" fill="var(--metal)" opacity=".85"/>`;
+    [92, 116, 140, 164].forEach(y => { o += `<text x="131" y="${y}" text-anchor="middle" style="fill:#1d2024;font-size:16px;font-weight:700">−</text>`; });
+    o += `<text class="t-w" x="88" y="118" text-anchor="middle" style="font-size:10px">470 µF</text><text class="t-w" x="88" y="134" text-anchor="middle" style="font-size:10px">10 V</text>`;
+    o += `<text class="t-pwr" x="64" y="272" style="font-size:15px">+</text><text class="t-dim" x="138" y="250">perna curta (−)</text><text class="t-dim" x="14" y="296" style="font-size:10px">perna longa = +</text>`;
+    o += `<text class="t-title" x="105" y="44" text-anchor="middle">Eletrolítico</text><text class="t-dim" x="105" y="58" text-anchor="middle">tem polaridade</text>`;
+    // ceramico
+    o += `<line x1="320" y1="190" x2="320" y2="246" stroke="var(--metal)" stroke-width="3" stroke-linecap="round"/><line x1="350" y1="190" x2="350" y2="246" stroke="var(--metal)" stroke-width="3" stroke-linecap="round"/>`;
+    o += `<ellipse cx="335" cy="156" rx="34" ry="40" fill="#c58a4a" stroke="var(--body-edge)" stroke-width="2"/><text x="335" y="161" text-anchor="middle" style="fill:#1d2024;font-size:14px;font-weight:600">104</text>`;
+    o += `<text class="t-title" x="335" y="44" text-anchor="middle">Cerâmico</text><text class="t-dim" x="335" y="58" text-anchor="middle">sem polaridade</text><text class="t-dim" x="335" y="272" text-anchor="middle">104 = 100 nF</text>`;
+    $('fig-cap-body').innerHTML = o;
+  }
+
+  // ---- capacitor: onde colocar ---------------------------------------------------------------------------------------------------------
+  function capPlace() {
+    let o = '';
+    const cap = (x, y1, y2) => { const m = (y1 + y2) / 2; return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${m - 7}" class="ln"/><line x1="${x - 14}" y1="${m - 7}" x2="${x + 14}" y2="${m - 7}" class="ln"/><line x1="${x - 14}" y1="${m + 7}" x2="${x + 14}" y2="${m + 7}" class="ln"/><line x1="${x}" y1="${m + 7}" x2="${x}" y2="${y2}" class="ln"/><text class="t-pwr" x="${x + 18}" y="${m - 8}">+</text>`; };
+    const chip = x => `<rect x="${x}" y="62" width="60" height="66" rx="6" fill="var(--pcb)" stroke="var(--body-edge)" stroke-width="2"/><text class="t-w" x="${x + 30}" y="92" text-anchor="middle" style="font-size:10px">MAX</text><text class="t-w" x="${x + 30}" y="106" text-anchor="middle" style="font-size:10px">98357</text>`;
+    const rails = (x1, x2) => `<line x1="${x1}" y1="60" x2="${x2}" y2="60" stroke="var(--w-pwr)" stroke-width="3"/><line x1="${x1}" y1="130" x2="${x2}" y2="130" stroke="var(--w-gnd)" stroke-width="3"/>`;
+    o += `<text class="t-title t-good" x="14" y="26">Certo</text>` + rails(14, 206) + `<text class="t-pwr" x="14" y="50">5 V</text><text class="t-dim" x="14" y="148">GND</text>`;
+    o += cap(148, 60, 130) + chip(160);
+    o += `<text class="t-dim" x="14" y="186">colado nos pinos da peça:</text><text class="t-dim" x="14" y="202">efeito total</text>`;
+    o += `<text class="t-title t-bad" x="236" y="26">Errado</text>` + rails(236, 430) + `<text class="t-pwr" x="236" y="50">5 V</text><text class="t-dim" x="236" y="148">GND</text>`;
+    o += cap(262, 60, 130) + chip(370);
+    o += `<path class="dimline" d="M276 168 H370 M276 162 V174 M370 162 V174" fill="none" stroke="var(--muted)"/><text class="t-bad" x="323" y="186" text-anchor="middle">longe</text>`;
+    o += `<text class="t-dim" x="236" y="222">fios compridos no meio:</text><text class="t-dim" x="236" y="238">o efeito se perde</text>`;
+    $('fig-cap-place').innerHTML = o;
+  }
+
+  // ---- resistor / pull-up ---------------------------------------------------------------------------------------------------------------------
+  function pull() {
+    let o = '';
+    o += `<line x1="40" y1="40" x2="500" y2="40" stroke="var(--w-pwr)" stroke-width="3"/><text class="t-pwr" x="40" y="30">3V3</text>`;
+    o += resistor(120, 40, 120, '4,7 kΩ');
+    o += `<line x1="40" y1="120" x2="500" y2="120" stroke="var(--w-i2c)" stroke-width="3"/><text class="t-title" x="40" y="112" style="fill:var(--w-i2c)">SDA</text>`;
+    o += `<text class="t-dim" x="232" y="112">a linha SCL tem o mesmo arranjo</text>`;
+    // chips
+    o += node(330, 150, 150, 60, 'Chip do touch', 'segura a linha no GND');
+    o += node(50, 150, 150, 60, 'ESP32', 'segura a linha no GND');
+    [[125, 150], [405, 150]].forEach(([x, y]) => { o += `<line x1="${x}" y1="120" x2="${x}" y2="${y}" stroke="var(--w-i2c)" stroke-width="2"/>`; });
+    o += `<line x1="40" y1="260" x2="500" y2="260" stroke="var(--w-gnd)" stroke-width="3"/><text class="t-dim" x="40" y="278">GND</text>`;
+    [[125], [405]].forEach(([x]) => { o += `<line x1="${x}" y1="210" x2="${x}" y2="260" stroke="var(--w-gnd)" stroke-width="2"/>`; });
+    // grafico
+    const gx = 560, gy = 50, gw = 300;
+    o += `<text class="t-title" x="${gx}" y="30">Nível da linha SDA</text>`;
+    o += `<line x1="${gx}" y1="${gy}" x2="${gx}" y2="${gy + 150}" stroke="var(--muted)"/><line x1="${gx}" y1="${gy + 150}" x2="${gx + gw}" y2="${gy + 150}" stroke="var(--muted)"/>`;
+    o += `<text class="t-dim" x="${gx - 6}" y="${gy + 8}" text-anchor="end">alto</text><text class="t-dim" x="${gx - 6}" y="${gy + 154}" text-anchor="end">0</text>`;
+    const y1 = gy + 2, y0 = gy + 148;
+    o += `<polyline points="${gx},${y1} ${gx + 50},${y1} ${gx + 50},${y0} ${gx + 100},${y0} ${gx + 100},${y1} ${gx + 150},${y1} ${gx + 150},${y0} ${gx + 190},${y0} ${gx + 190},${y1} ${gx + gw},${y1}" fill="none" stroke="var(--w-i2c)" stroke-width="2.6"/>`;
+    o += `<text class="t-dim" x="${gx + 4}" y="${gy + 176}">solta: o resistor</text><text class="t-dim" x="${gx + 4}" y="${gy + 190}">devolve ao alto</text>`;
+    o += `<text class="t-dim" x="${gx + 62}" y="${gy + 124}">puxa</text><text class="t-dim" x="${gx + 158}" y="${gy + 124}">puxa</text>`;
+    $('fig-pull').innerHTML = o;
+  }
+
+  // ---- botao tatil -----------------------------------------------------------------------------------------------------------------------------
+  function btn() {
+    let o = '';
+    const x0 = 120, y0 = 50;
+    o += `<rect x="${x0}" y="${y0}" width="130" height="130" rx="10" fill="var(--body)" stroke="var(--body-edge)" stroke-width="2"/><circle cx="${x0 + 65}" cy="${y0 + 65}" r="34" fill="var(--metal)" stroke="var(--body-edge)" stroke-width="2"/>`;
+    [[x0 - 18, y0 + 22], [x0 - 18, y0 + 98], [x0 + 130, y0 + 22], [x0 + 130, y0 + 98]].forEach(([x, y]) => { o += `<rect x="${x}" y="${y - 3}" width="18" height="6" rx="2" fill="var(--metal)"/>`; });
+    o += `<line x1="${x0 - 6}" y1="${y0 + 22}" x2="${x0 - 6}" y2="${y0 + 98}" stroke="var(--accent)" stroke-width="3"/><line x1="${x0 + 136}" y1="${y0 + 22}" x2="${x0 + 136}" y2="${y0 + 98}" stroke="var(--accent)" stroke-width="3"/>`;
+    o += `<text class="t-dim" x="${x0 - 28}" y="${y0 + 66}" text-anchor="end">já ligadas</text><text class="t-dim" x="${x0 - 28}" y="${y0 + 80}" text-anchor="end">por dentro</text>`;
+    o += `<text class="t-dim" x="${x0 + 166}" y="${y0 + 66}">já ligadas</text><text class="t-dim" x="${x0 + 166}" y="${y0 + 80}">por dentro</text>`;
+    o += `<text class="t-title" x="${x0 + 65}" y="30" text-anchor="middle">Visto de cima</text>`;
+    o += `<text class="t-dim" x="${x0 + 65}" y="${y0 + 158}" text-anchor="middle">apertar liga um lado ao outro</text>`;
+    // simbolo
+    const sx = 520;
+    o += `<text class="t-title" x="${sx}" y="30">Como ligar</text>`;
+    o += `<rect x="${sx}" y="46" width="110" height="34" rx="5" fill="var(--pcb)"/><text class="t-w" x="${sx + 55}" y="68" text-anchor="middle">pino EN</text>`;
+    o += `<line x1="${sx + 55}" y1="80" x2="${sx + 55}" y2="116" class="ln"/><line x1="${sx + 55}" y1="116" x2="${sx + 90}" y2="136" class="ln"/><line x1="${sx + 55}" y1="150" x2="${sx + 55}" y2="176" class="ln"/><circle cx="${sx + 55}" cy="116" r="3" fill="var(--fg)"/><circle cx="${sx + 55}" cy="150" r="3" fill="var(--fg)"/>`;
+    o += `<line x1="${sx + 20}" y1="176" x2="${sx + 90}" y2="176" stroke="var(--w-gnd)" stroke-width="3"/><text class="t-dim" x="${sx + 100}" y="180">GND</text>`;
+    o += `<text class="t-dim" x="${sx + 104}" y="130">botão</text>`;
+    o += `<text class="t-dim" x="${sx}" y="214">apertado: EN no GND = reset</text><text class="t-dim" x="${sx}" y="230">outro botão igual no GPIO 0 = boot</text>`;
+    $('fig-btn').innerHTML = o;
+  }
+
+  // ---- barras de pinos e jumpers ---------------------------------------------------------------------------------------------------------------
+  function pins() {
+    let o = '';
+    // macho
+    o += `<text class="t-title" x="40" y="26">Barra macho</text><rect x="40" y="76" width="200" height="22" fill="var(--body)" stroke="var(--body-edge)" stroke-width="1.5"/>`;
+    for (let i = 0; i < 8; i++) o += `<rect x="${f(48 + i * 24 - 3)}" y="34" width="6" height="42" fill="var(--gold)"/>`;
+    o += `<text class="t-dim" x="40" y="118">pino para cima</text>`;
+    // femea
+    o += `<text class="t-title" x="320" y="26">Barra fêmea (soquete)</text><rect x="320" y="46" width="200" height="52" fill="var(--body)" stroke="var(--body-edge)" stroke-width="1.5"/>`;
+    for (let i = 0; i < 8; i++) o += `<rect x="${f(328 + i * 24 - 5)}" y="58" width="10" height="10" fill="#0b0c0e"/>`;
+    o += `<text class="t-dim" x="320" y="118">furo para receber o pino</text>`;
+    // uso
+    o += `<text class="t-title" x="600" y="26">Na placa universal</text><rect x="600" y="52" width="260" height="14" fill="var(--pcb)"/>`;
+    o += `<rect x="620" y="38" width="120" height="14" fill="var(--body)" stroke="var(--body-edge)"/>`;
+    o += `<rect x="626" y="66" width="108" height="10" fill="var(--gold)" opacity=".8"/><text class="t-dim" x="600" y="100">soquete fêmea soldado;</text><text class="t-dim" x="600" y="114">o módulo encaixa nele</text>`;
+    // jumpers
+    const jump = (y, a, b, label, color, qtd) => {
+      const end = (x, tipo, dir) => tipo === 'M' ? `<rect x="${dir < 0 ? x - 28 : x}" y="${y - 3}" width="28" height="6" fill="var(--gold)"/><rect x="${dir < 0 ? x : x - 14}" y="${y - 9}" width="14" height="18" rx="2" fill="var(--body)"/>` : `<rect x="${dir < 0 ? x - 30 : x - 2}" y="${y - 10}" width="32" height="20" rx="3" fill="var(--body)" stroke="var(--body-edge)"/><rect x="${dir < 0 ? x - 22 : x + 6}" y="${y - 3}" width="16" height="6" fill="#0b0c0e"/>`;
+      return `<path d="M${200} ${y} C300 ${y - 28} 420 ${y + 28} 520 ${y}" fill="none" stroke="${color}" stroke-width="4"/>${end(200, a, -1).replace(/<rect x="(\d+)"/g, '<rect x="$1"')}${end(520, b, 1)}<text class="t-title" x="580" y="${y - 2}">${label}</text><text class="t-dim" x="580" y="${y + 14}">${qtd}</text>`;
+    };
+    o += `<text class="t-title" x="40" y="156">Jumpers</text>`;
+    o += jump(190, 'M', 'M', 'macho-macho', 'var(--w-i2s)', '8 usados: protoboard com protoboard');
+    o += jump(236, 'M', 'F', 'macho-fêmea', 'var(--w-spi)', '13 usados: tela para a protoboard');
+    o += jump(282, 'F', 'F', 'fêmea-fêmea', 'var(--muted)', 'não precisa neste projeto');
+    $('fig-pins').innerHTML = o;
+  }
+
+  // ---- protoboard por dentro ----------------------------------------------------------------------------------------------------------------------
+  function bb() {
+    let o = '';
+    const x0 = 80, p = 40, cols = 16, y = r => r;
+    o += `<rect x="40" y="20" width="${x0 + cols * p - 20}" height="290" rx="10" fill="var(--surface)" stroke="var(--line)"/>`;
+    // trilhos
+    const rail = (yy, col, name) => `<rect x="${x0 - 20}" y="${yy - 10}" width="${cols * p - 10}" height="20" rx="4" fill="${col}" opacity=".28"/><text class="t-title" x="${x0 - 36}" y="${yy + 4}" text-anchor="end" style="fill:${col}">${name}</text>` + Array.from({ length: cols }, (_, i) => `<circle cx="${x0 + i * p}" cy="${yy}" r="4" fill="var(--body)"/>`).join('');
+    o += rail(48, 'var(--w-pwr)', '3V3') + rail(78, 'var(--w-gnd)', 'GND');
+    // metades
+    const rowsTop = [124, 148, 172, 196, 220], rowsBot = [262, 286];
+    const rowsLow = [262, 286];
+    const topRows = [112, 136, 160, 184, 208], botRows = [250, 274, 298, 322];
+    for (let c = 0; c < cols; c++) {
+      const x = x0 + c * p;
+      if (c < 15) o += `<rect x="${x - 7}" y="${topRows[0] - 8}" width="14" height="${topRows[4] - topRows[0] + 16}" rx="5" fill="var(--accent)" opacity="${c === 5 ? .7 : .3}"/>`;
+    }
+    for (let c = 0; c < cols; c++) topRows.forEach(yy => { o += `<circle cx="${x0 + c * p}" cy="${yy}" r="4" fill="var(--body)"/>`; });
+    // canal
+    o += `<rect x="${x0 - 20}" y="224" width="${cols * p - 10}" height="14" fill="var(--bg)"/><text class="t-dim" x="${x0 + 8 * p}" y="235" text-anchor="middle">canal do meio: as duas metades não se tocam</text>`;
+    // segunda metade
+    const bot = [252, 276, 300];
+    for (let c = 0; c < cols; c++) { const x = x0 + c * p; o += `<rect x="${x - 7}" y="244" width="14" height="${300 - 244 + 8 + 0}" rx="5" fill="var(--accent)" opacity=".3"/>`; }
+    for (let c = 0; c < cols; c++) bot.forEach(yy => { o += `<circle cx="${x0 + c * p}" cy="${yy}" r="4" fill="var(--body)"/>`; });
+    // componente e jumper na coluna 5 (ligados)
+    const cx = x0 + 5 * p;
+    o += `<rect x="${cx - 6}" y="${topRows[0] - 6}" width="12" height="12" fill="var(--gold)"/><line x1="${cx}" y1="${topRows[3]}" x2="${x0 + 12 * p}" y2="${topRows[3]}" stroke="var(--w-i2s)" stroke-width="3"/><circle cx="${cx}" cy="${topRows[3]}" r="5" fill="var(--w-i2s)"/><circle cx="${x0 + 12 * p}" cy="${topRows[3]}" r="5" fill="var(--w-i2s)"/>`;
+    o += `<text class="t-title t-good" x="${cx + 12}" y="98">o pino e o jumper estão ligados: mesma coluna de 5 furos</text>`;
+    document.getElementById('fig-bb').innerHTML = o;
+  }
+
+  // ---- multimetro --------------------------------------------------------------------------------------------------------------------------------------------
+  function mm() {
+    let o = '';
+    const OY = 30;
+    const meter = (x, mode) => {
+      let m = `<rect x="${x}" y="${OY}" width="150" height="230" rx="16" fill="var(--body)" stroke="var(--body-edge)" stroke-width="2"/>`;
+      m += `<rect x="${x + 16}" y="${OY + 16}" width="118" height="56" rx="6" fill="#b8c9a6"/><text x="${x + 125}" y="${OY + 58}" text-anchor="end" style="fill:#1d2024;font-size:28px;font-weight:600">${mode === 'v' ? '3.30' : '0.00'}</text>`;
+      m += `<circle cx="${x + 75}" cy="${OY + 142}" r="44" fill="var(--metal)" stroke="var(--body-edge)" stroke-width="2"/>`;
+      const r = (mode === 'v' ? -60 : 40) * Math.PI / 180;
+      m += `<line x1="${x + 75}" y1="${OY + 142}" x2="${f(x + 75 + Math.sin(r) * 34)}" y2="${f(OY + 142 - Math.cos(r) * 34)}" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/>`;
+      m += `<text class="t-w" x="${x + 6}" y="${OY + 108}" style="font-size:10px">V⎓</text><text class="t-w" x="${x + 108}" y="${OY + 120}" style="font-size:10px">•))</text>`;
+      m += `<circle cx="${x + 40}" cy="${OY + 216}" r="6" fill="#0b0c0e"/><circle cx="${x + 110}" cy="${OY + 216}" r="6" fill="var(--bad)"/>`;
+      return m;
+    };
+    o += `<text class="t-title" x="30" y="18">Medir tensão (modo V⎓)</text>` + meter(30, 'v');
+    o += `<path d="M70 252 C70 330 200 330 290 316" fill="none" stroke="var(--fg)" stroke-width="3"/><path d="M140 252 C150 300 230 282 290 282" fill="none" stroke="var(--bad)" stroke-width="3"/>`;
+    o += `<rect x="290" y="268" width="86" height="28" rx="5" fill="var(--gold)"/><text class="t-title" x="333" y="287" text-anchor="middle" style="fill:#1d2024">3V3</text>`;
+    o += `<rect x="290" y="302" width="86" height="28" rx="5" fill="var(--gold)"/><text class="t-title" x="333" y="321" text-anchor="middle" style="fill:#1d2024">GND</text>`;
+    o += `<text class="t-dim" x="206" y="150">ponta vermelha no 3V3</text><text class="t-dim" x="206" y="166">ponta preta no GND</text><text class="t-dim" x="206" y="190">esperado: perto de 3,3</text>`;
+    o += `<text class="t-title" x="480" y="18">Continuidade (modo •)) apita)</text>` + meter(480, 'c');
+    o += `<text class="t-dim" x="650" y="150">USB desligado</text><text class="t-dim" x="650" y="166">uma ponta em cada ponto</text><text class="t-bad" x="650" y="196">apitou entre 3V3 e GND:</text><text class="t-bad" x="650" y="212">há curto, não ligue!</text><text class="t-good" x="650" y="240">silêncio: está certo</text>`;
+    $('fig-mm').innerHTML = o;
+  }
+
+  power(); cap(); capBody(); capPlace(); pull(); btn(); pins(); bb(); mm();
+})();
+</script>
+</body>
+</html>
