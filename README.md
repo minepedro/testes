@@ -9,6 +9,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `docs/decisoes.md` — decisões tomadas (uma por pergunta do grill-me)
 - `docs/compras-online.md` — lista de compras com links (Mercado Livre)
 - `docs/montagem.md` — mapa de pinos e guia de montagem em etapas, com um teste por etapa
+- `hardware/manual-montagem.html` — manual interativo da protoboard (Parte 1): passos curtos, peças ligáveis/desligáveis, multímetro virtual, 3 vistas (física, blocos, símbolos)
 - `hardware/esquema-ligacoes.html` — esquema visual das ligações (abra no navegador)
 - `hardware/entendendo-os-componentes.html` — o que é cada peça da lista, com desenhos (capacitor, resistor, botão, protoboard, multímetro)
 - `hardware/caixa-desenho.html` — desenhos e recomendações da caixa impressa (vistas, corte, layout interno, impressão)
