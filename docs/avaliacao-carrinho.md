@@ -11,13 +11,13 @@ Já tem: ferro de solda e estanho.
 |---|---|
 | Ferro de solda Exbom 60W | Você já tem. Se o seu for sem ajuste de temperatura, 60W ajustável ainda é bom, mas não é necessário. |
 | Estanho 63/37 0,5 mm | Você já tem. Confira só se é com fluxo e fino (0,5 a 0,8 mm). |
-| Amplificador MAX98357A (2) | Decisão 16: respostas só por texto, sem voz na v1. |
-| Mini alto-falante 3W (2) | Mesmo motivo. |
-| Capacitor 470 µF 10V | Só serve ao amplificador. |
 | Luminária com lupa e ring light | Repete a lupa com garras (terceira mão). Fique com uma. |
 | Analisador lógico 8 canais | Não é necessário agora. Só vale se o SPI ou o I2S falharem de um jeito que o multímetro não explica. Dá para comprar depois. |
 | Kit estilete de precisão 13 peças | Sobrepõe o kit de limas e o de chaves. Opcional. |
 | Tapete antiestático | Conforto, não necessidade. Opcional. |
+
+## Manter (correção)
+Amplificador MAX98357A, alto-falante 3W e capacitor 470 µF **ficam**. O Pedro não quer voz falada, mas quer som opcional (decisão 18). O capacitor vai no amplificador.
 
 ## Conferir antes de pagar
 1. **Kit 120 jumpers:** a montagem precisa de **13 macho-fêmea** (tela) e **8 macho-macho**. Muito kit de 120 traz só macho-macho. Se o anúncio não listar as três pontas, pergunte ou troque.

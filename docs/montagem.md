@@ -60,7 +60,7 @@ Se a sua tela vier com touch **resistivo** (XPT2046), ele usa o mesmo SPI da tel
 | WS | GPIO 16 | |
 | SD | GPIO 17 | Dados do microfone para o ESP32 |
 
-### Opcional (só se for ter voz numa versão futura): MAX98357A
+### Opcional (som: bipes e alertas, sem voz): MAX98357A
 
 | Pino do amplificador | ESP32-S3 | Observação |
 |---|---|---|
@@ -169,9 +169,9 @@ Com tela, touch e microfone testados separadamente, o próximo passo é gravar o
 mascote de verdade (LVGL, com o sprite 18×5 do protótipo) e ligar o touch ao
 push-to-talk. Essa parte eu escrevo junto com você quando você chegar aqui.
 
-## Etapa opcional: voz de saída
+## Etapa opcional: som
 
-Fora da v1 (decisão 16). Se decidir ter voz depois, monte o MAX98357A com o
+Sem voz falada (decisão 16), mas com som se você quiser (decisão 18). Monte o MAX98357A com o
 alto-falante e o capacitor, conforme a tabela opcional acima.
 
 ## Programas de teste

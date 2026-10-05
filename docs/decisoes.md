@@ -63,3 +63,7 @@ Impacto: o alto-falante e o amplificador MAX98357A deixam de ser necessários na
 **Opção A: cunha de duas peças** (moldura frontal inclinada 15° + tampa traseira, quatro pés laranja). Comparada com moldura com pé (B) e tela num pescoço (C); o pescoço com base fica como ideia para uma v2 com bateria.
 A modelagem fica para depois, quando as peças chegarem e as medidas forem confirmadas com o paquímetro. Os desenhos e as medidas de projeto estão em `hardware/caixa-desenho.html`. Para a caixa, a placa universal passa a ser de **6 × 8 cm** (a de 9 × 15 cm era grande demais).
 
+## 18. Som (sem voz)
+**Sem voz falada, mas com som opcional.** O mascote faz sons curtos (bipes e melodias, como aviso de que uma sessão pede aprovação), gerados pelo próprio firmware. O MAX98357A e o alto-falante entram na montagem como **extra opcional**, não como peça de v2. Dá para montar com som mudo e ligar depois. Os pinos já estavam reservados (DIN no GPIO 18, BCLK e WS compartilhados com o microfone).
+Compra: ficam o amplificador (2), o alto-falante (2) e o capacitor 470 µF no carrinho. Isso corrige a avaliação do carrinho que sugeria tirar esses itens.
+Risco: compartilhar BCLK e WS entre microfone e amplificador (mesma porta I2S, entrada e saída) ainda não foi testado na placa.

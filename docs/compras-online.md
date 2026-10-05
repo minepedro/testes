@@ -13,7 +13,7 @@ Filtre por **Full** ou entrega no dia seguinte e confira a data para o seu CEP.
 - [ ] [Barra de pinos macho](https://lista.mercadolivre.com.br/barra-de-pinos-macho) (para a tela, se vier sem pinos soldados)
 - [ ] [Inserto de latão M3](https://lista.mercadolivre.com.br/inserto-latao-m3)
 
-## Opcional: só se for ter voz de saída (decisão 16: fora da v1)
+## Opcional: som (bipes e alertas, sem voz; decisão 18)
 - [ ] [Amplificador MAX98357A](https://lista.mercadolivre.com.br/max98357a) (qtd 2)
 - [ ] [Alto-falante 4 ohm 3 W 40 mm](https://lista.mercadolivre.com.br/alto-falante-4-ohm-3w-40mm) (qtd 2)
 - [ ] [Capacitor 470 uF 10 V](https://lista.mercadolivre.com.br/capacitor-eletrolitico-470uf-10v)
