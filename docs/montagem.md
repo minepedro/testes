@@ -169,6 +169,11 @@ Com tela, touch e microfone testados separadamente, o próximo passo é gravar o
 mascote de verdade (LVGL, com o sprite 18×5 do protótipo) e ligar o touch ao
 push-to-talk. Essa parte eu escrevo junto com você quando você chegar aqui.
 
+## Etapa opcional: botão físico
+
+Um botão tátil entre o **GPIO 21** e o **GND** (resistor pull-up interno do ESP32; sem apertar lê 1, apertado lê 0).
+Teste: `firmware/testes/extra_botao`. Está na Parte 2 do manual interativo (`hardware/manual-placa-ilhada.html`).
+
 ## Etapa opcional: som
 
 Sem voz falada (decisão 16), mas com som se você quiser (decisão 18). Monte o MAX98357A com o
@@ -184,6 +189,8 @@ Ficam em `firmware/testes/`, um por etapa:
 | 2 e 3 | `etapa2_3_tela_touch` | Pinta a tela; com `USAR_TOUCH 1`, desenha um ponto a cada toque |
 | 3 | `etapa3_i2c_scan` | Procura o chip do touch no I2C |
 | 4 | `etapa4_microfone` | Mostra o volume do microfone no Serial |
+| extra | `extra_botao` | Mostra no Serial quando o botão é apertado e solto (GPIO 21) |
+| extra | `extra_som` | Toca três sons de teste no alto-falante pelo MAX98357A (BCLK 15, LRC 16, DIN 18) |
 
 Os quatro **compilam** para o ESP32-S3 N16R8 (arduino-cli, pacote esp32 3.3.12,
 LovyanGFX 1.2.32), inclusive a variante com touch ligado. **Não foram testados na

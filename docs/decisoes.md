@@ -67,3 +67,6 @@ A modelagem fica para depois, quando as peças chegarem e as medidas forem confi
 **Sem voz falada, mas com som opcional.** O mascote faz sons curtos (bipes e melodias, como aviso de que uma sessão pede aprovação), gerados pelo próprio firmware. O MAX98357A e o alto-falante entram na montagem como **extra opcional**, não como peça de v2. Dá para montar com som mudo e ligar depois. Os pinos já estavam reservados (DIN no GPIO 18, BCLK e WS compartilhados com o microfone).
 Compra: ficam o amplificador (2), o alto-falante (2) e o capacitor 470 µF no carrinho. Isso corrige a avaliação do carrinho que sugeria tirar esses itens.
 Risco: compartilhar BCLK e WS entre microfone e amplificador (mesma porta I2S, entrada e saída) ainda não foi testado na placa.
+
+## 19. Botão físico opcional
+**GPIO 21 para o GND**, com o pull-up interno do ESP32 (extra A da Parte 2). Serve de apertar-para-falar ou mudo, sem depender da tela. O GPIO 21 fica no lado J3 da placa, longe dos pinos reservados (USB 19/20, flash/PSRAM 26–37).

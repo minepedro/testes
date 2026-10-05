@@ -57,6 +57,7 @@ code { font: 13px var(--font-mono); background: var(--surface2); padding: 1px 5p
 .tab { appearance: none; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font: 500 13px/1 var(--font-body); }
 .tab[aria-pressed="true"], .tab[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .tab:disabled { opacity: .5; cursor: not-allowed; }
+a.tab { text-decoration: none; color: inherit; display: inline-block; }
 .tab:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--good); width: 0; transition: width .2s; }
@@ -189,7 +190,7 @@ label.fld { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
     </div>
     <div class="parts-tabs" role="group" aria-label="Partes do manual">
       <button class="tab" type="button" aria-pressed="true">Parte 1 · Protoboard</button>
-      <button class="tab" type="button" disabled title="Vem depois que você revisar a Parte 1">Parte 2 · Placa ilhada (em breve)</button>
+      <a class="tab" href="manual-placa-ilhada.html">Parte 2 · Placa ilhada</a>
     </div>
   </header>
   <div class="bar" aria-hidden="true"><i id="progress"></i></div>
