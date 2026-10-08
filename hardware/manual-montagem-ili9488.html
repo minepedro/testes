@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual Tela ILI9488</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: tres colunas no computador (passos | desenho e passo atual | pecas e multimetro).
+   O desenho e o texto nascem do mesmo modelo de pecas e fios, entao ligar ou desligar
+   uma peca muda o desenho, a lista de redes e o que o multimetro virtual mede.
+   Variante da tela ILI9488 com touch resistivo XPT2046 (o touch usa um SPI separado).
+   Cores dos fios: laranja SPI da tela, azul SPI do touch, verde I2S, vermelho 3V3, cinza GND. */
+:root {
+  --bg: #e9ebee; --surface: #f6f7f9; --surface2: #eceef1; --fg: #1d2024; --muted: #5f6670; --line: #cfd3d9;
+  --accent: #d97757; --accent-fg: #ffffff; --good: #23864f; --bad: #c93030; --warn: #b9770e;
+  --w-spi: #c4561f; --w-i2c: #2a63c4; --w-i2s: #23864f; --w-pwr: #c93030; --w-gnd: #4b525b;
+  --bb: #eef0f2; --bb-edge: #b9bec6; --hole: #a3aab4; --gap: #dfe2e6;
+  --pcb: #1d2b2a; --pcb-edge: #0f1818; --pcb-fg: #e8efe9; --pcb-dim: #7f918c; --chip: #aeb4ba; --gold: #d6b25e;
+  --lcd: #b8c9a6;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1d2024; --surface2: #23272c; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+    --accent: #e08562; --accent-fg: #1a0e08; --good: #5cc58a; --bad: #f26b6b; --warn: #e0a64a;
+    --w-spi: #ef8a5a; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-pwr: #f26b6b; --w-gnd: #aab1ba;
+    --bb: #2a2e33; --bb-edge: #3a4047; --hole: #5b636c; --gap: #22262a;
+    --pcb: #16211f; --pcb-edge: #050a0a; --chip: #8d949b; --lcd: #9fb08d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1d2024; --surface2: #23272c; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+  --accent: #e08562; --accent-fg: #1a0e08; --good: #5cc58a; --bad: #f26b6b; --warn: #e0a64a;
+  --w-spi: #ef8a5a; --w-i2c: #6fa3f2; --w-i2s: #5cc58a; --w-pwr: #f26b6b; --w-gnd: #aab1ba;
+  --bb: #2a2e33; --bb-edge: #3a4047; --hole: #5b636c; --gap: #22262a;
+  --pcb: #16211f; --pcb-edge: #050a0a; --chip: #8d949b; --lcd: #9fb08d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+button { font: inherit; color: inherit; }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+header.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: end; justify-content: space-between; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 6px 0 0; font: 700 26px/1.1 var(--font-display); }
+h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; }
+h3 { margin: 0; font: 500 11px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+b { font-weight: 600; }
+code { font: 13px var(--font-mono); background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
+.parts-tabs { display: flex; gap: 8px; }
+.tab { appearance: none; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font: 500 13px/1 var(--font-body); }
+.tab[aria-pressed="true"], .tab[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tab:disabled { opacity: .5; cursor: not-allowed; }
+a.tab { text-decoration: none; color: inherit; display: inline-block; }
+.tab:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--good); width: 0; transition: width .2s; }
+
+.app { display: grid; grid-template-columns: 250px minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.col-l, .col-r { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow: auto; }
+
+/* lista de passos */
+.stage-name { font: 500 11px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 0 4px; }
+.step-btn { appearance: none; width: 100%; text-align: left; cursor: pointer; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: start; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 8px; font-size: 13px; line-height: 1.35; }
+.step-btn:hover { background: var(--surface2); }
+.step-btn[aria-current="step"] { background: var(--surface2); border-color: var(--fg); }
+.step-btn .n { font: 500 11px/1.6 var(--font-mono); color: var(--muted); }
+.step-btn.done .n::after { content: " ✓"; color: var(--good); }
+.step-btn.done .t { color: var(--muted); }
+
+/* desenho */
+.viewbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.segs { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.segs button { appearance: none; border: 0; background: transparent; padding: 8px 12px; cursor: pointer; font: 500 13px/1 var(--font-body); }
+.segs button + button { border-left: 1px solid var(--line); }
+.segs button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.canvas { overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.canvas svg { display: block; height: auto; }
+.canvas svg.fit { max-width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.legend .gh { background: none; border-top: 2px dashed var(--muted); height: 0; }
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .t-dim { fill: var(--muted); }
+svg .t-title { font-family: var(--font-body); font-size: 12px; font-weight: 600; }
+svg .t-pcb { fill: var(--pcb-fg); }
+svg .t-pcbdim { fill: var(--pcb-dim); }
+svg .t-bad { fill: var(--bad); font-weight: 500; }
+svg .t-good { fill: var(--good); font-weight: 500; }
+svg .t-w { fill: #fff; }
+.pt { cursor: pointer; }
+.pt:hover .ring, .pt:focus-visible .ring { stroke: var(--accent); stroke-width: 2; }
+.pt:focus-visible { outline: none; }
+.ring { fill: transparent; stroke: transparent; }
+.wire.future { opacity: .17; }
+.wire.off { opacity: .85; }
+.cur-halo { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .cur-halo { animation: none; } }
+
+/* painel do passo */
+.step-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.badge { font: 500 11px/1 var(--font-mono); letter-spacing: .04em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface2); color: var(--muted); }
+.badge.optional { color: var(--warn); border-color: var(--warn); }
+.sec { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.sec > p, .sec > ul { max-width: 78ch; }
+.sec ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.gl { appearance: none; background: none; border: 0; padding: 0; cursor: help; color: inherit; border-bottom: 1px dotted var(--accent); font: inherit; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.btn { appearance: none; cursor: pointer; background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; font: 500 14px/1 var(--font-body); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { appearance: none; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; font: 500 14px/1 var(--font-body); }
+.opt.right { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+.opt.wrong { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+.note { border-left: 3px solid var(--accent); background: var(--surface2); padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: 14px; max-width: 78ch; }
+.note.good { border-color: var(--good); }
+.note.bad { border-color: var(--bad); }
+.codewrap { min-width: 0; }
+.codewrap .cap { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 500 12px/1 var(--font-mono); color: #8d96a1; background: #0d0f11; padding: 8px 10px; border-radius: 8px 8px 0 0; }
+.codewrap .cap button { background: transparent; color: #e3e6ea; border: 1px solid #3a4047; border-radius: 6px; padding: 5px 10px; cursor: pointer; font: 500 12px/1 var(--font-body); }
+pre.code { margin: 0; background: #0d0f11; color: #e3e6ea; padding: 12px 14px; border-radius: 0 0 8px 8px; overflow: auto; max-height: 360px; font: 12.5px/1.55 var(--font-mono); tab-size: 2; }
+pre.code code, pre.mini code { background: transparent; padding: 0; font: inherit; color: inherit; }
+pre.mini { margin: 0; background: #0d0f11; color: #e3e6ea; padding: 8px 12px; border-radius: 6px; overflow: auto; font: 12.5px/1.5 var(--font-mono); }
+.block { display: grid; gap: 6px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font: 500 11px/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); }
+td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+details > summary { cursor: pointer; font-weight: 600; }
+textarea, select, input[type=text] { width: 100%; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: 13px var(--font-body); }
+label.fld { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+
+/* pecas */
+.parts-grp { display: grid; gap: 4px; }
+.part { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: center; padding: 6px 4px; border-radius: 6px; font-size: 13px; line-height: 1.3; }
+.part.cur { background: var(--surface2); }
+.sw { appearance: none; position: relative; width: 38px; height: 22px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface2); cursor: pointer; padding: 0; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: left .15s; }
+.sw[aria-checked="true"] { background: var(--good); border-color: var(--good); }
+.sw[aria-checked="true"]::after { left: 18px; background: #fff; }
+.part small { display: block; color: var(--muted); font-size: 11px; }
+.part .off { color: var(--bad); }
+
+/* multimetro */
+.mm { display: grid; gap: 10px; }
+.mm-body { background: #2d3036; border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
+.mm-lcd { background: var(--lcd); color: #1d2024; border-radius: 6px; padding: 8px 12px; text-align: right; font: 600 30px/1.1 var(--font-mono); min-height: 56px; display: flex; justify-content: space-between; align-items: center; }
+.mm-lcd small { font: 500 11px/1.2 var(--font-mono); text-align: left; }
+.mm .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mm .seg2 { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #4a4f58; }
+.mm .seg2 button { flex: 1; background: transparent; color: #e3e6ea; border: 0; padding: 8px 6px; cursor: pointer; font: 500 12px/1.2 var(--font-body); }
+.mm .seg2 button + button { border-left: 1px solid #4a4f58; }
+.mm .seg2 button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.probe-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.beep { font: 700 12px/1 var(--font-mono); padding: 3px 7px; border-radius: 4px; background: #0b0c0e; color: #666; }
+.beep.on { background: var(--good); color: #fff; }
+.mm-explain { font-size: 13px; color: var(--fg); }
+.warn { color: var(--bad); font-size: 13px; }
+
+/* glossario */
+.gl-pop { position: fixed; z-index: 50; max-width: 320px; background: var(--fg); color: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.gl-pop b { display: block; margin-bottom: 2px; }
+.hint { font: 500 12px/1.4 var(--font-mono); color: var(--muted); }
+
+@media (max-width: 1180px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .col-l, .col-r { position: static; max-height: none; }
+}
+@media (max-width: 560px) { h1 { font-size: 20px; } }
+@media (max-width: 1180px) { #steps { max-height: 260px; overflow: auto; } }
+.extrasw { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: center; }
+.extrasw small { display: block; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">manual interativo · parte 1 · protoboard · tela de teste ILI9488</div>
+      <h1>Manual de Montagem do Mascote · ILI9488</h1>
+    </div>
+    <div class="parts-tabs" role="group" aria-label="Partes do manual">
+      <button class="tab" type="button" aria-pressed="true">Parte 1 · Protoboard</button>
+      <a class="tab" href="manual-placa-ilhada.html">Parte 2 · Placa ilhada (ST7796)</a>
+      <a class="tab" href="manual-montagem.html">Versão ST7796 (capacitiva)</a>
+    </div>
+  </header>
+  <div class="bar" aria-hidden="true"><i id="progress"></i></div>
+
+  <div class="app">
+    <aside class="col col-l" aria-label="Passos">
+      <div class="card"><h3>Passos</h3><div id="steps"></div>
+        <button class="btn" type="button" id="resetAll">Recomeçar do zero</button>
+      </div>
+    </aside>
+
+    <main class="col" id="main">
+      <div class="card">
+        <div class="viewbar">
+          <div class="segs" id="views" role="group" aria-label="Vista do circuito">
+            <button type="button" data-view="phys" aria-pressed="true">Física (protoboard)</button>
+            <button type="button" data-view="blocks" aria-pressed="false">Blocos</button>
+            <button type="button" data-view="sym" aria-pressed="false">Símbolos</button>
+          </div>
+          <div class="segs" id="zoom" role="group" aria-label="Zoom">
+            <button type="button" data-z="1" aria-pressed="true">100%</button>
+            <button type="button" data-z="1.4" aria-pressed="false">140%</button>
+            <button type="button" data-z="1.8" aria-pressed="false">180%</button>
+          </div>
+        </div>
+        <div class="canvas" id="canvas"></div>
+        <div class="legend" id="legend"></div>
+        <p class="hint" id="viewhint"></p>
+      </div>
+      <div class="card" id="stepcard"></div>
+    </main>
+
+    <aside class="col col-r" aria-label="Peças e multímetro">
+      <div class="card"><h3>Peças e fios</h3>
+        <p class="hint">Cada interruptor liga ou desliga a peça no desenho e no multímetro. Desligue uma para ver o que deixa de funcionar.</p>
+        <div id="parts"></div>
+        <div id="conseq"></div>
+        <button class="btn" type="button" id="resetOv">Voltar ao passo atual</button>
+      </div>
+      <div class="card mm" id="mm"></div>
+    </aside>
+  </div>
+</div>
+
+<script type="text/plain" id="code-etapa1">// Etapa 1: confirma que a placa é N16R8 (PSRAM de 8 MB e flash de 16 MB).
+// Abra o Monitor Serial em 115200.
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+  Serial.println();
+  Serial.printf("Chip:  %s, %d MHz\n", ESP.getChipModel(), ESP.getCpuFreqMHz());
+  Serial.printf("PSRAM: %u bytes (esperado: perto de 8388608)\n", ESP.getPsramSize());
+  Serial.printf("Flash: %u bytes (esperado: perto de 16777216)\n", ESP.getFlashChipSize());
+}
+
+void loop() {}
+</script>
+<script type="text/plain" id="code-etapa2_3_tela_touch_ili9488">// Etapas 2 e 3 (tela de teste): ILI9488 (SPI) e touch resistivo XPT2046 (SPI separado).
+// Etapa 2: deixe USAR_TOUCH em 0 e veja as cores na tela.
+// Etapa 3: troque USAR_TOUCH para 1; cada toque desenha um ponto e imprime x e y (cru e na tela).
+// Biblioteca: LovyanGFX (Gerenciador de Bibliotecas).
+// O touch usa um segundo barramento SPI (SPI3) com fios próprios. Assim ele não divide
+// o MISO com a tela: o ILI9488 não solta o fio SDO e atrapalharia a leitura do touch.
+
+#define USAR_TOUCH 0
+
+#define LGFX_USE_V1
+#include <LovyanGFX.hpp>
+
+// Pinos da tela (docs/montagem.md, variante ILI9488): os mesmos da ST7796
+constexpr int PIN_SCK = 12, PIN_MOSI = 11, PIN_MISO = 13, PIN_DC = 14;
+constexpr int PIN_CS = 10, PIN_RST = 6, PIN_BL = 7;
+// Pinos do touch XPT2046: os GPIO que o touch capacitivo usaria (4, 5, 8, 9)
+constexpr int PIN_T_CLK = 9, PIN_T_CS = 5, PIN_T_DIN = 8, PIN_T_DO = 4;
+constexpr int PIN_T_IRQ = -1;  // T_IRQ fica sem ligar; a biblioteca pergunta ao chip se há toque
+
+class LGFX : public lgfx::LGFX_Device {
+  lgfx::Panel_ILI9488 _panel;
+  lgfx::Bus_SPI _bus;
+  lgfx::Light_PWM _light;
+  lgfx::Touch_XPT2046 _touch;
+
+public:
+  LGFX() {
+    {
+      auto cfg = _bus.config();
+      cfg.spi_host = SPI2_HOST;
+      cfg.spi_mode = 0;
+      cfg.freq_write = 27000000;  // o ILI9488 é mais lento; se aparecer ruído, baixe para 20000000
+      cfg.freq_read = 16000000;
+      cfg.pin_sclk = PIN_SCK;
+      cfg.pin_mosi = PIN_MOSI;
+      cfg.pin_miso = PIN_MISO;
+      cfg.pin_dc = PIN_DC;
+      _bus.config(cfg);
+      _panel.setBus(&_bus);
+    }
+    {
+      auto cfg = _panel.config();
+      cfg.pin_cs = PIN_CS;
+      cfg.pin_rst = PIN_RST;
+      cfg.pin_busy = -1;
+      cfg.panel_width = 320;   // a tela é 320x480 "em pé"; setRotation(1) deixa 480x320
+      cfg.panel_height = 480;
+      cfg.offset_x = 0;
+      cfg.offset_y = 0;
+      cfg.offset_rotation = 0;
+      cfg.readable = false;
+      cfg.invert = false;      // se as cores saírem invertidas (preto vira branco), troque para true
+      cfg.rgb_order = false;   // se vermelho e azul saírem trocados, troque para true
+      cfg.dlen_16bit = false;
+      cfg.bus_shared = false;
+      _panel.config(cfg);
+    }
+    {
+      auto cfg = _light.config();
+      cfg.pin_bl = PIN_BL;
+      cfg.invert = false;
+      cfg.freq = 44100;
+      cfg.pwm_channel = 7;
+      _light.config(cfg);
+      _panel.setLight(&_light);
+    }
+#if USAR_TOUCH
+    {
+      auto cfg = _touch.config();
+      // valores crus típicos do XPT2046; refine com o que o Serial mostrar nos cantos
+      cfg.x_min = 300;
+      cfg.x_max = 3900;
+      cfg.y_min = 200;
+      cfg.y_max = 3900;
+      cfg.pin_int = PIN_T_IRQ;
+      cfg.bus_shared = false;
+      cfg.offset_rotation = 0;  // se o ponto sair espelhado ou de lado, tente 1 a 7
+      cfg.spi_host = SPI3_HOST;
+      cfg.freq = 1000000;
+      cfg.pin_sclk = PIN_T_CLK;
+      cfg.pin_mosi = PIN_T_DIN;
+      cfg.pin_miso = PIN_T_DO;
+      cfg.pin_cs = PIN_T_CS;
+      _touch.config(cfg);
+      _panel.setTouch(&_touch);
+    }
+#endif
+    setPanel(&_panel);
+  }
+};
+
+LGFX tft;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  tft.init();
+  tft.setRotation(1);       // paisagem, 480x320
+  tft.setBrightness(200);
+
+  // 1) as três cores, nesta ordem: vermelho, verde, azul
+  const uint32_t cores[] = {TFT_RED, TFT_GREEN, TFT_BLUE};
+  for (uint32_t c : cores) {
+    tft.fillScreen(c);
+    delay(800);
+  }
+
+  // 2) moldura e texto
+  tft.fillScreen(TFT_BLACK);
+  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_WHITE);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextSize(3);
+  tft.setCursor(24, 24);
+  tft.print("Mascote Claude");
+  tft.setTextSize(2);
+  tft.setCursor(24, 80);
+  tft.printf("Tela %dx%d ok", tft.width(), tft.height());
+#if USAR_TOUCH
+  tft.setCursor(24, 112);
+  tft.print("Aperte a tela (touch resistivo)");
+#endif
+}
+
+void loop() {
+#if USAR_TOUCH
+  int32_t x, y;
+  if (tft.getTouch(&x, &y)) {
+    tft.fillCircle(x, y, 6, TFT_YELLOW);
+    lgfx::touch_point_t cru;
+    tft.getTouchRaw(&cru, 1);
+    Serial.printf("toque: x=%d y=%d  (cru: %d, %d)\n", (int)x, (int)y, cru.x, cru.y);
+    delay(20);
+  }
+#endif
+}
+</script>
+<script type="text/plain" id="code-etapa4_microfone">// Etapa 4: lê o microfone INMP441 pelo I2S e mostra o volume no Serial.
+// Precisa do núcleo esp32 (Espressif) versão 3.0 ou mais nova.
+// Esperado: o número e a barra sobem quando você bate palma perto.
+
+#include <ESP_I2S.h>
+
+constexpr int PIN_BCLK = 15, PIN_WS = 16, PIN_MIC_DATA = 17;
+
+I2SClass i2s;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+
+  i2s.setPins(PIN_BCLK, PIN_WS, -1, PIN_MIC_DATA);  // sem saída de áudio (-1)
+  // o INMP441 manda 24 bits dentro de uma palavra de 32; L/R no GND = canal esquerdo
+  if (!i2s.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT)) {
+    Serial.println("Falha ao iniciar o I2S. Confira os fios SCK, WS e SD.");
+    while (true) delay(1000);
+  }
+  Serial.println("Microfone pronto. Bata palma perto dele.");
+}
+
+void loop() {
+  int32_t amostras[256];
+  size_t n = i2s.readBytes((char *)amostras, sizeof(amostras)) / sizeof(int32_t);
+  if (n == 0) return;
+
+  // volume = desvio médio em relação à média (tira o nível contínuo do microfone)
+  int64_t soma = 0;
+  for (size_t i = 0; i < n; i++) soma += amostras[i] >> 14;
+  int32_t media = soma / (int64_t)n;
+  int64_t desvio = 0;
+  for (size_t i = 0; i < n; i++) desvio += abs((amostras[i] >> 14) - media);
+  int32_t volume = desvio / (int64_t)n;
+
+  int barra = constrain(volume / 100, 0, 60);
+  Serial.printf("%6d ", (int)volume);
+  for (int i = 0; i < barra; i++) Serial.print('#');
+  Serial.println();
+}
+</script>
+
+
+<script type="text/plain" id="code-extra_botao">// Extra: botão tátil entre o GPIO 21 e o GND.
+// Sem apertar, o pino lê 1 (o resistor interno puxa para 3V3). Apertando, lê 0.
+// Abra o Monitor Serial em 115200.
+
+constexpr int PIN_BOTAO = 21;
+
+bool anterior = true;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+  pinMode(PIN_BOTAO, INPUT_PULLUP);  // pull-up interno: sem botão apertado o pino fica em 1
+  Serial.println("Botão pronto. Aperte e solte o botão.");
+}
+
+void loop() {
+  bool agora = digitalRead(PIN_BOTAO);  // 1 = solto, 0 = apertado
+  if (agora != anterior) {
+    Serial.println(agora ? "solto  (leitura 1)" : "APERTADO (leitura 0)");
+    anterior = agora;
+    delay(20);  // espera o ruído do contato passar (debounce)
+  }
+}
+</script>
+<script type="text/plain" id="code-extra_som">// Extra: toca bipes no alto-falante pelo amplificador MAX98357A (I2S).
+// Precisa do núcleo esp32 (Espressif) versão 3.0 ou mais nova.
+// O som é gerado aqui mesmo, sem arquivos: uma onda senoidal na frequência pedida.
+// Se o microfone estiver montado, ele divide os fios BCLK e WS: use este programa
+// com o microfone desligado do I2S (o teste do microfone fica para depois).
+
+#include <ESP_I2S.h>
+#include <math.h>
+
+constexpr int PIN_BCLK = 15, PIN_WS = 16, PIN_DIN = 18;
+constexpr int TAXA = 16000;      // amostras por segundo
+constexpr float VOLUME = 0.25f;  // 0 a 1. Comece baixo: o alto-falante é pequeno
+
+I2SClass i2s;
+
+// toca um tom de 'hz' durante 'ms' milissegundos (hz = 0 faz silêncio)
+void tom(float hz, int ms) {
+  int total = TAXA * ms / 1000;
+  for (int n = 0; n < total; n++) {
+    float fade = 1.0f;                        // sobe e desce suave, para não estalar
+    if (n < 160) fade = n / 160.0f;
+    if (total - n < 160) fade = (total - n) / 160.0f;
+    int16_t s = hz > 0 ? (int16_t)(sinf(2.0f * PI * hz * n / TAXA) * 32000.0f * VOLUME * fade) : 0;
+    int16_t par[2] = {s, s};                  // esquerdo e direito iguais
+    i2s.write((uint8_t *)par, sizeof(par));
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+  i2s.setPins(PIN_BCLK, PIN_WS, PIN_DIN, -1);  // só saída (-1 = sem entrada)
+  if (!i2s.begin(I2S_MODE_STD, TAXA, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO)) {
+    Serial.println("Falha ao iniciar o I2S. Confira BCLK (15), LRC (16) e DIN (18).");
+    while (true) delay(1000);
+  }
+  Serial.println("Som pronto.");
+}
+
+void loop() {
+  Serial.println("bipe de toque");    tom(1200, 60);  tom(0, 600);
+  Serial.println("aviso de aprovação"); tom(880, 120); tom(0, 60); tom(1320, 180); tom(0, 800);
+  Serial.println("erro");             tom(300, 400);  tom(0, 1200);
+}
+</script>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const f = n => (Math.round(n * 100) / 100).toString();
+  const pt = n => String(n).replace('.', ',');
+
+  // =====================================================================================
+  // 1. MODELO: pinos, pecas, fios e passos
+  // =====================================================================================
+  const LEFT  = ['3V3','3V3','RST','4','5','6','7','15','16','17','18','8','3','46','9','10','11','12','13','14','5V','GND'];
+  const RIGHT = ['GND','TX','RX','1','2','42','41','40','39','38','37','36','35','0','45','48','47','21','20','19','GND','GND'];
+  const RES_L = ['3','46'], RES_R = ['TX','RX','38','37','36','35','0','45','48','20','19'];
+  const lIdx = g => LEFT.indexOf(String(g));
+  const BB_C0 = 14, MIC_C0 = 4;
+  const colOf = g => BB_C0 + lIdx(g);
+  const BUS = {
+    spi: { name: 'SPI (tela)', c: 'var(--w-spi)' }, i2c: { name: 'SPI do touch', c: 'var(--w-i2c)' },
+    i2s: { name: 'I2S (microfone)', c: 'var(--w-i2s)' }, pwr: { name: 'Energia', c: 'var(--w-pwr)' }
+  };
+  const busColor = (bus, net) => net === 'GND' ? 'var(--w-gnd)' : net === '3V3' ? 'var(--w-pwr)' : BUS[bus].c;
+
+  // pinos do modulo da tela ILI9488 (ordem do modulo vermelho de 14 pinos) e do microfone.
+  // O 14o pino, T_IRQ, fica sem ligar. O touch usa o SPI3, com fios proprios (bus 'i2c' so guarda a cor azul).
+  const TELA = [
+    { pin: 'VCC', net: '3V3' }, { pin: 'GND', net: 'GND' },
+    { pin: 'CS', gpio: 10, bus: 'spi' }, { pin: 'RESET', gpio: 6, bus: 'spi' }, { pin: 'DC', gpio: 14, bus: 'spi' },
+    { pin: 'SDI', gpio: 11, bus: 'spi' }, { pin: 'SCK', gpio: 12, bus: 'spi' }, { pin: 'LED', gpio: 7, bus: 'spi' },
+    { pin: 'SDO', gpio: 13, bus: 'spi' },
+    { pin: 'T_CLK', gpio: 9, bus: 'i2c' }, { pin: 'T_CS', gpio: 5, bus: 'i2c' }, { pin: 'T_DIN', gpio: 8, bus: 'i2c' }, { pin: 'T_DO', gpio: 4, bus: 'i2c' }
+  ];
+  const MIC = [
+    { pin: 'SCK', gpio: 15, bus: 'i2s' }, { pin: 'WS', gpio: 16, bus: 'i2s' }, { pin: 'SD', gpio: 17, bus: 'i2s' },
+    { pin: 'L/R', net: 'GND' }, { pin: 'VDD', net: '3V3' }, { pin: 'GND', net: 'GND' }
+  ];
+
+  // texto por fio: o que faz (why) e o que acontece sem ele (cons)
+  const INFO = {
+    'tela:VCC': ['Alimenta a tela e o chip do touch com 3,3 V. O módulo vermelho também aceita 5 V, mas aqui fica tudo no 3V3.', 'A tela fica apagada, como se não existisse. Nenhum sinal adianta sem energia.'],
+    'tela:GND': ['É o caminho de volta da corrente e a referência de 0 V para todos os sinais da tela.', 'Sem {{GND}} os sinais não têm referência: a tela fica apagada ou instável. É o fio mais importante.'],
+    'tela:CS': ['{{CS}} avisa à tela que a conversa é com ela. Fica em nível baixo enquanto o ESP32 fala.', 'A tela não sabe quando a conversa é com ela e ignora tudo. Resultado típico: tela branca ou preta.'],
+    'tela:RESET': ['Reinicia a tela por software, para ela começar sempre do mesmo estado.', 'A tela pode não iniciar direito depois de ligar. Resultado típico: tela branca.'],
+    'tela:DC': ['{{DC}} diz se o próximo byte é um comando ("pinte aqui") ou um pixel.', 'A tela confunde comando com pixel e interpreta os dados errado. Resultado típico: imagem embaralhada ou nada.'],
+    'tela:SDI': ['{{MOSI}} (SDI) leva os pixels e comandos do ESP32 até a tela, um bit por pulso.', 'Os pixels não chegam. A luz de fundo acende, mas a tela fica branca.'],
+    'tela:SCK': ['{{SCK}} é o relógio: cada pulso marca um bit. É ele que dá o ritmo da conversa.', 'Sem relógio os bits não andam. Nada chega à tela.'],
+    'tela:LED': ['Liga a luz de fundo da tela (backlight). Com PWM dá para controlar o brilho.', 'A imagem existe, mas sem luz de fundo você quase não enxerga nada. Olhe de perto, com uma lanterna.'],
+    'tela:SDO': ['{{MISO}} (SDO) volta da tela para o ESP32. Neste projeto o ESP32 só escreve na tela, então este fio é opcional. O ILI9488 não solta este fio; por isso o touch tem um SPI só dele.', 'Nada muda: o ESP32 só escreve na tela. Este fio pode ficar sem ligar.'],
+    'tela:T_CLK': ['Relógio do {{SPI}} do touch: dá o ritmo da conversa com o chip XPT2046.', 'Sem relógio o chip do touch não responde: tocar não faz nada.'],
+    'tela:T_CS': ['{{CS}} do touch: avisa ao chip XPT2046 que a conversa é com ele.', 'O chip do touch nunca sabe que é com ele: tocar não faz nada.'],
+    'tela:T_DIN': ['Leva os pedidos do ESP32 ao chip do touch ("meça X", "meça Y").', 'O chip não recebe o pedido de medida: a leitura fica parada ou sem sentido.'],
+    'tela:T_DO': ['Traz do chip do touch para o ESP32 o número medido no ponto apertado.', 'O ESP32 não recebe a medida: tocar não faz nada, ou o ponto pula para um canto.'],
+    'mic:SCK': ['Relógio dos bits do áudio ({{I2S}}). Dá o ritmo do envio do som.', 'O microfone não envia bits. A leitura fica parada.'],
+    'mic:WS': ['{{WS}} marca o início de cada amostra e diz se é canal esquerdo ou direito.', 'O ESP32 e o microfone perdem o compasso esquerdo/direito. Dados trocados ou zero.'],
+    'mic:SD': ['Leva os dados do som, do microfone para o ESP32.', 'O som não chega ao ESP32. A leitura é sempre zero.'],
+    'mic:L/R': ['Ligado ao GND, escolhe o canal esquerdo. Precisa de um nível definido.', 'O pino solto flutua: o microfone pode escolher o canal sozinho e mandar silêncio no canal que o ESP32 lê.'],
+    'mic:VDD': ['Alimenta o microfone com 3,3 V.', 'O microfone fica sem energia e entrega sempre zero.'],
+    'mic:GND': ['Referência de 0 V do microfone. Sem ela as leituras não têm sentido.', 'Sem {{GND}} o sinal do microfone não tem referência: leituras sem sentido.']
+  };
+
+  // ---- elementos (pecas e fios) ----
+  const E = {};
+  const addE = (id, o) => { E[id] = { id, ...o }; return id; };
+  addE('esp', { kind: 'part', label: 'ESP32-S3 na protoboard', cons: 'Sem o ESP32 não há cérebro nem regulador: nada recebe energia nem sinal.' });
+  addE('tela', { kind: 'part', label: 'Tela com touch (módulo)', cons: 'Sem a tela o mascote não tem rosto.' });
+  addE('mic', { kind: 'part', label: 'Microfone INMP441', cons: 'Sem o microfone o mascote não ouve.' });
+  addE('w.esp3v3', { kind: 'wire', bus: 'pwr', net: '3V3', label: 'ESP32 3V3 → trilho 3V3', a: `bbB:${colOf('3V3')}`, b: 'rail:3V3',
+    cons: 'O trilho 3V3 fica sem energia: nenhum módulo recebe 3,3 V.' });
+  addE('w.espgnd', { kind: 'wire', bus: 'pwr', net: 'GND', label: 'ESP32 GND → trilho GND', a: `bbB:${colOf('GND')}`, b: 'rail:GND',
+    cons: 'O trilho GND fica solto: os módulos não têm caminho de volta nem referência.' });
+  TELA.forEach((w, k) => addE(`w.tela.${w.pin}`, { kind: 'wire', mod: 'tela', k, pin: w.pin, gpio: w.gpio, bus: w.bus || 'pwr', net: w.net,
+    label: `Tela ${w.pin} → ${w.gpio ? 'GPIO ' + w.gpio : 'trilho ' + w.net}`, a: `tela:${w.pin}`, b: w.gpio ? `bbB:${colOf(w.gpio)}` : `rail:${w.net}`,
+    why: INFO[`tela:${w.pin}`][0], cons: INFO[`tela:${w.pin}`][1], optional: w.pin === 'SDO' }));
+  MIC.forEach((w, k) => addE(`w.mic.${w.pin}`, { kind: 'wire', mod: 'mic', k, pin: w.pin, gpio: w.gpio, bus: w.bus || 'pwr', net: w.net,
+    label: `Microfone ${w.pin} → ${w.gpio ? 'GPIO ' + w.gpio : 'trilho ' + w.net}`, a: `bbB:${MIC_C0 + k}`, b: w.gpio ? `bbB:${colOf(w.gpio)}` : `rail:${w.net}`,
+    why: INFO[`mic:${w.pin}`][0], cons: INFO[`mic:${w.pin}`][1] }));
+
+
+  // ---- extras opcionais (desligados por padrao) ----
+  const AMP = [{ pin: 'LRC', gpio: 16, bus: 'i2s' }, { pin: 'BCLK', gpio: 15, bus: 'i2s' }, { pin: 'DIN', gpio: 18, bus: 'i2s' }, { pin: 'GAIN' }, { pin: 'SD' }, { pin: 'GND', net: 'GND' }, { pin: 'VIN', net: '5V' }];
+  const AMP_C0 = 44, BTN_GPIO = 21, BTN_C = [41, 43], CAPM = [8, 9], CAPR_C = 11;
+  const rIdx = g => RIGHT.indexOf(String(g));
+  const colR = g => BB_C0 + rIdx(g);                // coluna de um pino do lado direito (metade de cima)
+  addE('x.c.mic', { kind: 'xcomp', extra: 'cap', comp: { type: 'cap', a: `bbB:${CAPM[0]}`, b: `bbB:${CAPM[1]}`, uf: 0.1 }, label: 'Capacitor 100 nF no microfone (VDD–GND)',
+    why: 'Funciona como um mini-reservatório de energia colado no microfone: cobre os picos rápidos de corrente e alisa o ruído da alimentação.', cons: 'Nada para de funcionar, mas o ruído da alimentação entra direto no microfone: o som fica mais sujo, principalmente com fios longos.' });
+  addE('x.c.rail', { kind: 'xcomp', extra: 'cap', comp: { type: 'cap', a: 'rail:3V3', b: 'rail:GND', uf: 0.1 }, label: 'Capacitor 100 nF entre os trilhos (3V3–GND)',
+    why: 'Fica entre os dois trilhos e segura a tensão quando a tela ou o touch pedem corrente de repente.', cons: 'Nada para de funcionar, mas a tensão oscila mais quando a tela muda de imagem. Pode aparecer como falha esporádica.' });
+  addE('x.btn', { kind: 'xpart', extra: 'btn', label: 'Botão tátil 6×6 (atravessa o canal)', cons: 'Sem o botão não há como apertar para falar ou dar mudo sem usar a tela.' });
+  addE('x.w.btn.sig', { kind: 'xwire', extra: 'btn', bus: 'spi', net: 'SIG', a: `bbT:${BTN_C[0]}`, b: `bbT:${colR(BTN_GPIO)}`, label: `Botão → GPIO ${BTN_GPIO}`,
+    why: `Leva o lado de cima do botão ao pino GPIO ${BTN_GPIO} do ESP32 (metade de cima da protoboard).`, cons: 'O ESP32 nunca vê o botão ser apertado.' });
+  addE('x.w.btn.gnd', { kind: 'xwire', extra: 'btn', bus: 'pwr', net: 'GND', a: `bbB:${BTN_C[0]}`, b: 'rail:GND', label: 'Botão → trilho GND',
+    why: 'O lado de baixo do botão vai ao GND: ao apertar, o pino do ESP32 é puxado para 0 V.', cons: 'Apertar o botão não muda nada: o pino continua em 1.' });
+  addE('x.amp', { kind: 'xpart', extra: 'som', label: 'Amplificador MAX98357A', cons: 'Sem o amplificador o ESP32 não tem como tocar som.' });
+  AMP.filter(w => w.net || w.gpio).forEach(w => {
+    const k = AMP.indexOf(w), tgt = w.gpio ? (w.gpio === 15 ? `bbB:${MIC_C0}` : w.gpio === 16 ? `bbB:${MIC_C0 + 1}` : `bbB:${colOf(w.gpio)}`) : w.net === '5V' ? `bbB:${colOf('5V')}` : 'rail:GND';
+    addE(`x.w.amp.${w.pin}`, { kind: 'xwire', extra: 'som', bus: w.bus || 'pwr', net: w.net || 'SIG', a: `bbB:${AMP_C0 + k}`, b: tgt, ra: 'a', rb: w.gpio === 15 || w.gpio === 16 ? 'b' : 'a',
+      label: `Amplificador ${w.pin} → ${w.gpio === 15 ? 'coluna do SCK do microfone (GPIO 15)' : w.gpio === 16 ? 'coluna do WS do microfone (GPIO 16)' : w.gpio ? 'GPIO ' + w.gpio : w.net === '5V' ? '5V do ESP32' : 'trilho GND'}`,
+      why: { LRC: '{{WS}} do I2S: marca o compasso esquerdo/direito. É o mesmo fio do microfone, por isso vai na coluna do WS dele.', BCLK: 'Relógio dos bits do áudio ({{I2S}}). É o mesmo fio do microfone, por isso vai na coluna do SCK dele.', DIN: 'Os dados do som, do ESP32 para o amplificador.', GND: 'Referência de 0 V do amplificador.', VIN: 'Alimenta o amplificador com 5 V (mais volume que 3,3 V), direto do pino 5V do ESP32.' }[w.pin],
+      cons: { LRC: 'O amplificador não sabe o compasso: silêncio ou ruído.', BCLK: 'Sem relógio o amplificador não entende os bits: silêncio.', DIN: 'Nenhum som chega ao amplificador: silêncio.', GND: 'O amplificador não tem referência: ruído, ou não liga.', VIN: 'O amplificador fica sem energia: mudo.' }[w.pin] });
+  });
+  addE('x.cap', { kind: 'xcomp', extra: 'som', comp: { type: 'cap', a: `bbB:${AMP_C0 + 6}`, b: `bbB:${AMP_C0 + 5}`, uf: 470 }, label: 'Capacitor 470 µF 10 V no amplificador (VIN–GND)',
+    why: 'Quando o alto-falante pede um pico de corrente, a tensão cai um pouco. O capacitor guarda energia e segura a tensão, evitando estalos e reinícios.', cons: 'O amplificador funciona em volume baixo, mas estala ou reinicia o ESP32 em volume alto.' });
+  addE('x.spk', { kind: 'xcomp', extra: 'som', comp: { type: 'res', a: 'amp:OUT+', b: 'amp:OUT-', ohms: 4, spk: true }, label: 'Alto-falante 4 Ω 3 W',
+    why: 'Move o ar no ritmo do som. Para o multímetro, é uma bobina de uns 4 Ω.', cons: 'Sem o alto-falante o amplificador não tem o que mover: nenhum som.' });
+
+  // ---- passos ----
+  const STAGES = [
+    { id: 0, name: 'Preparação' }, { id: 1, name: 'Etapa 1 · O ESP32 sozinho' }, { id: 2, name: 'Etapa 2 · A tela' },
+    { id: 3, name: 'Etapa 3 · O touch' }, { id: 4, name: 'Etapa 4 · O microfone' },
+    { id: 5, name: 'Extra A · Capacitores de 100 nF (opcional)' }, { id: 6, name: 'Extra B · Calibrar o touch (opcional)' },
+    { id: 7, name: 'Extra C · Botão (opcional)' }, { id: 8, name: 'Extra D · Som (opcional)' }
+  ];
+  const STEPS = [];
+  const step = o => { o.idx = STEPS.length; STEPS.push(o); (o.adds || []).forEach(id => { E[id].step = o.idx; E[id].stage = o.stage; }); return o; };
+  const espPin = g => `esp:L${lIdx(g)}`;
+  const hole = c => `bbB:${c}`;
+  const holeNote = g => `na coluna ${colOf(g)}, no furo livre ao lado do pino GPIO ${g} do ESP32`;
+
+  // ----- preparacao
+  step({ stage: 0, type: 'info', title: 'Prepare a bancada', adds: [], usb: false,
+    do: ['Separe: ESP32-S3, tela ILI9488 com touch resistivo (placa vermelha), microfone INMP441, protoboard, 13 jumpers macho-fêmea, 8 macho-macho, cabo USB-C de dados e o {{multímetro}}.',
+         'Instale a Arduino IDE 2, o pacote de placas **esp32** (versão 3.0 ou mais nova) e a biblioteca **LovyanGFX**.',
+         'Deixe o cabo USB **desligado** até o manual mandar ligar.'],
+    why: 'Montar sem pressa e sem energia é o que evita a maioria dos erros. O multímetro será seu aliado em cada passo: ele mostra o que o olho não vê.',
+    ifNot: 'Sem o multímetro você monta, mas fica sem como descobrir por que algo não funciona.' });
+  step({ stage: 0, type: 'info', title: 'Entenda a protoboard', adds: [], usb: false, overlay: 'strips',
+    do: ['Olhe o desenho: as barras laranja mostram o metal escondido por baixo dos furos.',
+         'Cada coluna de 5 furos é um único ponto elétrico. O canal do meio separa as duas metades.',
+         'Os {{trilho|trilhos}} correm no comprimento e servem para distribuir 3V3 e GND.'],
+    why: 'Conectar duas coisas na mesma coluna é o mesmo que ligá-las com um fio. Entender isso evita curtos sem querer e explica por que o ESP32 atravessa o canal.',
+    ifNot: 'Se você ignora essas ligações internas, vai ligar coisas sem perceber, ou deixar de ligar o que achava que estava ligado.' });
+
+  // ----- etapa 1
+  step({ stage: 1, type: 'place', title: 'Encaixe o ESP32-S3', adds: ['esp'], usb: false,
+    do: ['Encaixe o ESP32 com o primeiro pino (3V3) na **coluna 14**, a antena para a esquerda e as portas USB para a direita.',
+         'As duas fileiras de pinos ficam uma de cada lado do canal central. Nunca as duas do mesmo lado.',
+         'Faça com o cabo USB desligado.'],
+    why: 'Cada pino do ESP32 cai numa coluna diferente, e cada coluna oferece 4 furos ligados a esse pino para os jumpers. O canal do meio impede que o pino da esquerda encoste no da direita.',
+    verify: { mode: 'cont', a: espPin(4), b: hole(colOf(4)), usb: false, goal: 'o pino GPIO 4 e o furo livre da mesma coluna estão ligados pela protoboard' },
+    counter: { mode: 'cont', a: espPin(4), b: 'esp:R3', usb: false, goal: 'o pino da esquerda e o da direita, na mesma altura, não se tocam' },
+    ifNot: 'Se o ESP32 não atravessasse o canal, as duas fileiras de pinos ficariam ligadas em pares e vários sinais entrariam em curto.' });
+  step({ stage: 1, type: 'wire', title: 'Ligue o 3V3 ao trilho', adds: ['w.esp3v3'], usb: false,
+    do: ['Pegue um jumper **macho-macho**. Uma ponta na coluna 14, no furo livre ao lado do pino 3V3. A outra no trilho do 3V3 (qualquer furo).'],
+    why: 'O pino 3V3 do ESP32 é a fonte de 3,3 V. Levá-lo ao trilho espalha essa energia para todos os módulos sem repetir fios.',
+    verify: { mode: 'cont', a: espPin('3V3'), b: 'rail:3V3', usb: false, goal: 'o pino 3V3 do ESP32 e o trilho 3V3 estão ligados' } });
+  step({ stage: 1, type: 'wire', title: 'Ligue o GND ao trilho', adds: ['w.espgnd'], usb: false,
+    do: ['Jumper **macho-macho**: uma ponta na coluna 35, no furo livre ao lado do pino GND. A outra no trilho do GND.'],
+    why: 'O {{GND}} é o caminho de volta da corrente de todas as peças. O trilho GND vai distribuí-lo.',
+    verify: { mode: 'cont', a: espPin('GND'), b: 'rail:GND', usb: false, goal: 'o pino GND do ESP32 e o trilho GND estão ligados' } });
+  step({ stage: 1, type: 'test', title: 'Procure curto antes de ligar', adds: [], usb: false,
+    do: ['Multímetro em **continuidade**. Uma ponta no trilho 3V3 e a outra no trilho GND. **Não pode apitar.**'],
+    why: 'Se 3V3 e GND se tocam, ao ligar o USB a corrente é enorme e queima peças. Esta checagem leva 10 segundos e evita isso. Faça-a sempre, antes de ligar, em cada etapa.',
+    verify: { mode: 'cont', a: 'rail:3V3', b: 'rail:GND', usb: false, goal: 'o trilho 3V3 e o trilho GND estão separados' },
+    ifNot: 'Se apitar, há um {{curto}}. Procure um fio ou perna de peça que encoste nos dois trilhos, e só ligue o USB depois de resolver.' });
+  step({ stage: 1, type: 'action', title: 'Ligue o USB e meça a energia', adds: [], usb: true,
+    do: ['Ligue o cabo USB-C na porta **UART** da placa e no computador.',
+         'Multímetro em **tensão contínua** (V⎓). Ponta vermelha no pino 3V3 e preta no pino GND. Deve marcar perto de **3,3 V**.'],
+    why: 'O cabo traz 5 V. O {{regulador}} da placa baixa para 3,3 V. Medir confirma que a energia chega certa antes de ligar qualquer módulo.',
+    verify: { mode: 'volt', a: espPin('3V3'), b: espPin('GND'), usb: true, goal: 'entre o 3V3 e o GND há 3,3 V' },
+    counter: { mode: 'volt', a: espPin('5V'), b: espPin('GND'), usb: true, goal: 'entre o 5V e o GND há 5 V, direto do cabo' },
+    ifNot: 'Se marcar 0 V, o USB não está dando energia (cabo só de carga? porta errada?). Se marcar perto de 5 V no 3V3, desligue e me conte o valor.' });
+  step({ stage: 1, type: 'code', title: 'Grave o teste da Etapa 1', adds: [], usb: true, code: 'etapa1',
+    ok: 'O {{Monitor Serial}} (115200) mostra {{PSRAM}} perto de 8388608 e Flash perto de 16777216.',
+    fail: [['PSRAM: 0', 'A opção PSRAM está errada (use OPI PSRAM), ou a placa não tem PSRAM. Se a opção está certa, o anúncio era enganoso: peça troca.'],
+           ['Não grava', 'Cabo só de carga ou porta errada. Use a porta UART. Segure BOOT, aperte RESET, solte BOOT e grave de novo.'],
+           ['Texto ilegível', 'O Monitor Serial não está em 115200.']],
+    blocks: [
+      ['Serial.begin(115200);\ndelay(1500);', 'Abre a conversa com o computador pelo cabo USB, a 115200 bits por segundo. O atraso dá tempo de abrir o Monitor Serial.'],
+      ['Serial.printf("PSRAM: %u bytes ...", ESP.getPsramSize());', 'Pergunta ao chip quanta {{PSRAM}} ele tem. Perto de 8 MB significa que a placa é N16R8 de verdade.'],
+      ['Serial.printf("Flash: %u bytes ...", ESP.getFlashChipSize());', 'Mesma pergunta para a memória flash, onde o programa fica guardado. Esperado: 16 MB.']
+    ] });
+
+  // ----- etapa 2
+  step({ stage: 2, type: 'action', title: 'Desligue o USB', adds: [], usb: false,
+    do: ['Desconecte o cabo USB antes de mexer em qualquer fio.', 'Confirme no multímetro: entre 3V3 e GND do ESP32 agora marca **0 V**.'],
+    why: 'Ligar e desligar fio com a placa energizada é a causa mais comum de peça queimada. Medir 0 V prova que não há energia.',
+    verify: { mode: 'volt', a: espPin('3V3'), b: espPin('GND'), usb: false, goal: 'sem USB, não há tensão entre o 3V3 e o GND' } });
+  step({ stage: 2, type: 'place', title: 'Posicione a tela', adds: ['tela'], usb: false,
+    do: ['Deixe o módulo da tela ao lado da protoboard, fora dela. Os jumpers dela são **macho-fêmea**: a ponta fêmea encaixa no pino do módulo e a macho vai à protoboard.',
+         'Confira o nome de cada pino na serigrafia do módulo. O desenho segue a placa vermelha de 14 pinos (VCC, GND, CS, RESET, DC/RS, SDI, SCK, LED, SDO, T_CLK, T_CS, T_DIN, T_DO, T_IRQ).',
+         'O 14º pino, **T_IRQ**, fica sem ligar. Os 4 pinos do cartão SD, do outro lado da placa, também ficam sem ligar.',
+         'Remova a película protetora só no fim: o touch resistivo funciona apertando, e a película ajuda a não riscar.'],
+    why: 'A tela é grande demais para a protoboard e só precisa de fios. Conferir os nomes impressos evita ligar o fio certo no pino errado.',
+    ifNot: 'Sem a tela posicionada, não há onde ligar os fios dela.' });
+  TELA.filter(w => w.bus !== 'i2c').forEach(w => {
+    const id = `w.tela.${w.pin}`, e = E[id];
+    const dest = w.gpio ? `na ${holeNote(w.gpio)}` : `no trilho ${w.net} (qualquer furo)`;
+    const verifyA = `tela:${w.pin}`;
+    const sibling = TELA.find(x => x.gpio && x.pin !== w.pin && x.bus === (w.bus || x.bus));
+    step({ stage: 2, type: 'wire', title: w.gpio ? `Ligue ${w.pin} ao GPIO ${w.gpio}` : `Ligue ${w.pin} ao trilho ${w.net}`, adds: [id], usb: false, optional: !!e.optional,
+      do: [`Jumper **macho-fêmea**: ponta fêmea no pino **${w.pin}** da tela, ponta macho ${dest}.`, ...(e.optional ? ['Este fio é **opcional** neste projeto. Pode ligar para completar, ou pular.'] : [])],
+      why: e.why,
+      verify: { mode: 'cont', a: verifyA, b: w.gpio ? espPin(w.gpio) : `rail:${w.net}`, usb: false,
+                goal: `o pino ${w.pin} da tela e ${w.gpio ? 'o pino GPIO ' + w.gpio + ' do ESP32' : 'o trilho ' + w.net} estão ligados` },
+      counter: w.gpio ? { mode: 'cont', a: verifyA, b: espPin(w.gpio === 12 ? 11 : 12), usb: false, goal: `o pino ${w.pin} não toca em outro sinal (cada fio é independente)` } : null,
+      ifNot: e.cons });
+  });
+  step({ stage: 2, type: 'test', title: 'Procure curto de novo', adds: [], usb: false,
+    do: ['Continuidade: trilho 3V3 contra trilho GND. **Não pode apitar.**', 'Se quiser: pino VCC da tela contra GND da tela também não pode apitar.'],
+    why: 'Você acabou de mexer em 9 fios. Um jumper frouxo que encosta no vizinho cria um curto. Repita a checagem sempre que mexer nos fios.',
+    verify: { mode: 'cont', a: 'rail:3V3', b: 'rail:GND', usb: false, goal: 'o trilho 3V3 e o trilho GND continuam separados' },
+    ifNot: 'Se apitar, algum fio encosta onde não deve. Desconecte um a um até o apito sumir.' });
+  step({ stage: 2, type: 'action', title: 'Ligue o USB e meça a tela', adds: [], usb: true,
+    do: ['Ligue o USB. Multímetro em tensão contínua: ponta vermelha no pino **VCC da tela**, preta no **GND da tela**. Deve marcar perto de **3,3 V**.'],
+    why: 'Medir direto nos pinos da tela prova que a energia chegou ao módulo. Se a tela não acender depois, você já sabe que a energia não é a causa.',
+    verify: { mode: 'volt', a: 'tela:VCC', b: 'tela:GND', usb: true, goal: 'a tela recebe 3,3 V entre VCC e GND' },
+    ifNot: 'Se marcar 0 V, falta o fio de VCC ou o de GND da tela, ou um deles está frouxo.' });
+  step({ stage: 2, type: 'code', title: 'Grave o teste da tela', adds: [], usb: true, code: 'etapa2_3_tela_touch_ili9488', flag: 'USAR_TOUCH 0', showPins: ['spi'],
+    ok: 'A tela acende e mostra vermelho, verde e azul, nessa ordem, e depois "Mascote Claude" com uma moldura branca.',
+    fail: [['Tela branca ou preta', 'RESET, DC ou CS trocados. Confira os três pelo nome impresso. Veja se o LED está no GPIO 7 ou no 3V3.'],
+           ['Cores trocadas', 'No programa, troque rgb_order de false para true.'],
+           ['Cores invertidas (preto vira branco)', 'No programa, troque invert de false para true.'],
+           ['Imagem espelhada ou de lado', 'Troque o número em tft.setRotation(1) por 0, 2 ou 3.'],
+           ['Ruído ou falhas', 'Fio de SCK ou SDI frouxo. Use jumpers mais curtos. Se continuar, baixe freq_write de 27000000 para 20000000.']],
+    blocks: [
+      ['lgfx::Panel_ILI9488 _panel;', 'Escolhe o driver do controlador ILI9488. Na tela capacitiva final, esta linha vira Panel_ST7796.'],
+      ['constexpr int PIN_SCK = 12, PIN_MOSI = 11, ...', 'É aqui que seus fios viram números. Cada constante é o GPIO ligado a um pino da tela (tabela abaixo).'],
+      ['cfg.pin_sclk = PIN_SCK;\ncfg.pin_mosi = PIN_MOSI;\ncfg.pin_dc = PIN_DC;', 'Conta à biblioteca quais pinos formam o barramento {{SPI}} da tela.'],
+      ['cfg.pin_cs = PIN_CS;\ncfg.pin_rst = PIN_RST;', 'Diz qual pino é o {{CS}} e qual é o RESET.'],
+      ['cfg.pin_bl = PIN_BL;', 'Liga a luz de fundo ao pino do LED, com controle de brilho.'],
+      ['tft.init();\ntft.setRotation(1);', 'Acorda a tela e deixa em paisagem (480×320).'],
+      ['const uint32_t cores[] = {TFT_RED, TFT_GREEN, TFT_BLUE};\nfor (uint32_t c : cores) { tft.fillScreen(c); delay(800); }', 'Pinta a tela inteira de vermelho, verde e azul. Se as três cores aparecerem certas, os 7 fios SPI estão corretos. O ILI9488 é mais lento: dá para ver a cor descendo pela tela, e isso é normal.']
+    ] });
+
+  // ----- etapa 3
+  step({ stage: 3, type: 'info', title: 'Entenda o touch resistivo', adds: [], usb: false,
+    do: ['O touch desta tela é **resistivo**: duas películas que se encostam quando você **aperta**. Use a ponta do dedo com firmeza, a unha ou uma caneta sem ponta.',
+         'Quem mede o ponto é o chip **XPT2046**, que conversa por {{SPI}}. Ele ganha um SPI só dele, com 4 fios próprios: T_CLK, T_CS, T_DIN e T_DO.',
+         'Esses 4 fios vão aos GPIO 9, 5, 8 e 4, os mesmos que o touch capacitivo usaria. Quando a tela final chegar, os fios mudam de nome, mas não de lugar.',
+         'O **T_IRQ** fica sem ligar: o programa pergunta ao chip se há toque.'],
+    why: 'O ILI9488 não solta o fio SDO quando não está falando. Se o touch dividisse esse fio com a tela, as leituras sairiam erradas. Com um SPI separado, o problema some.',
+    ifNot: 'Encostar de leve, como num celular, não registra nada. Isso é normal no resistivo, e não é defeito.' });
+  step({ stage: 3, type: 'action', title: 'Desligue o USB', adds: [], usb: false,
+    do: ['Desconecte o USB antes de ligar os fios do touch.'],
+    why: 'Mesma regra de sempre: nunca mexa em fio com a placa energizada.' });
+  ['T_CLK', 'T_CS', 'T_DIN', 'T_DO'].forEach(p => {
+    const w = TELA.find(x => x.pin === p), id = `w.tela.${p}`, e = E[id];
+    step({ stage: 3, type: 'wire', title: `Ligue ${p} ao GPIO ${w.gpio}`, adds: [id], usb: false,
+      do: [`Jumper **macho-fêmea**: ponta fêmea no pino **${p}** da tela, ponta macho ${holeNote(w.gpio)}.`],
+      why: e.why,
+      verify: { mode: 'cont', a: `tela:${p}`, b: espPin(w.gpio), usb: false, goal: `o pino ${p} da tela e o GPIO ${w.gpio} do ESP32 estão ligados` },
+      counter: { mode: 'cont', a: `tela:${p}`, b: espPin(w.gpio === 12 ? 11 : 12), usb: false, goal: `${p} não toca no SPI da tela (são barramentos separados)` },
+      ifNot: e.cons });
+  });
+  step({ stage: 3, type: 'test', title: 'Procure curto e ligue o USB', adds: [], usb: true,
+    do: ['Antes de ligar: continuidade 3V3 contra GND, **sem apitar**. Depois ligue o USB.'],
+    why: 'Quatro fios novos, a mesma checagem. O hábito de procurar curto antes de ligar é o que mais protege suas peças.',
+    verify: { mode: 'cont', a: 'rail:3V3', b: 'rail:GND', usb: false, goal: 'o trilho 3V3 e o trilho GND continuam separados' } });
+  step({ stage: 3, type: 'code', title: 'Aperte a tela', adds: [], usb: true, code: 'etapa2_3_tela_touch_ili9488', flag: 'USAR_TOUCH 1', showPins: ['i2c'],
+    ok: 'Cada aperto desenha um ponto amarelo e imprime no Serial a posição na tela (x, y) e o valor cru do chip.',
+    fail: [['Nada acontece ao apertar', 'Aperte com mais força ou com a unha. Se ainda assim nada mudar, confira T_CS (GPIO 5) e T_CLK (GPIO 9).'],
+           ['Pontos aparecem sozinhos', 'T_DO (GPIO 4) ou T_DIN (GPIO 8) frouxo ou trocado. Confira pelo nome impresso.'],
+           ['O ponto sai espelhado ou de lado', 'Troque offset_rotation do touch (0 a 7) até o ponto seguir o dedo.'],
+           ['O ponto sai deslocado', 'Normal no resistivo. Faça o Extra B (calibrar o touch).']],
+    blocks: [
+      ['#define USAR_TOUCH 1', 'Troque o 0 por 1 no começo do programa para ligar o touch.'],
+      ['lgfx::Touch_XPT2046 _touch;', 'Escolhe o driver do chip XPT2046, o do touch resistivo.'],
+      ['cfg.spi_host = SPI3_HOST;\ncfg.pin_sclk = PIN_T_CLK;\ncfg.pin_mosi = PIN_T_DIN;\ncfg.pin_miso = PIN_T_DO;\ncfg.pin_cs = PIN_T_CS;', 'Põe o touch no segundo barramento {{SPI}} do ESP32-S3, com os 4 fios que você acabou de ligar.'],
+      ['cfg.x_min = 300;\ncfg.x_max = 3900;', 'O chip mede de 0 a 4095. Estes números dizem onde ficam as bordas da tela. O Extra B ensina a acertá-los.'],
+      ['if (tft.getTouch(&x, &y)) {\n  tft.fillCircle(x, y, 6, TFT_YELLOW);\n}', 'A cada volta, pergunta se há um aperto. Se houver, desenha um ponto amarelo onde você apertou.']
+    ] });
+
+  // ----- etapa 4
+  step({ stage: 4, type: 'action', title: 'Desligue o USB', adds: [], usb: false,
+    do: ['Desconecte o USB antes de montar o microfone.'], why: 'Sempre sem energia ao mexer em fios.' });
+  step({ stage: 4, type: 'place', title: 'Encaixe o microfone', adds: ['mic'], usb: false,
+    do: ['Encaixe o INMP441 nas **colunas 4 a 9**, com o pino SCK na coluna 4. Os pinos ficam todos na mesma metade da protoboard.',
+         'Confira os nomes na serigrafia: a ordem dos pinos do módulo varia entre fabricantes.'],
+    why: 'O módulo é pequeno e cabe direto na protoboard. Cada pino fica numa coluna própria, com furos livres ao lado para os jumpers.',
+    ifNot: 'Sem o microfone encaixado não há onde ligar os fios dele.' });
+  MIC.forEach((w, k) => {
+    const id = `w.mic.${w.pin}`, e = E[id], mc = MIC_C0 + k;
+    const to = w.gpio ? `na ${holeNote(w.gpio)}` : `no trilho ${w.net}`;
+    step({ stage: 4, type: 'wire', title: w.gpio ? `Ligue ${w.pin} ao GPIO ${w.gpio}` : `Ligue ${w.pin} ao ${w.net}`, adds: [id], usb: false,
+      do: [`Jumper **macho-macho**: uma ponta no furo livre da coluna ${mc} (pino **${w.pin}** do microfone), a outra ${to}.`],
+      why: e.why,
+      verify: { mode: 'cont', a: `mic:${w.pin}`, b: w.gpio ? espPin(w.gpio) : `rail:${w.net}`, usb: false,
+                goal: `o pino ${w.pin} do microfone e ${w.gpio ? 'o GPIO ' + w.gpio + ' do ESP32' : 'o trilho ' + w.net} estão ligados` },
+      ifNot: e.cons });
+  });
+  step({ stage: 4, type: 'action', title: 'Curto, USB e energia do microfone', adds: [], usb: true,
+    do: ['Antes: continuidade 3V3 contra GND, **sem apitar**. Ligue o USB.',
+         'Tensão contínua: vermelha no pino **VDD** do microfone, preta no **GND** do microfone. Deve marcar perto de **3,3 V**.'],
+    why: 'Confirma que o microfone está alimentado antes de procurar problemas no som.',
+    verify: { mode: 'volt', a: 'mic:VDD', b: 'mic:GND', usb: true, goal: 'o microfone recebe 3,3 V entre VDD e GND' },
+    ifNot: 'Se marcar 0 V, falta o fio de VDD ou o de GND do microfone.' });
+  step({ stage: 4, type: 'code', title: 'Grave o teste do microfone', adds: [], usb: true, code: 'etapa4_microfone', showPins: ['i2s'],
+    ok: 'O Monitor Serial mostra números baixos no silêncio. Quando você bate palma perto, o número e a barra de # sobem.',
+    fail: [['Sempre zero', 'L/R solto (precisa ir ao GND) ou SD no GPIO errado.'],
+           ['Ruído alto e constante', 'Fios longos. Aproxime o microfone do ESP32 e encurte os jumpers.'],
+           ['Falha ao iniciar o I2S', 'Confira SCK (GPIO 15) e WS (GPIO 16) e se o pacote esp32 é 3.0 ou mais novo.']],
+    blocks: [
+      ['i2s.setPins(PIN_BCLK, PIN_WS, -1, PIN_MIC_DATA);', 'Diz à biblioteca quais fios do {{I2S}} você montou. O -1 significa "sem saída de áudio" (não há alto-falante).'],
+      ['i2s.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT)', 'Liga o microfone a 16 mil amostras por segundo. "SLOT_LEFT" é o canal esquerdo, escolhido pelo L/R no GND.'],
+      ['size_t n = i2s.readBytes((char *)amostras, sizeof(amostras)) / sizeof(int32_t);', 'Lê um pacote de amostras de som.'],
+      ['desvio += abs((amostras[i] >> 14) - media);', 'Calcula o volume: o quanto o som se afasta do nível médio. Palma dá número grande, silêncio dá número pequeno.']
+    ] });
+
+
+  // ----- extras (opcionais; desligados por padrao) -----
+  const xStep = (o) => step({ optional: true, usb: false, adds: [], ...o });
+  const xInfo = (extra, stage, title, do_, why, ifNot) => xStep({ stage, extra, type: 'info', title, do: do_, why, ifNot });
+  // Extra A: capacitores de 100 nF
+  xInfo('cap', 5, 'Capacitores de 100 nF: para que servem',
+    ['Um capacitor é um mini-reservatório de energia. Chips digitais pedem corrente em pulsos muito rápidos; o capacitor, colado no chip, entrega esse pulso na hora e alisa a tensão.',
+     'O de 100 nF é de cerâmica, **sem polaridade**: tanto faz qual perna vai em qual furo. Ele vem com “104” escrito.',
+     'Este extra está **desligado** por padrão. Para ver as peças no desenho e no multímetro, ligue “Montar este extra” acima.',
+     'Honestidade: no seu bancada o efeito é **invisível** sem osciloscópio. O capacitor é um seguro barato: não muda o que você vê funcionando, mas evita falhas esporádicas.'],
+    'Todo projeto digital sério leva esses capacitores perto dos chips. Ver onde eles entram ensina a ler qualquer placa que você abrir no futuro.',
+    'Sem eles o circuito costuma funcionar na bancada e dar falhas raras no uso real, difíceis de achar.');
+  xStep({ stage: 5, extra: 'cap', type: 'place', title: 'Capacitor do microfone', adds: ['x.c.mic'],
+    do: ['Encaixe as duas pernas do capacitor de 100 nF nos furos livres **da coluna 8 (VDD) e da coluna 9 (GND)**, na linha c (acima dos jumpers).', 'Sem polaridade: tanto faz qual perna vai em qual coluna.'],
+    why: E['x.c.mic'].why,
+    verify: { mode: 'cont', a: 'bbB:8', b: 'bbB:9', usb: false, goal: 'o VDD e o GND do microfone continuam separados (o capacitor bloqueia corrente contínua)' },
+    ifNot: E['x.c.mic'].cons });
+  xStep({ stage: 5, extra: 'cap', type: 'place', title: 'Capacitor entre os trilhos', adds: ['x.c.rail'],
+    do: ['Encaixe o segundo capacitor de 100 nF com uma perna no **trilho 3V3** e a outra no **trilho GND**, na coluna 11 (entre o microfone e o ESP32).'],
+    why: E['x.c.rail'].why,
+    verify: { mode: 'cont', a: 'rail:3V3', b: 'rail:GND', usb: false, goal: 'o trilho 3V3 e o trilho GND continuam separados' },
+    ifNot: 'Se apitar, uma perna encostou na outra ou o capacitor está em curto: troque-o.' });
+  xStep({ stage: 5, extra: 'cap', type: 'action', title: 'Meça a tensão com os capacitores', usb: true,
+    do: ['Ligue o USB. Tensão contínua: vermelha no trilho 3V3, preta no GND. Deve marcar **3,3 V**, como antes.', 'O capacitor não muda esse número. O que ele faz acontece em microssegundos, rápido demais para o multímetro.'],
+    why: 'Um bom teste de que o capacitor não atrapalha: a tensão continua certa e o circuito segue funcionando.',
+    verify: { mode: 'volt', a: 'rail:3V3', b: 'rail:GND', usb: true, goal: 'entre o trilho 3V3 e o trilho GND há 3,3 V' },
+    ifNot: 'Se marcar 0 V ou algo bem abaixo de 3,3 V, um capacitor pode estar em curto. Desligue e tire-os um a um.' });
+  // Extra B: calibrar o touch
+  xInfo('cal', 6, 'Calibrar o touch: para que serve',
+    ['O touch resistivo não sabe sozinho onde ficam as bordas da tela. O chip mede de 0 a 4095, e o programa converte isso em pixels usando 4 números: x_min, x_max, y_min e y_max.',
+     'Os valores que vêm no programa (300 a 3900) são típicos, mas cada tela é um pouco diferente. Se o ponto amarelo sai deslocado do dedo, é hora de calibrar.',
+     'Não precisa de peça nova: só o Monitor Serial e uns apertos nos cantos. Este extra está **desligado** por padrão.'],
+    'Calibrar mostra na prática como um sensor analógico vira coordenada. É a mesma ideia de qualquer touch resistivo, de caixa eletrônico a impressora.',
+    'Sem calibrar, os botões do mascote (Aprovar, sessões) podem responder a um toque um pouco ao lado.');
+  xStep({ stage: 6, extra: 'cal', type: 'test', title: 'Anote os valores crus dos cantos', usb: true,
+    do: ['Com o programa da etapa 3 rodando (USAR_TOUCH 1), abra o Monitor Serial.',
+         'Aperte com a unha bem perto de cada canto: **superior esquerdo, superior direito, inferior esquerdo e inferior direito**.',
+         'Anote os dois números de "cru" de cada canto. O menor e o maior de cada coluna são os seus limites.'],
+    why: 'O valor cru é o que o chip realmente mede, antes de qualquer conversão. Os cantos mostram onde a tela começa e termina para ele.',
+    ifNot: 'Se o cru não muda ao apertar, volte à etapa 3: algum fio do touch está frouxo.' });
+  xStep({ stage: 6, extra: 'cal', type: 'code', title: 'Ajuste os limites no programa', usb: true, code: 'etapa2_3_tela_touch_ili9488', flag: 'USAR_TOUCH 1', showPins: ['i2c'],
+    ok: 'Depois de gravar de novo, o ponto amarelo aparece embaixo do dedo nos quatro cantos e no meio.',
+    fail: [['Ainda deslocado num eixo', 'Os limites daquele eixo estão trocados ou com folga. Repita a anotação só desse eixo.'],
+           ['X e Y trocados', 'Troque offset_rotation do touch (0 a 7) antes de mexer nos limites.']],
+    blocks: [
+      ['cfg.x_min = 300;\ncfg.x_max = 3900;\ncfg.y_min = 200;\ncfg.y_max = 3900;', 'Troque pelos menores e maiores valores crus que você anotou. Os números que você mediu ficam guardados no programa.'],
+      ['Serial.printf("toque: x=%d y=%d  (cru: %d, %d)\\n", ...);', 'Mostra os dois jeitos de ver o mesmo aperto: em pixels (já convertido) e cru (direto do chip).']
+    ] });
+  // Extra C: botao
+  xInfo('btn', 7, 'O botão: para que serve',
+    ['Um botão físico para apertar-para-falar (push-to-talk) ou dar mudo sem depender da tela.', `Liga entre o GPIO ${BTN_GPIO} e o GND. Sem apertar, o pino lê 1 (o resistor interno do ESP32 puxa para cima, {{pull-up}}). Apertando, o botão liga o pino ao GND e lê 0.`, 'Este extra está **desligado** por padrão.'],
+    'Um botão é a forma mais simples de ver, no multímetro, um circuito que abre e fecha.');
+  xStep({ stage: 7, extra: 'btn', type: 'place', title: 'Encaixe o botão atravessando o canal', adds: ['x.btn'],
+    do: ['Encaixe o botão tátil 6×6 atravessando o **canal central**, com as pernas nas **colunas 41 e 43**: duas pernas embaixo (linha e) e duas em cima (linha f).', 'As duas pernas de cada lado são ligadas por dentro; apertar liga o lado de baixo ao de cima.', 'Se, sem apertar, o multímetro apitar entre as duas metades, o botão está girado 90°: gire-o.'],
+    why: 'Atravessando o canal, cada metade da protoboard recebe um lado do botão. O canal impede que os dois lados se toquem sem apertar.',
+    verify: { mode: 'cont', a: 'bbB:41', b: 'bbT:41', usb: false, goal: 'solto: o lado de baixo e o de cima do botão estão separados' },
+    counter: { mode: 'cont', a: 'bbB:41', b: 'bbT:41', usb: false, pressed: true, goal: 'apertado: o lado de baixo e o de cima apitam entre si' },
+    ifNot: 'Botão girado 90° vive em curto: o pino lê sempre 0.' });
+  xStep({ stage: 7, extra: 'btn', type: 'wire', title: `Ligue o botão ao GPIO ${BTN_GPIO}`, adds: ['x.w.btn.sig'],
+    do: [`Jumper macho-macho: uma ponta na **coluna 41, linha j** (metade de cima), a outra no furo livre da **coluna ${colR(BTN_GPIO)}, linha j**, ao lado do pino GPIO ${BTN_GPIO} do ESP32 (a fileira de cima).`],
+    why: E['x.w.btn.sig'].why, ifNot: E['x.w.btn.sig'].cons,
+    verify: { mode: 'cont', a: 'bbT:41', b: `esp:R${rIdx(BTN_GPIO)}`, usb: false, goal: `o lado de cima do botão e o GPIO ${BTN_GPIO} do ESP32 estão ligados` } });
+  xStep({ stage: 7, extra: 'btn', type: 'wire', title: 'Ligue o botão ao GND', adds: ['x.w.btn.gnd'],
+    do: ['Jumper macho-macho: uma ponta na **coluna 41, linha a** (metade de baixo) e a outra no **trilho GND**.'],
+    why: E['x.w.btn.gnd'].why, ifNot: E['x.w.btn.gnd'].cons,
+    verify: { mode: 'cont', a: 'bbB:41', b: 'rail:GND', usb: false, goal: 'o lado de baixo do botão e o trilho GND estão ligados' } });
+  xStep({ stage: 7, extra: 'btn', type: 'test', title: 'Teste do botão',
+    do: [`Continuidade entre o GPIO ${BTN_GPIO} e o GND. Primeiro **solto** (não apita), depois **segurando o botão** (apita).`, 'No multímetro virtual, use “segurando o botão”.'],
+    why: 'É a prova de que o botão abre e fecha o circuito. Se apitar sem apertar, o botão está girado; se não apitar apertado, falta um fio.',
+    verify: { mode: 'cont', a: `esp:R${rIdx(BTN_GPIO)}`, b: 'rail:GND', usb: false, goal: `solto: o GPIO ${BTN_GPIO} e o GND estão separados` },
+    counter: { mode: 'cont', a: `esp:R${rIdx(BTN_GPIO)}`, b: 'rail:GND', usb: false, pressed: true, goal: `apertado: o GPIO ${BTN_GPIO} e o GND apitam entre si` },
+    ifNot: 'Apertado e sem apitar: confira os dois jumpers e se as pernas do botão estão bem encaixadas.' });
+  xStep({ stage: 7, extra: 'btn', type: 'code', title: 'Grave o teste do botão', usb: true, code: 'extra_botao',
+    ok: 'O {{Monitor Serial}} (115200) escreve “APERTADO (leitura 0)” ao apertar e “solto (leitura 1)” ao soltar.',
+    fail: [['Sempre “solto”', 'Jumper do botão ao GPIO 21 ou ao GND faltando. Refaça o teste de continuidade apertando.'], ['Sempre “APERTADO”', 'O botão está girado 90°, ou o jumper do GPIO 21 toca o GND. Meça sem apertar.'], ['Vários toques para um aperto', 'Normal em botão barato: o programa já espera 20 ms. Aumente o delay se precisar.']],
+    table: [['Botão', `GPIO ${BTN_GPIO}`, 'Entrada com {{pull-up}} interno: sem apertar lê 1, apertado lê 0.']],
+    blocks: [['pinMode(PIN_BOTAO, INPUT_PULLUP);', 'Liga o pino como entrada e ativa o {{pull-up}} interno: sem ninguém puxando, o pino fica em 1.'], ['bool agora = digitalRead(PIN_BOTAO);', 'Lê o pino: 1 = solto, 0 = apertado (o botão liga o pino ao GND).'], ['if (agora != anterior) { ... delay(20); }', 'Só escreve quando o estado muda, e espera 20 ms para o ruído do contato passar.']] });
+  // Extra D: som
+  xInfo('som', 8, 'O som: para que serve',
+    ['Sem voz falada, mas o mascote pode fazer bipes e avisos (por exemplo, quando uma sessão pede aprovação). O som é gerado pelo próprio programa.', 'O amplificador MAX98357A recebe os dados de áudio pelo {{I2S}} e move o alto-falante. Ele usa os **mesmos fios BCLK e LRC do microfone**: por isso esses dois jumpers vão nas colunas do microfone. Dividir esses fios ainda não foi testado na placa.',
+     'Este extra está **desligado** por padrão. Ele usa as colunas 44 a 50 da protoboard.'],
+    'Som opcional: dá para montar agora ou depois. Ver o amplificador ao lado do microfone mostra por que o I2S usa relógio compartilhado.');
+  xStep({ stage: 8, extra: 'som', type: 'place', title: 'Encaixe o amplificador', adds: ['x.amp'],
+    do: ['Encaixe o MAX98357A nas **colunas 44 a 50**, com os pinos na ordem do manual: LRC, BCLK, DIN, GAIN, SD, GND, VIN. **Confira a serigrafia do seu módulo**: a ordem varia entre fabricantes.', 'GAIN e SD ficam sem ligar.'],
+    why: 'Como o microfone, o módulo cabe direto na protoboard e cada pino cai numa coluna própria.',
+    verify: { mode: 'cont', a: 'amp:VIN', b: `bbB:${AMP_C0 + 6}`, usb: false, goal: 'o pino VIN do módulo e a coluna 50 estão ligados' },
+    counter: { mode: 'cont', a: 'amp:VIN', b: 'amp:GND', usb: false, goal: 'VIN e GND do módulo continuam separados' },
+    ifNot: 'Se o módulo não encaixar firme, confira se não está trocado de lado.' });
+  AMP.filter(w => w.net || w.gpio).forEach(w => {
+    const id = `x.w.amp.${w.pin}`, tgt = w.gpio ? `esp:L${lIdx(w.gpio)}` : w.net === '5V' ? 'esp:L20' : 'rail:GND', col = AMP_C0 + AMP.indexOf(w);
+    const to = w.gpio === 15 ? 'na **coluna 4, linha b** (a coluna do SCK do microfone)' : w.gpio === 16 ? 'na **coluna 5, linha b** (a coluna do WS do microfone)' : w.gpio ? `no furo livre ao lado do pino GPIO ${w.gpio} (coluna ${colOf(w.gpio)})` : w.net === '5V' ? `no furo livre ao lado do pino 5V (coluna ${colOf('5V')})` : 'no trilho GND';
+    xStep({ stage: 8, extra: 'som', type: 'wire', title: `Ligue ${w.pin} ${w.gpio ? 'ao GPIO ' + w.gpio : w.net === '5V' ? 'ao 5V' : 'ao GND'}`, adds: [id],
+      do: [`Jumper macho-macho: uma ponta na **coluna ${col}, linha a** (pino ${w.pin}), a outra ${to}.`], why: E[id].why, ifNot: E[id].cons,
+      verify: { mode: 'cont', a: `amp:${w.pin}`, b: tgt, usb: false, goal: `o pino ${w.pin} do amplificador e ${w.gpio ? 'o GPIO ' + w.gpio : w.net === '5V' ? 'o pino 5V' : 'o trilho GND'} estão ligados` } });
+  });
+  xStep({ stage: 8, extra: 'som', type: 'place', title: 'Capacitor de 470 µF', adds: ['x.cap'],
+    do: ['Capacitor eletrolítico: perna **positiva** (a mais longa) na **coluna 50** (VIN) e perna **negativa** (a do traço claro na lateral) na **coluna 49** (GND), na linha c.', 'Cuidado com a {{polaridade}}: invertido, ele esquenta e pode estourar.'],
+    why: E['x.cap'].why,
+    verify: { mode: 'cont', a: `bbB:${AMP_C0 + 6}`, b: `bbB:${AMP_C0 + 5}`, usb: false, goal: 'o VIN e o GND do amplificador continuam separados (o capacitor bloqueia corrente contínua)' },
+    ifNot: E['x.cap'].cons });
+  xStep({ stage: 8, extra: 'som', type: 'place', title: 'Ligue o alto-falante', adds: ['x.spk'],
+    do: ['Solde (ou prenda com o terminal de parafuso) dois fios de uns 10 cm entre o alto-falante e os terminais **OUT+** e **OUT−** do módulo. Para um bipe, a polaridade não importa.', 'Por enquanto deixe o alto-falante solto sobre a mesa.'],
+    why: E['x.spk'].why,
+    verify: { mode: 'res', a: 'amp:OUT+', b: 'amp:OUT-', usb: false, goal: 'entre OUT+ e OUT− o multímetro mede poucos ohms (a bobina do alto-falante, cerca de 4 Ω)' },
+    ifNot: 'Se medir OL, um fio do alto-falante está solto. Se medir 0 Ω puro, há curto entre os dois terminais.' });
+  xStep({ stage: 8, extra: 'som', type: 'action', title: 'Meça os 5 V do amplificador', usb: true,
+    do: ['Antes: continuidade entre trilho 3V3 e GND e entre 5V e GND, **sem apitar**. Ligue o USB.', 'Tensão contínua: vermelha no **VIN** do amplificador, preta no **GND** dele. Deve marcar perto de **5 V**.'],
+    why: 'O amplificador usa 5 V (mais volume que 3,3 V). Medir confirma que o 5V do USB chega a ele e que o capacitor não está em curto.',
+    verify: { mode: 'volt', a: 'amp:VIN', b: 'amp:GND', usb: true, goal: 'o amplificador recebe 5 V entre VIN e GND' },
+    ifNot: 'Se marcar 0 V, falta o fio de VIN ou de GND. Se esquentar, desligue: capacitor invertido ou curto.' });
+  xStep({ stage: 8, extra: 'som', type: 'code', title: 'Grave o teste do som', usb: true, code: 'extra_som',
+    ok: 'O alto-falante toca três sons em sequência: um tique curto, um aviso de duas notas e um som grave de erro. O Monitor Serial mostra qual está tocando.',
+    fail: [['Silêncio total', 'Confira VIN (5 V), GND e DIN no GPIO 18. Meça 5 V no VIN. Veja se o módulo está bem encaixado.'], ['Chiado ou estalo', 'Falta o capacitor, ou o GND está frouxo.'], ['Falha ao iniciar o I2S', 'Confira BCLK (GPIO 15) e LRC (GPIO 16) e se o pacote esp32 é 3.0 ou mais novo.'], ['Volume muito baixo', 'Aumente VOLUME no programa de 0,25 para 0,5.']],
+    table: [['Amplificador BCLK', 'GPIO 15', 'Relógio dos bits. Compartilhado com o microfone.'], ['Amplificador LRC', 'GPIO 16', 'Marcador esquerdo/direito. Compartilhado com o microfone.'], ['Amplificador DIN', 'GPIO 18', 'Dados do som, do ESP32 para o amplificador.']],
+    blocks: [['i2s.setPins(PIN_BCLK, PIN_WS, PIN_DIN, -1);', 'Diz à biblioteca quais fios do {{I2S}} você montou. O -1 significa “sem entrada” (o microfone usa outro programa).'], ['sinf(2.0f * PI * hz * n / TAXA)', 'Calcula a onda do tom: uma senoide na frequência pedida, uma amostra por vez.'], ['i2s.write((uint8_t *)par, sizeof(par));', 'Manda cada amostra (esquerda e direita iguais) ao amplificador.']] });
+
+  const STEP_OF = {};
+  STEPS.forEach(s => (s.adds || []).forEach(id => { STEP_OF[id] = s.idx; }));
+  // usb nominal de cada passo
+  STEPS.forEach(s => { s.usbNom = !!s.usb; });
+
+  // =====================================================================================
+  // 2. REDES: uniao dos pontos ligados e o que o multimetro mede
+  // =====================================================================================
+  class UF {
+    constructor() { this.p = new Map(); }
+    find(x) { if (!this.p.has(x)) this.p.set(x, x); let r = x; while (this.p.get(r) !== r) r = this.p.get(r); let c = x; while (this.p.get(c) !== r) { const n = this.p.get(c); this.p.set(c, r); c = n; } return r; }
+    union(a, b) { const ra = this.find(a), rb = this.find(b); if (ra !== rb) this.p.set(ra, rb); }
+  }
+  function buildNets(on, usb, pressed) {
+    const uf = new UF();
+    if (on.has('esp')) {
+      for (let i = 0; i < 22; i++) { uf.union(`esp:L${i}`, `bbB:${BB_C0 + i}`); uf.union(`esp:R${i}`, `bbT:${BB_C0 + i}`); }
+      uf.union('esp:L0', 'esp:L1');                                           // os dois pinos 3V3 sao o mesmo fio
+      ['esp:R0', 'esp:R20', 'esp:R21'].forEach(n => uf.union('esp:L21', n));  // todos os GND da placa sao o mesmo
+    }
+    if (on.has('mic')) MIC.forEach((w, k) => uf.union(`mic:${w.pin}`, `bbB:${MIC_C0 + k}`));
+    if (on.has('x.amp')) AMP.forEach((w, k) => uf.union(`amp:${w.pin}`, `bbB:${AMP_C0 + k}`));
+    if (on.has('x.btn')) { uf.union(`bbB:${BTN_C[0]}`, `bbB:${BTN_C[1]}`); uf.union(`bbT:${BTN_C[0]}`, `bbT:${BTN_C[1]}`); if (pressed) uf.union(`bbB:${BTN_C[0]}`, `bbT:${BTN_C[0]}`); }
+    Object.values(E).forEach(e => { if ((e.kind === 'wire' || e.kind === 'xwire') && on.has(e.id)) uf.union(e.a, e.b); });
+    const comps = Object.values(E).filter(e => e.comp && on.has(e.id) && (e.id !== 'x.spk' || on.has('x.amp'))).map(e => e.comp);
+    const volt = new Map(); let short = false;
+    if (on.has('esp')) {
+      const gnd = uf.find('esp:L21'); volt.set(gnd, 0);
+      if (usb) {
+        const v33 = uf.find('esp:L0'), v5 = uf.find('esp:L20');
+        if (v33 === gnd) short = true;
+        else volt.set(v33, 3.3);
+        if (v5 !== gnd && !volt.has(v5)) volt.set(v5, 5.0);
+        comps.filter(c => c.pull).forEach(c => { const a = uf.find(c.a), b = uf.find(c.b); if (volt.has(b) && !volt.has(a)) volt.set(a, volt.get(b)); });   // pull-up leva a linha parada a 3,3 V
+      }
+    }
+    return { uf, volt, short, usb, on, comps, pressed: !!pressed };
+  }
+  const POINT_LABEL = {};
+  const regLabel = (node, label) => { POINT_LABEL[node] = label; };
+  LEFT.forEach((p, i) => regLabel(`esp:L${i}`, /^\d+$/.test(p) ? `ESP32 · GPIO ${p}` : `ESP32 · ${p}${i === 1 ? ' (2º)' : ''}`));
+  RIGHT.forEach((p, i) => regLabel(`esp:R${i}`, /^\d+$/.test(p) ? `ESP32 (lado direito) · GPIO ${p}` : `ESP32 (lado direito) · ${p}`));
+  TELA.forEach(w => regLabel(`tela:${w.pin}`, `Tela · ${w.pin}`));
+  MIC.forEach(w => regLabel(`mic:${w.pin}`, `Microfone · ${w.pin}`));
+  regLabel('rail:3V3', 'Trilho 3V3'); regLabel('rail:GND', 'Trilho GND');
+  for (let c = 4; c <= 50; c++) regLabel(`bbB:${c}`, `Furo livre da coluna ${c}`);
+  for (let c = 14; c <= 50; c++) regLabel(`bbT:${c}`, `Furo livre (metade de cima) da coluna ${c}`);
+  regLabel(`bbB:${BTN_C[0]}`, `Botão · lado de baixo (coluna ${BTN_C[0]})`); regLabel(`bbB:${BTN_C[1]}`, `Botão · lado de baixo (coluna ${BTN_C[1]})`);
+  regLabel(`bbT:${BTN_C[0]}`, `Botão · lado de cima (coluna ${BTN_C[0]})`); regLabel(`bbT:${BTN_C[1]}`, `Botão · lado de cima (coluna ${BTN_C[1]})`);
+  regLabel(`bbT:${colR(BTN_GPIO)}`, `Coluna ${colR(BTN_GPIO)} (metade de cima), pino GPIO ${BTN_GPIO} do ESP32`);
+  AMP.forEach(w => regLabel(`amp:${w.pin}`, `Amplificador · ${w.pin}`)); regLabel('amp:OUT+', 'Amplificador · saída OUT+'); regLabel('amp:OUT-', 'Amplificador · saída OUT−');
+  regLabel(`bbB:${AMP_C0 + 5}`, `Amplificador · coluna do GND (${AMP_C0 + 5})`); regLabel(`bbB:${AMP_C0 + 6}`, `Amplificador · coluna do VIN (${AMP_C0 + 6})`);
+  regLabel(`bbB:${CAPM[0]}`, `Microfone · coluna do VDD (${CAPM[0]})`); regLabel(`bbB:${CAPM[1]}`, `Microfone · coluna do GND (${CAPM[1]})`);
+  const nodeAvail = (n, on) => n.startsWith('esp:') ? on.has('esp') : n.startsWith('tela:') ? on.has('tela') : n.startsWith('mic:') ? on.has('mic') : n.startsWith('bbB:') ? (parseInt(n.slice(4), 10) >= BB_C0 ? on.has('esp') : parseInt(n.slice(4), 10) < BB_C0 + 22 ? true : true) : true;
+
+  function netName(nets, node) {
+    const r = nets.uf.find(node), names = [];
+    const probe = ['esp:L0', 'esp:L20', 'esp:L21', 'rail:3V3', 'rail:GND'];
+    if (nets.uf.find('esp:L21') === r) return 'GND';
+    if (nets.uf.find('esp:L0') === r || nets.uf.find('rail:3V3') === r) return '3V3';
+    if (nets.uf.find('esp:L20') === r) return '5V';
+    TELA.concat(MIC).forEach(w => { if (w.gpio) { const n = (TELA.includes(w) ? 'tela:' : 'mic:') + w.pin; if (nets.uf.find(n) === r) names.push(`${TELA.includes(w) ? 'Tela' : 'Microfone'} ${w.pin}`); } });
+    for (let i = 0; i < 22; i++) if (/^\d+$/.test(LEFT[i]) && nets.uf.find(`esp:L${i}`) === r) names.unshift(`GPIO ${LEFT[i]}`);
+    return names.length ? names.join(' ↔ ') : 'um ponto solto';
+  }
+  const fmtOhm = o => (o < 1000 ? { disp: pt(o.toFixed(1)), unit: 'Ω' } : { disp: pt((o / 1000).toFixed(2)), unit: 'kΩ' });
+  function resPath(nets, ra, rb) {          // resistencia equivalente (serie/paralelo simples) entre duas redes, ou null
+    const key = (x, y) => (x < y ? x + '|' + y : y + '|' + x), par = new Map(), adj = new Map();
+    nets.comps.filter(c => c.type === 'res').forEach(c => { const x = nets.uf.find(c.a), y = nets.uf.find(c.b); if (x === y) return; const k = key(x, y), g = par.get(k) || { x, y, g: 0 }; g.g += 1 / c.ohms; par.set(k, g); });
+    par.forEach(({ x, y, g }) => { const r = 1 / g; if (!adj.has(x)) adj.set(x, []); if (!adj.has(y)) adj.set(y, []); adj.get(x).push([y, r]); adj.get(y).push([x, r]); });
+    const dist = new Map([[ra, 0]]), q = [[0, ra]];
+    while (q.length) { q.sort((a, b) => a[0] - b[0]); const [d, u] = q.shift(); if (d > dist.get(u)) continue; if (u === rb) return d; (adj.get(u) || []).forEach(([v, w]) => { if (!dist.has(v) || d + w < dist.get(v)) { dist.set(v, d + w); q.push([d + w, v]); } }); }
+    return null;
+  }
+  const isCapPair = (nets, ra, rb) => nets.comps.some(c => c.type === 'cap' && ((nets.uf.find(c.a) === ra && nets.uf.find(c.b) === rb) || (nets.uf.find(c.a) === rb && nets.uf.find(c.b) === ra)));
+  const CAP_WHY = 'Entre as pernas de um capacitor o multímetro mostra OL: o capacitor bloqueia corrente contínua (no começo ele pode apitar um instante, enquanto carrega).';
+  function measure(nets, mode, a, b) {
+    const ra = nets.uf.find(a), rb = nets.uf.find(b), same = ra === rb;
+    if (mode === 'res') {
+      if (nets.usb) return { beep: false, disp: '——', unit: 'Ω', cat: 'none', warn: true, why: 'Resistência só se mede com o circuito desligado: com o USB ligado a leitura não faz sentido. Desligue o USB.' };
+      if (same) return { beep: false, disp: '0.0', unit: 'Ω', cat: 'zero', why: `Os dois pontos estão na mesma rede (${netName(nets, a)}): é só metal, 0 Ω.` };
+      const R = resPath(nets, ra, rb);
+      if (R !== null) { const o = fmtOhm(R); return { beep: false, disp: o.disp, unit: o.unit, cat: R < 50 ? 'low' : 'kohm', why: `Entre os dois pontos há ${R < 50 ? 'uma resistência pequena (por exemplo, a bobina de um alto-falante)' : 'um resistor'}: o multímetro mede cerca de ${o.disp} ${o.unit}.` }; }
+      return { beep: false, disp: 'OL', unit: 'Ω', cat: 'open', why: isCapPair(nets, ra, rb) ? CAP_WHY : `Os dois pontos estão em redes diferentes (${netName(nets, a)} e ${netName(nets, b)}) e nada os liga: OL, resistência infinita.` };
+    }
+    if (mode === 'cont') {
+      if (!same) {
+        const R = resPath(nets, ra, rb);
+        if (R !== null && R < 500) { const o = fmtOhm(R); return { beep: R < 50, disp: o.disp, unit: o.unit, warnPower: nets.usb, why: R < 50 ? `Entre os dois pontos há uma resistência pequena (cerca de ${o.disp} ${o.unit}, como a bobina de um alto-falante): não é um fio, mas é baixa o bastante para o multímetro apitar.` : `Entre os dois pontos há um componente de cerca de ${o.disp} ${o.unit}: é resistência demais para apitar.` }; }
+        if (isCapPair(nets, ra, rb)) return { beep: false, disp: 'OL', unit: 'Ω', warnPower: nets.usb, why: CAP_WHY };
+      }
+      return { beep: same, disp: same ? '0.0' : 'OL', unit: 'Ω', warnPower: nets.usb,
+        why: same ? `Os dois pontos estão na mesma rede elétrica (${netName(nets, a)}): há um caminho de metal entre eles, então o multímetro apita.`
+                  : `Os dois pontos estão em redes diferentes (${netName(nets, a)} e ${netName(nets, b)}): não há caminho de metal entre eles, então não apita (OL = circuito aberto).` };
+    }
+    // tensao
+    if (!nets.usb) return { beep: false, disp: '0.00', unit: 'V', why: 'O USB está desligado: não há energia no circuito, então qualquer tensão vale 0 V.' };
+    if (nets.short) return { beep: false, disp: '0.00', unit: 'V', why: 'Há um curto entre 3V3 e GND: a tensão desaba, o regulador esquenta e a placa pode reiniciar. Desligue o USB.', warn: true };
+    const va = nets.volt.get(ra), vb = nets.volt.get(rb);
+    if (va === undefined || vb === undefined) {
+      const un = va === undefined ? a : b;
+      return { beep: false, disp: '——', unit: 'V', why: `${POINT_LABEL[un] || un} é um sinal ou um ponto solto: a tensão ali depende do programa que o ESP32 está rodando (pode ser 0 V ou 3,3 V) ou fica instável se estiver solto.` };
+    }
+    const v = va - vb;
+    return { beep: false, disp: (v < 0 ? '-' : '') + Math.abs(v).toFixed(2), unit: 'V', why: `Ponta vermelha em ${netName(nets, a)} (${va.toFixed(1)} V) e preta em ${netName(nets, b)} (${vb.toFixed(1)} V): a diferença é ${pt(v.toFixed(2))} V.` };
+  }
+  const CAT_LABEL = { zero: '0 Ω (um fio)', low: 'poucos Ω', kohm: 'alguns kΩ', open: 'OL (aberto)', none: '——' };
+  const choicesFor = mode => (mode === 'cont' ? ['Apita (ligados)', 'Não apita (separados)'] : mode === 'res' ? ['0 Ω (um fio)', 'poucos Ω', 'alguns kΩ', 'OL (aberto)'] : ['0 V', '3,3 V', '5 V']);
+  const resultLabel = (mode, m) => mode === 'res' ? CAT_LABEL[m.cat] : mode === 'cont' ? (m.beep ? 'Apita (ligados)' : 'Não apita (separados)') : (m.disp === '0.00' ? '0 V' : m.disp === '3.30' ? '3,3 V' : m.disp === '5.00' ? '5 V' : pt(m.disp) + ' V');
+
+  // =====================================================================================
+  // 3. ESTADO
+  // =====================================================================================
+  const KEY = 'mascote.manual.v1.ili9488';
+  const S = { cur: 0, done: [], view: 'phys', ov: {}, usbOv: null, zoom: 1, mode: 'cont', red: null, black: null, pick: 'red', ans: {}, report: false, extras: {}, pressed: false };
+  try { const d = JSON.parse(localStorage.getItem(KEY) || '{}'); Object.assign(S, { cur: Math.min(d.cur || 0, STEPS.length - 1), done: d.done || [], view: d.view || 'phys', ov: d.ov || {}, zoom: d.zoom || 1, ans: d.ans || {}, extras: d.extras || {} }); } catch (_) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ cur: S.cur, done: S.done, view: S.view, ov: S.ov, zoom: S.zoom, ans: S.ans, extras: S.extras })); } catch (_) {} };
+  const inNominal = (id, k) => E[id].step <= k && (!E[id].extra || !!S.extras[E[id].extra]);
+  const nominalOn = id => inNominal(id, S.cur);
+  const effOn = id => S.ov[id] === undefined ? nominalOn(id) : S.ov[id];
+  const onSet = () => new Set(Object.keys(E).filter(effOn));
+  const usbNow = () => S.usbOv === null ? STEPS[S.cur].usbNom : S.usbOv;
+  const nominalSet = k => new Set(Object.keys(E).filter(id => inNominal(id, k)));
+  const elState = id => effOn(id) ? 'on' : (nominalOn(id) ? 'off' : 'future');
+  const curIds = () => new Set(STEPS[S.cur].adds || []);
+
+  // =====================================================================================
+  // 4. TEXTO RICO E GLOSSARIO
+  // =====================================================================================
+  const GLOSS = {
+    GND: ['GND (terra)', 'A referência de 0 V e o caminho de volta da corrente de toda peça. Sem ele, as tensões não têm com o que ser comparadas.'],
+    '3V3': ['3V3', 'O fio de alimentação de 3,3 V. Sai do regulador do ESP32 e alimenta tela, touch e microfone.'],
+    trilho: ['Trilho', 'Linha de furos ligados ao longo de toda a protoboard, usada para distribuir 3V3 e GND sem repetir fios.'],
+    curto: ['Curto-circuito', 'Ligação direta entre dois pontos que não deviam se tocar, como 3V3 e GND. A corrente fica enorme e queima peças.'],
+    regulador: ['Regulador', 'Chip da placa que baixa os 5 V do USB para 3,3 V. A diferença vira calor.'],
+    'multímetro': ['Multímetro', 'Aparelho que mede tensão, continuidade e resistência. Em continuidade ele apita quando dois pontos estão ligados por metal.'],
+    SPI: ['SPI', 'Barramento rápido de poucos fios (relógio, dados de ida, dados de volta, seleção) usado para mandar a imagem à tela.'],
+    I2C: ['I2C', 'Barramento de 2 fios compartilhados (dados e relógio), usado aqui para ler o chip do touch.'],
+    I2S: ['I2S', 'Barramento feito para áudio digital: relógio dos bits, marcador esquerdo/direito e dados.'],
+    CS: ['CS (Chip Select)', 'Fio que avisa à tela que a conversa é com ela. Fica em nível baixo enquanto o ESP32 fala.'],
+    DC: ['DC (Data/Command)', 'Fio que diz se o próximo byte é um comando ou um pixel.'],
+    SCK: ['SCK (relógio)', 'Cada pulso deste fio marca um bit. Dá o ritmo da conversa.'],
+    MOSI: ['MOSI / SDI', 'Dados do ESP32 para o outro chip. Na tela chama-se SDI.'],
+    MISO: ['MISO / SDO', 'Dados do outro chip para o ESP32. Na tela chama-se SDO.'],
+    WS: ['WS (Word Select)', 'No I2S, marca o começo de cada amostra e diz se é canal esquerdo ou direito.'],
+    'pull-up': ['Pull-up', 'Resistor que empurra uma linha para o nível alto (3V3) quando ninguém a puxa para baixo.'],
+    PSRAM: ['PSRAM', 'Memória extra do ESP32 (8 MB no N16R8), usada para imagens e áudio.'],
+    'Monitor Serial': ['Monitor Serial', 'Janela da Arduino IDE que mostra as mensagens que o ESP32 envia pelo cabo USB.']
+  };
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const rich = t => esc(t)
+    .replace(/\{\{([^}|]+)(?:\|([^}]+))?\}\}/g, (m, k, label) => GLOSS[k] ? `<button type="button" class="gl" data-gl="${esc(k)}">${label || k}</button>` : (label || k))
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+  // =====================================================================================
+  // 5. DESENHOS
+  // =====================================================================================
+  // ---- geometria da protoboard (vista fisica) ----
+  const bx = c => 48 + (c - 1) * 14;
+  const ROW = { j: 82, i: 96, h: 110, g: 124, f: 138, e: 180, d: 194, c: 208, b: 222, a: 236 };
+  const RAIL_Y = { '3V3': 264, 'GND': 278 };
+  const TELA_Y = 400, TELA_X0 = 150, TELA_P = 46;
+  const SPRITE = ['...############...', '...############...', '.################.', '...############...', '....#.#....#.#....'];
+  const mascot = (x, y, px, py) => { let s = ''; SPRITE.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === '#') s += `<rect x="${x + c * px}" y="${y + r * py}" width="${px}" height="${py}" fill="#d97757" shape-rendering="crispEdges"/>`; }); return s + [5, 12].map(c => `<rect x="${x + c * px}" y="${y + py}" width="${px}" height="${py}" fill="#141210" shape-rendering="crispEdges"/>`).join(''); };
+
+  // posicao de cada no no desenho fisico (para pontas de prova e fios)
+  function physXY(node) {
+    if (node === 'rail:3V3') return [bx(46), RAIL_Y['3V3']];
+    if (node === 'rail:GND') return [bx(46), RAIL_Y.GND];
+    if (node.startsWith('bbB:')) return [bx(+node.slice(4)), ROW.a];
+    if (node.startsWith('esp:L')) return [bx(BB_C0 + +node.slice(5)), ROW.b];
+    if (node.startsWith('esp:R')) return [bx(BB_C0 + +node.slice(5)), ROW.i];
+    if (node.startsWith('tela:')) { const k = TELA.findIndex(w => w.pin === node.slice(5)); return [TELA_X0 + TELA_P * k, TELA_Y]; }
+    if (node.startsWith('mic:')) { const k = MIC.findIndex(w => w.pin === node.slice(4)); return [bx(MIC_C0 + k), ROW.e]; }
+    if (node.startsWith('bbT:')) return [bx(+node.slice(4)), ROW.j];
+    if (node === 'amp:OUT+') return [bx(45), 118];
+    if (node === 'amp:OUT-') return [bx(47), 118];
+    if (node.startsWith('amp:')) { const k = AMP.findIndex(w => w.pin === node.slice(4)); return [bx(AMP_C0 + k), ROW.e]; }
+    return [0, 0];
+  }
+  function wirePath(e) {
+    // fios da tela vem de baixo; fios da protoboard ficam acima dos furos
+    if (e.mod === 'tela') {
+      const [x1, y1] = physXY(e.a), [x2, y2] = e.b.startsWith('rail:') ? [bx(e.net === '3V3' ? 2 : 3), RAIL_Y[e.net]] : physXY(e.b);
+      return { d: `M${x1} ${y1} C${x1} ${y1 - 70} ${x2} ${y2 + 70} ${x2} ${y2}`, p1: [x1, y1], p2: [x2, y2] };
+    }
+    if (e.b.startsWith('rail:')) { const [x1] = physXY(e.a); const y2 = RAIL_Y[e.net]; return { d: `M${x1} ${ROW.a} V${y2}`, p1: [x1, ROW.a], p2: [x1, y2] }; }
+    const [x1] = physXY(e.a), [x2] = physXY(e.b), dd = 26 + 7 * (e.k || 0);
+    return { d: `M${x1} ${ROW.a} C${x1} ${ROW.a + dd} ${x2} ${ROW.a + dd} ${x2} ${ROW.a}`, p1: [x1, ROW.a], p2: [x2, ROW.a] };
+  }
+  const pointEl = (node, x, y, r = 7) => `<g class="pt" data-node="${node}" tabindex="0" role="button" aria-label="Encostar a ponta em ${esc(POINT_LABEL[node] || node)}"><title>${esc(POINT_LABEL[node] || node)}</title><circle class="ring" cx="${f(x)}" cy="${f(y)}" r="${r}"/></g>`;
+  const probeMarks = (xy) => {
+    let s = '';
+    [['red', 'var(--bad)', 'V+'], ['black', '#111', 'COM']].forEach(([k, col, txt]) => {
+      const n = S[k]; if (!n) return; const p = xy(n); if (!p) return;
+      s += `<g pointer-events="none"><circle cx="${f(p[0])}" cy="${f(p[1])}" r="9" fill="${col}" stroke="#fff" stroke-width="1.5"/><text x="${f(p[0])}" y="${f(p[1]) * 1 - 13}" text-anchor="middle" style="font-size:9px;font-weight:700;fill:${k === 'red' ? 'var(--bad)' : 'var(--fg)'}">${txt}</text></g>`;
+    });
+    return s;
+  };
+  const stateClass = id => elState(id);
+  const wireG = (id, d, col, extra = '') => {
+    const st = stateClass(id), cur = curIds().has(id);
+    const stroke = st === 'off' ? 'var(--bad)' : col, dash = st !== 'on' ? ' stroke-dasharray="5 4"' : '';
+    return `<g class="wire ${st}" data-el="${id}">${cur ? `<path class="cur-halo" d="${d}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".45"/>` : ''}<path d="${d}" fill="none" stroke="var(--bb)" stroke-width="5.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.4" stroke-linecap="round"${dash}/>${extra}</g>`;
+  };
+
+  // ---- extras no desenho fisico ----
+  function xExtraOn(id) { return !E[id].extra || !!S.extras[E[id].extra]; }
+  const xOpacity = id => { const st = elState(id); return st === 'on' ? 1 : st === 'off' ? .6 : .11; };
+  const xStrokeOff = id => (elState(id) === 'off' ? ' stroke="var(--bad)" stroke-dasharray="4 3"' : '');
+  const xHalo = (id, x1, y1, x2, y2) => (curIds().has(id) ? `<rect class="cur-halo" x="${f(x1 - 6)}" y="${f(y1 - 6)}" width="${f(x2 - x1 + 12)}" height="${f(y2 - y1 + 12)}" rx="8" fill="none" stroke="var(--accent)" stroke-width="3"/>` : '');
+  function extraNodes() {
+    const n = [], on = id => effOn(id);
+    if (on('x.btn')) n.push(`bbB:${BTN_C[0]}`, `bbB:${BTN_C[1]}`, `bbT:${BTN_C[0]}`, `bbT:${BTN_C[1]}`);
+    if (on('x.w.btn.sig') && on('esp')) n.push(`bbT:${colR(BTN_GPIO)}`);
+    if (on('x.amp')) { AMP.forEach(w => n.push(`amp:${w.pin}`)); n.push(`bbB:${AMP_C0 + 5}`, `bbB:${AMP_C0 + 6}`); if (on('x.spk')) n.push('amp:OUT+', 'amp:OUT-'); }
+    return n;
+  }
+  function drawExtras() {
+    let s = '';
+    const g = (id, inner) => `<g data-el="${id}" opacity="${xOpacity(id)}" pointer-events="none">${inner}</g>`;
+    // amplificador (deitado, como o microfone)
+    {
+      const x1 = bx(AMP_C0) - 12, x2 = bx(AMP_C0 + 6) + 12, st = elState('x.amp');
+      let t = xHalo('x.amp', x1, 108, x2, 174) + `<rect x="${x1}" y="108" width="${x2 - x1}" height="66" rx="4" fill="var(--pcb)" stroke="${st === 'off' ? 'var(--bad)' : 'var(--pcb-edge)'}" stroke-width="2"${st === 'off' ? ' stroke-dasharray="4 3"' : ''}/><rect x="${bx(AMP_C0 + 2) - 10}" y="124" width="26" height="26" rx="3" fill="var(--chip)"/><text class="t-pcb t-title" x="${bx(AMP_C0 + 2) + 20}" y="136" style="font-size:9px">MAX98357A</text><text class="t-pcbdim" x="${bx(AMP_C0 + 2) + 20}" y="148" style="font-size:8.5px">amplificador</text>`;
+      AMP.forEach((w, k) => { t += `<circle cx="${bx(AMP_C0 + k)}" cy="${ROW.e}" r="3.2" fill="var(--gold)"/><text transform="translate(${bx(AMP_C0 + k) + 3.2} 171) rotate(-90)" class="t-pcb" style="font-size:8.5px">${w.pin}</text>`; });
+      t += [[45, '+'], [47, '−']].map(([c, sg]) => `<circle cx="${bx(c)}" cy="118" r="4.5" fill="var(--gold)"/><text class="t-pcb" x="${bx(c)}" y="114" text-anchor="middle" style="font-size:8px">${sg}</text>`).join('');
+      s += g('x.amp', t);
+    }
+    // alto-falante
+    {
+      const sp = [700, 338], o1 = physXY('amp:OUT+'), o2 = physXY('amp:OUT-'), st = elState('x.spk');
+      s += g('x.spk', `<circle cx="${sp[0]}" cy="${sp[1]}" r="26" fill="#2a2d31" stroke="${st === 'off' ? 'var(--bad)' : '#000'}" stroke-width="2"/><circle cx="${sp[0]}" cy="${sp[1]}" r="13" fill="#4a4f55"/><circle cx="${sp[0]}" cy="${sp[1]}" r="4" fill="#15171a"/><text x="${sp[0]}" y="${sp[1] - 32}" text-anchor="middle" class="t-dim" style="font-size:9px">alto-falante 4 Ω</text>`
+        + `<path d="M${o1[0]} ${o1[1]} V100 C${o1[0]} 70 770 90 772 200 S750 330 ${sp[0] + 12} ${sp[1] - 25}" fill="none" stroke="var(--w-pwr)" stroke-width="2"/><path d="M${o2[0]} ${o2[1]} V104 C${o2[0]} 74 782 94 784 210 S744 334 ${sp[0] - 6} ${sp[1] - 26}" fill="none" stroke="var(--w-gnd)" stroke-width="2"/>`);
+    }
+    // botao
+    {
+      const xa = bx(BTN_C[0]), xb = bx(BTN_C[1]), xm = (xa + xb) / 2;
+      s += g('x.btn', xHalo('x.btn', xa - 9, 130, xb + 9, 188) + `<rect x="${xa - 9}" y="130" width="${xb - xa + 18}" height="58" rx="5" fill="#2d3136" stroke="#000" stroke-width="1.5"${xStrokeOff('x.btn')}/><circle cx="${xm}" cy="159" r="13" fill="${S.pressed ? '#e08562' : '#555b63'}" stroke="#15171a" stroke-width="2"/>` + [[xa, ROW.f], [xb, ROW.f], [xa, ROW.e], [xb, ROW.e]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.4" fill="var(--gold)"/>`).join(''));
+    }
+    // capacitores
+    {
+      const xm = (bx(CAPM[0]) + bx(CAPM[1])) / 2, y = ROW.c;
+      s += g('x.c.mic', xHalo('x.c.mic', bx(CAPM[0]) - 8, y - 30, bx(CAPM[1]) + 8, y + 4) + `<path d="M${bx(CAPM[0])} ${y} V${y - 8} M${bx(CAPM[1])} ${y} V${y - 8}" stroke="#aab1ba" stroke-width="1.6" fill="none"/><ellipse cx="${xm}" cy="${y - 18}" rx="11" ry="12" fill="#e3a23a" stroke="${elState('x.c.mic') === 'off' ? 'var(--bad)' : '#8a5a10'}" stroke-width="1.5"/><text x="${xm}" y="${y - 15}" text-anchor="middle" style="font-size:8px;fill:#3a2400;font-weight:600">104</text>`);
+      const xr = bx(CAPR_C);
+      s += g('x.c.rail', xHalo('x.c.rail', xr - 6, RAIL_Y['3V3'] - 12, xr + 26, RAIL_Y.GND + 12) + `<path d="M${xr} ${RAIL_Y['3V3']} H${xr + 7} M${xr} ${RAIL_Y.GND} H${xr + 7}" stroke="#aab1ba" stroke-width="1.6" fill="none"/><ellipse cx="${xr + 17}" cy="${(RAIL_Y['3V3'] + RAIL_Y.GND) / 2}" rx="10" ry="11" fill="#e3a23a" stroke="${elState('x.c.rail') === 'off' ? 'var(--bad)' : '#8a5a10'}" stroke-width="1.5"/><text x="${xr + 17}" y="${(RAIL_Y['3V3'] + RAIL_Y.GND) / 2 + 3}" text-anchor="middle" style="font-size:8px;fill:#3a2400;font-weight:600">104</text>`);
+      const xn = bx(AMP_C0 + 5), xp = bx(AMP_C0 + 6), xc = (xn + xp) / 2;
+      s += g('x.cap', xHalo('x.cap', xn - 12, y - 34, xp + 12, y + 4) + `<path d="M${xn} ${y} V${y - 8} M${xp} ${y} V${y - 8}" stroke="#aab1ba" stroke-width="1.6" fill="none"/><circle cx="${xc}" cy="${y - 22}" r="13" fill="#223a6a" stroke="${elState('x.cap') === 'off' ? 'var(--bad)' : '#0b1530'}" stroke-width="1.5"/><rect x="${xc - 13}" y="${y - 34}" width="8" height="24" fill="#cfd5dc" opacity=".6"/><text x="${xc + 3}" y="${y - 19}" text-anchor="middle" class="t-pcb" style="font-size:7.5px">470µ</text><text x="${xn}" y="${y + 12}" text-anchor="middle" style="font-size:10px;font-weight:700;fill:var(--fg)">−</text><text x="${xp}" y="${y + 12}" text-anchor="middle" style="font-size:10px;font-weight:700;fill:var(--w-pwr)">+</text>`);
+    }
+    // fios extras (jumpers)
+    Object.values(E).filter(e => e.kind === 'xwire' && xExtraOn(e.id)).forEach((e, i) => {
+      const col = busColor(e.bus, e.net); let d, p1, p2;
+      if (e.b.startsWith('rail:')) { const x = bx(+e.a.slice(4)); p1 = [x, ROW[e.ra || 'a']]; p2 = [x, RAIL_Y[e.net]]; d = `M${p1[0]} ${p1[1]} V${p2[1]}`; }
+      else if (e.a.startsWith('bbT:')) { const x1 = bx(+e.a.slice(4)), x2 = bx(+e.b.slice(4)); p1 = [x1, ROW.j]; p2 = [x2, ROW.j]; d = `M${x1} ${ROW.j} C${x1} ${ROW.j - 48} ${x2} ${ROW.j - 48} ${x2} ${ROW.j}`; }
+      else { const x1 = bx(+e.a.slice(4)), x2 = bx(+e.b.slice(4)), y1 = ROW[e.ra || 'a'], y2 = ROW[e.rb || 'a'], dd = 34 + 6 * (i % 6); p1 = [x1, y1]; p2 = [x2, y2]; d = `M${x1} ${y1} C${x1} ${y1 + dd} ${x2} ${y2 + dd} ${x2} ${y2}`; }
+      const ex = `<circle cx="${p1[0]}" cy="${p1[1]}" r="3.6" fill="${col}"/><circle cx="${p2[0]}" cy="${p2[1]}" r="3.6" fill="${col}"/>` + (elState(e.id) === 'off' ? `<text x="${f((p1[0] + p2[0]) / 2)}" y="${f((p1[1] + p2[1]) / 2)}" text-anchor="middle" class="t-bad" style="font-size:16px">×</text>` : '');
+      s += wireG(e.id, d, col, ex);
+    });
+    return s;
+  }
+
+  function drawPhys() {
+    const nomOn = nominalSet(S.cur);
+    let s = `<defs><pattern id="hole" x="41" y="0" width="14" height="14" patternUnits="userSpaceOnUse"><rect x="4.5" y="9.5" width="5" height="5" rx="1" fill="var(--hole)"/></pattern></defs>`;
+    s += `<rect x="30" y="18" width="720" height="282" rx="8" fill="var(--bb)" stroke="var(--bb-edge)" stroke-width="2"/><rect x="41" y="146" width="700" height="22" fill="var(--gap)"/>`;
+    [[28, 28], [70, 70], [168, 70], [252, 28]].forEach(([y, h]) => { s += `<rect x="41" y="${y}" width="700" height="${h}" fill="url(#hole)"/>`; });
+    [['3V3', 'var(--w-pwr)'], ['GND', 'var(--w-gnd)']].forEach(([n, c]) => { const y = RAIL_Y[n]; s += `<line x1="41" x2="741" y1="${y - 8}" y2="${y - 8}" stroke="${c}" stroke-width="1.5" opacity=".7"/><text x="8" y="${y + 3.5}" class="t-title" style="fill:${c}">${n}</text>`; });
+    s += `<text x="8" y="43" class="t-dim">livre</text><text x="8" y="57" class="t-dim">livre</text>`;
+    for (let c = 1; c <= 50; c++) if (c === 1 || c % 5 === 0) s += `<text class="t-dim" x="${bx(c)}" y="66" text-anchor="middle" style="font-size:9px">${c}</text>`;
+    if (STEPS[S.cur].overlay === 'strips') {                      // ligacoes internas
+      for (let c = 1; c <= 50; c++) { s += `<rect x="${bx(c) - 4}" y="76" width="8" height="68" rx="4" fill="var(--accent)" opacity=".35"/><rect x="${bx(c) - 4}" y="174" width="8" height="68" rx="4" fill="var(--accent)" opacity=".35"/>`; }
+      s += `<rect x="41" y="${RAIL_Y['3V3'] - 4}" width="700" height="8" rx="4" fill="var(--w-pwr)" opacity=".35"/><rect x="41" y="${RAIL_Y.GND - 4}" width="700" height="8" rx="4" fill="var(--w-gnd)" opacity=".35"/>`;
+      s += `<text class="t-title" x="${bx(18)}" y="162" style="fill:var(--accent)">cada coluna de 5 furos é um só ponto elétrico · o canal do meio separa as metades</text>`;
+    }
+    // microfone
+    const mSt = elState('mic');
+    if (mSt !== 'off' || true) {
+      const op = mSt === 'on' ? 1 : mSt === 'off' ? .5 : .14, dash = mSt === 'on' ? '' : ' stroke-dasharray="5 4"';
+      s += `<g data-el="mic" opacity="${op}">${curIds().has('mic') ? `<rect class="cur-halo" x="${bx(MIC_C0) - 16}" y="104" width="${bx(MIC_C0 + 5) - bx(MIC_C0) + 32}" height="76" rx="6" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ''}<rect x="${bx(MIC_C0) - 12}" y="108" width="${bx(MIC_C0 + 5) - bx(MIC_C0) + 24}" height="66" rx="4" fill="var(--pcb)" stroke="${mSt === 'off' ? 'var(--bad)' : 'var(--pcb-edge)'}" stroke-width="2"${dash}/>`;
+      s += `<rect x="${bx(MIC_C0) + 4}" y="118" width="22" height="22" rx="3" fill="var(--chip)"/><circle cx="${bx(MIC_C0) + 15}" cy="129" r="4.5" fill="#141210"/><text class="t-pcb t-title" x="${bx(MIC_C0) + 30}" y="126" style="font-size:9px">INMP441</text><text class="t-pcbdim" x="${bx(MIC_C0) + 30}" y="138" style="font-size:8.5px">microfone</text>`;
+      MIC.forEach((w, k) => { s += `<circle cx="${bx(MIC_C0 + k)}" cy="${ROW.e}" r="3.2" fill="var(--gold)"/><text transform="translate(${bx(MIC_C0 + k) + 3.2} 171) rotate(-90)" class="t-pcb" style="font-size:9px">${w.pin}</text>`; });
+      s += `</g>`;
+    }
+    // ESP32
+    const eSt = elState('esp'), eop = eSt === 'on' ? 1 : eSt === 'off' ? .5 : .14, edash = eSt === 'on' ? '' : ' stroke-dasharray="5 4"';
+    const xl = bx(BB_C0) - 26, xr = bx(BB_C0 + 21) + 36;
+    s += `<g data-el="esp" opacity="${eop}">${curIds().has('esp') ? `<rect class="cur-halo" x="${xl - 4}" y="82" width="${xr - xl + 22}" height="154" rx="6" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ''}<rect x="${xl}" y="86" width="${xr - xl}" height="146" rx="4" fill="var(--pcb)" stroke="${eSt === 'off' ? 'var(--bad)' : 'var(--pcb-edge)'}" stroke-width="2"${edash}/>`;
+    s += `<rect x="${xr}" y="112" width="14" height="24" rx="2" fill="var(--chip)"/><rect x="${xr}" y="158" width="14" height="24" rx="2" fill="var(--chip)"/><rect x="${xl + 8}" y="104" width="86" height="104" rx="3" fill="var(--chip)"/><text x="${xl + 51}" y="159" text-anchor="middle" transform="rotate(-90 ${xl + 51} 156)" style="fill:#1d2024;font-size:9.5px">WROOM-1 N16R8</text>`;
+    s += `<text class="t-pcbdim" x="${xr - 6}" y="102" text-anchor="end" style="font-size:9px">USB →</text>`;
+    LEFT.forEach((p, i) => {
+      const x = bx(BB_C0 + i), res = RES_L.includes(p);
+      s += `<circle cx="${x}" cy="${ROW.i}" r="3.2" fill="var(--gold)"/><circle cx="${x}" cy="${ROW.b}" r="3.2" fill="var(--gold)"/><text transform="translate(${x + 3.4} 214) rotate(-90)" class="${res ? 't-bad' : 't-pcb'}" style="font-size:9px${res ? ';text-decoration:line-through' : ''}">${/^\d+$/.test(p) ? 'GPIO' + p : p}</text>`;
+    });
+    s += `</g>`;
+    // tela
+    const tSt = elState('tela'), top = tSt === 'on' ? 1 : tSt === 'off' ? .5 : .14, tdash = tSt === 'on' ? '' : ' stroke-dasharray="5 4"';
+    const tw = TELA.length;
+    s += `<g data-el="tela" opacity="${top}">${curIds().has('tela') ? `<rect class="cur-halo" x="${TELA_X0 - 36}" y="${TELA_Y - 6}" width="${TELA_P * (tw - 1) + 72}" height="142" rx="12" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ''}<rect x="${TELA_X0 - 30}" y="${TELA_Y}" width="${TELA_P * (tw - 1) + 60}" height="130" rx="8" fill="var(--pcb)" stroke="${tSt === 'off' ? 'var(--bad)' : 'var(--pcb-edge)'}" stroke-width="2"${tdash}/>`;
+    s += `<rect x="${TELA_X0 + 160}" y="${TELA_Y + 40}" width="240" height="80" rx="3" fill="#141210"/>` + mascot(TELA_X0 + 224, TELA_Y + 62, 6, 8);
+    s += `<text class="t-title t-pcb" x="${TELA_X0 - 14}" y="${TELA_Y + 62}">Tela 3,5″ ILI9488</text><text class="t-pcbdim" x="${TELA_X0 - 14}" y="${TELA_Y + 80}">fora de escala</text>`;
+    TELA.forEach((w, k) => { const x = TELA_X0 + TELA_P * k; s += `<circle cx="${x}" cy="${TELA_Y}" r="4" fill="var(--gold)"/><text class="t-pcb" x="${x}" y="${TELA_Y + 18}" text-anchor="middle" style="font-size:9.5px">${w.pin}</text>`; });
+    s += `</g>`;
+    // fios
+    Object.values(E).filter(e => e.kind === 'wire').forEach(e => {
+      const wp = wirePath(e), col = busColor(e.bus, e.net);
+      let extra = `<circle cx="${wp.p1[0]}" cy="${wp.p1[1]}" r="3.6" fill="${col}"/><circle cx="${wp.p2[0]}" cy="${wp.p2[1]}" r="3.6" fill="${col}"/>`;
+      if (elState(e.id) === 'off') extra += `<text x="${f((wp.p1[0] + wp.p2[0]) / 2)}" y="${f((wp.p1[1] + wp.p2[1]) / 2)}" text-anchor="middle" class="t-bad" style="font-size:16px">×</text>`;
+      s += wireG(e.id, wp.d, col, extra);
+    });
+    s += drawExtras();
+    // pontos de medida
+    const nodes = [];
+    if (effOn('esp')) { LEFT.forEach((p, i) => nodes.push(`esp:L${i}`)); [0, 20, 21].forEach(i => nodes.push(`esp:R${i}`)); for (let c = BB_C0; c < BB_C0 + 22; c++) nodes.push(`bbB:${c}`); }
+    if (effOn('mic')) { MIC.forEach((w, k) => nodes.push(`mic:${w.pin}`)); for (let c = MIC_C0; c < MIC_C0 + 6; c++) nodes.push(`bbB:${c}`); }
+    if (effOn('tela')) TELA.forEach(w => nodes.push(`tela:${w.pin}`));
+    nodes.push('rail:3V3', 'rail:GND'); extraNodes().forEach(n => nodes.push(n));
+    nodes.forEach(n => { const [x, y] = physXY(n); s += pointEl(n, x, y, n.startsWith('rail') ? 9 : 7); });
+    s += probeMarks(n => (nodes.includes(n) ? physXY(n) : null));
+    return `<svg id="svg" class="${S.zoom === 1 ? 'fit' : ''}" viewBox="0 0 800 560" width="${Math.round(800 * S.zoom)}" role="img" aria-label="Protoboard vista de cima com as peças e os fios ativos neste passo">${s}</svg>`;
+  }
+
+  // ---- vista de blocos (esquema de ligacao) ----
+  const BLK = { espL: 600, espT: 60, pitch: 24, y0: 112, modX: 300, lane0: 360, step: 14 };
+  const blkEspY = g => BLK.y0 + BLK.pitch * lIdx(g);
+  const blkMod = (mod, k) => (mod === 'tela' ? 84 : 444) + BLK.pitch * k;
+  let LANES = null;
+  function lanes() {
+    if (LANES) return LANES;
+    const sig = Object.values(E).filter(e => e.kind === 'wire' && e.gpio);
+    const cost = ord => { const ln = new Map(ord.map((w, i) => [w.id, BLK.lane0 + BLK.step * i])); let n = 0;
+      sig.forEach(a => sig.forEach(b => { if (a === b) return; const xa = ln.get(a.id), ya = blkMod(a.mod, a.k), ye = blkEspY(a.gpio), xb = ln.get(b.id), y1 = Math.min(blkMod(b.mod, b.k), blkEspY(b.gpio)), y2 = Math.max(blkMod(b.mod, b.k), blkEspY(b.gpio));
+        if (xb > BLK.modX && xb < xa && ya > y1 && ya < y2) n++; if (xb > xa && xb < BLK.espL && ye > y1 && ye < y2) n++; })); return n; };
+    let seed = 7; const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    let best = sig.slice().sort((a, b) => blkEspY(a.gpio) - blkEspY(b.gpio)), bc = cost(best);
+    for (let r = 0; r < 20; r++) { let cur = best.slice(); for (let i = cur.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cur[i], cur[j]] = [cur[j], cur[i]]; }
+      let c = cost(cur); for (let it = 0; it < 1200; it++) { const i = Math.floor(rnd() * cur.length), j = Math.floor(rnd() * cur.length); if (i === j) continue; [cur[i], cur[j]] = [cur[j], cur[i]]; const c2 = cost(cur); if (c2 <= c) c = c2; else [cur[i], cur[j]] = [cur[j], cur[i]]; }
+      if (c < bc) { best = cur.slice(); bc = c; } }
+    LANES = new Map(best.map((w, i) => [w.id, BLK.lane0 + BLK.step * i])); return LANES;
+  }
+  const blkXY = node => {
+    if (node.startsWith('esp:L')) return [BLK.espL, BLK.y0 + BLK.pitch * +node.slice(5)];
+    if (node.startsWith('tela:')) { const k = TELA.findIndex(w => w.pin === node.slice(5)); return [BLK.modX, blkMod('tela', k)]; }
+    if (node.startsWith('mic:')) { const k = MIC.findIndex(w => w.pin === node.slice(4)); return [BLK.modX, blkMod('mic', k)]; }
+    return null;
+  };
+  const flagSvg = (x, y, net, dir) => { const col = net === '3V3' ? 'var(--w-pwr)' : 'var(--w-gnd)', w = 30, x0 = dir > 0 ? x : x - w; return `<rect x="${x0}" y="${y - 8}" width="${w}" height="16" rx="3" fill="${col}"/><text x="${x0 + w / 2}" y="${y + 3.5}" text-anchor="middle" style="font-size:10px;font-weight:500;fill:#fff">${net}</text>`; };
+  function drawBlocks() {
+    const ln = lanes(); let s = '';
+    const modBox = (id, x, y, w, h, title, sub) => { const st = elState(id), op = st === 'on' ? 1 : st === 'off' ? .5 : .14, dash = st === 'on' ? '' : ' stroke-dasharray="5 4"'; return `<g opacity="${op}">${curIds().has(id) ? `<rect class="cur-halo" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" rx="10" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ''}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="var(--pcb)" stroke="${st === 'off' ? 'var(--bad)' : 'var(--pcb-edge)'}" stroke-width="2"${dash}/><text class="t-title t-pcb" x="${x + 16}" y="${y + 20}">${title}</text><text class="t-pcbdim" x="${x + 16}" y="${y + 36}">${sub}</text></g>`; };
+    s += modBox('tela', 24, 60, 276, 336, 'Tela 3,5″ ST7796', 'SPI 480×320 + touch I2C');
+    s += modBox('mic', 150, 424, 150, 168, 'Microfone', 'INMP441 · I2S');
+    s += modBox('esp', 600, 60, 200, 582, 'ESP32-S3-DevKitC-1', 'N16R8');
+    LEFT.forEach((p, i) => { const y = BLK.y0 + BLK.pitch * i, res = RES_L.includes(p), used = Object.values(E).some(e => e.kind === 'wire' && (e.gpio === +p || e.net === p) && (e.mod || e.id.startsWith('w.esp')) && String(e.gpio) === p) || p === '3V3' || p === 'GND';
+      s += `<circle cx="${BLK.espL}" cy="${y}" r="3.5" fill="var(--gold)"/><text class="${res ? 't-bad' : used ? 't-pcb' : 't-pcbdim'}" x="${BLK.espL + 12}" y="${y + 3.5}" style="opacity:${effOn('esp') ? 1 : .15}">${/^\d+$/.test(p) ? 'GPIO' + p : p}</text>`; });
+    Object.values(E).filter(e => e.kind === 'wire').forEach(e => {
+      const col = busColor(e.bus, e.net);
+      if (e.gpio && e.mod) {
+        const [x1, y1] = blkXY(`${e.mod}:${e.pin}`), y2 = blkEspY(e.gpio), x = ln.get(e.id), d = `M${x1} ${y1} H${x} V${y2} H${BLK.espL - 3}`;
+        s += wireG(e.id, d, col);
+      } else if (e.mod) {
+        const [x1, y1] = blkXY(`${e.mod}:${e.pin}`); const st = elState(e.id);
+        s += `<g class="wire ${st}" data-el="${e.id}"><path d="M${x1} ${y1} H${x1 + 18}" stroke="${st === 'off' ? 'var(--bad)' : col}" stroke-width="2.4" fill="none"${st !== 'on' ? ' stroke-dasharray="4 3"' : ''}/>${flagSvg(x1 + 18, y1, e.net, 1)}</g>`;
+      }
+    });
+    // alimentacao do ESP32
+    [['3V3', 0, 'w.esp3v3'], ['GND', 21, 'w.espgnd']].forEach(([net, i, id]) => { const y = BLK.y0 + BLK.pitch * i, st = elState(id);
+      s += `<g class="wire ${st}" data-el="${id}"><path d="M${BLK.espL - 3} ${y} H${BLK.espL - 22}" stroke="${st === 'off' ? 'var(--bad)' : busColor('pwr', net)}" stroke-width="2.4" fill="none"${st !== 'on' ? ' stroke-dasharray="4 3"' : ''}/>${flagSvg(BLK.espL - 22, y, net, -1)}</g>`; });
+    s += `<text class="t-dim" x="${BLK.espL - 10}" y="${BLK.y0 + BLK.pitch * 20 + 3.5}" text-anchor="end">5V: não usado</text>`;
+    // pontos
+    const pts = [];
+    if (effOn('esp')) LEFT.forEach((p, i) => pts.push(`esp:L${i}`));
+    if (effOn('tela')) TELA.forEach(w => pts.push(`tela:${w.pin}`));
+    if (effOn('mic')) MIC.forEach(w => pts.push(`mic:${w.pin}`));
+    pts.forEach(n => { const xy = blkXY(n); if (xy) s += pointEl(n, xy[0], xy[1], 7); });
+    TELA.forEach(w => { const xy = blkXY(`tela:${w.pin}`); s += `<circle cx="${xy[0]}" cy="${xy[1]}" r="3.5" fill="var(--gold)" opacity="${effOn('tela') ? 1 : .15}"/><text class="t-pcb" x="${xy[0] - 12}" y="${xy[1] + 3.5}" text-anchor="end" style="opacity:${effOn('tela') ? 1 : .15}">${w.pin}</text>`; });
+    MIC.forEach(w => { const xy = blkXY(`mic:${w.pin}`); s += `<circle cx="${xy[0]}" cy="${xy[1]}" r="3.5" fill="var(--gold)" opacity="${effOn('mic') ? 1 : .15}"/><text class="t-pcb" x="${xy[0] - 12}" y="${xy[1] + 3.5}" text-anchor="end" style="opacity:${effOn('mic') ? 1 : .15}">${w.pin}</text>`; });
+    s += probeMarks(n => blkXY(n));
+    return `<svg id="svg" class="${S.zoom === 1 ? 'fit' : ''}" viewBox="0 40 830 660" width="${Math.round(830 * S.zoom)}" role="img" aria-label="Esquema de ligação por blocos, com os fios ativos neste passo">${s}</svg>`;
+  }
+
+  // ---- vista de simbolos (esquema eletrico) ----
+  const SYM = { xT: 190, xE: 420, xE2: 580, xM: 740, y0: 100, p: 30 };
+  const SYM_SIG = [['CS', 10], ['SCK', 12], ['SDI', 11], ['DC', 14], ['RESET', 6], ['LED', 7], ['SDO', 13], ['T_DIN', 8], ['T_CLK', 9], ['T_DO', 4], ['T_CS', 5]]; // linhas 1..11
+  const SYM_MIC = [['VDD', null], ['SCK', 15], ['WS', 16], ['SD', 17], ['L/R', null], ['GND', null]];                                             // linhas 3..8
+  const symY = i => SYM.y0 + SYM.p * i;
+  function symPos() {
+    const P = {}, yE = i => symY(i);
+    P['tela:VCC'] = [SYM.xT, yE(0)]; P['tela:GND'] = [SYM.xT, yE(12)];
+    SYM_SIG.forEach(([pin, g], k) => { P[`tela:${pin}`] = [SYM.xT, yE(k + 1)]; P[espPin(g)] = [SYM.xE, yE(k + 1)]; });
+    P['esp:L0'] = P['esp:L1'] = [SYM.xE, yE(0)]; P['esp:L21'] = [SYM.xE, yE(12)];
+    SYM_MIC.forEach(([pin, g], k) => { P[`mic:${pin}`] = [SYM.xM, yE(k + 3)]; if (g) P[espPin(g)] = [SYM.xE2, yE(k + 3)]; });
+    return P;
+  }
+  function drawSym() {
+    let s = '';
+    const P = symPos(), F = 'font-size:10px';
+    const box = (id, x, y, w, h, title, sub) => { const st = elState(id), op = st === 'on' ? 1 : st === 'off' ? .5 : .14, dash = st === 'on' ? '' : ' stroke-dasharray="5 4"';
+      return `<g opacity="${op}">${curIds().has(id) ? `<rect class="cur-halo" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" rx="8" fill="none" stroke="var(--accent)" stroke-width="3"/>` : ''}<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="var(--surface2)" stroke="${st === 'off' ? 'var(--bad)' : 'var(--fg)'}" stroke-width="2"${dash}/><text class="t-title" x="${x + w / 2}" y="${y + 20}" text-anchor="middle">${title}</text><text class="t-dim" x="${x + w / 2}" y="${y + 35}" text-anchor="middle" style="${F}">${sub}</text></g>`; };
+    const boxOp = id => (effOn(id) ? 1 : .15);
+    s += box('tela', 30, SYM.y0 - 50, SYM.xT - 30, SYM.p * 12 + 80, 'Tela + touch', 'ILI9488 + XPT2046');
+    s += box('esp', SYM.xE, SYM.y0 - 50, SYM.xE2 - SYM.xE, SYM.p * 12 + 80, 'ESP32-S3', 'regulador 5 V → 3,3 V');
+    s += box('mic', SYM.xM, symY(3) - 50, 140, SYM.p * 5 + 80, 'Microfone', 'INMP441');
+    // simbolos de alimentacao (sempre fora das caixas, sem cruzar fios de sinal)
+    const pw = (id, x, y, net, side) => {
+      const st = elState(id), col = st === 'off' ? 'var(--bad)' : busColor('pwr', net), dash = st !== 'on' ? ' stroke-dasharray="4 3"' : '', xs = x + side * 24;
+      const stub = `<line x1="${x}" y1="${y}" x2="${xs}" y2="${y}" stroke="${col}" stroke-width="2"${dash}/>`;
+      const sym = net === '3V3'
+        ? `<line x1="${xs}" y1="${y}" x2="${xs}" y2="${y - 12}" stroke="${col}" stroke-width="2"${dash}/><line x1="${xs - 8}" y1="${y - 12}" x2="${xs + 8}" y2="${y - 12}" stroke="${col}" stroke-width="2"/><text x="${xs}" y="${y - 17}" text-anchor="middle" style="${F};font-weight:600;fill:${col}">+3V3</text>`
+        : `<line x1="${xs}" y1="${y}" x2="${xs}" y2="${y + 6}" stroke="${col}" stroke-width="2"${dash}/><line x1="${xs - 9}" y1="${y + 6}" x2="${xs + 9}" y2="${y + 6}" stroke="${col}" stroke-width="2"/><line x1="${xs - 6}" y1="${y + 10}" x2="${xs + 6}" y2="${y + 10}" stroke="${col}" stroke-width="2"/><line x1="${xs - 3}" y1="${y + 14}" x2="${xs + 3}" y2="${y + 14}" stroke="${col}" stroke-width="2"/>`;
+      return `<g class="wire ${st}" data-el="${id}">${stub}${sym}</g>`; };
+    const lab = (x, y, t, anchor, on) => `<text x="${x}" y="${y + 3.5}" text-anchor="${anchor}" style="${F};opacity:${boxOp(on)}">${t}</text>`;
+    // tela: VCC e GND (nomes do modulo)
+    s += lab(SYM.xT - 8, symY(0), 'VCC', 'end', 'tela') + pw('w.tela.VCC', SYM.xT, symY(0), '3V3', 1);
+    s += lab(SYM.xT - 8, symY(12), 'GND', 'end', 'tela') + pw('w.tela.GND', SYM.xT, symY(12), 'GND', 1);
+    s += lab(SYM.xE + 8, symY(0), '3V3', 'start', 'esp') + pw('w.esp3v3', SYM.xE, symY(0), '3V3', -1);
+    s += lab(SYM.xE + 8, symY(12), 'GND', 'start', 'esp') + pw('w.espgnd', SYM.xE, symY(12), 'GND', -1);
+    // sinais da tela: fio reto horizontal, pino da tela -> GPIO
+    SYM_SIG.forEach(([pin, g], k) => {
+      const y = symY(k + 1), id = `w.tela.${pin}`, e = E[id], col = busColor(e.bus, e.net);
+      s += lab(SYM.xT - 8, y, pin, 'end', 'tela') + lab(SYM.xE + 8, y, `GPIO ${g}`, 'start', 'esp');
+      s += wireG(id, `M${SYM.xT} ${y} H${SYM.xE}`, col, `<circle cx="${SYM.xT}" cy="${y}" r="3.2" fill="${col}"/><circle cx="${SYM.xE}" cy="${y}" r="3.2" fill="${col}"/>`);
+    });
+    // microfone
+    SYM_MIC.forEach(([pin, g], k) => {
+      const y = symY(k + 3), id = `w.mic.${pin}`, e = E[id];
+      s += lab(SYM.xM + 8, y, pin, 'start', 'mic');
+      if (g) { const col = busColor(e.bus, e.net); s += lab(SYM.xE2 - 8, y, `GPIO ${g}`, 'end', 'esp') + wireG(id, `M${SYM.xE2} ${y} H${SYM.xM}`, col, `<circle cx="${SYM.xE2}" cy="${y}" r="3.2" fill="${col}"/><circle cx="${SYM.xM}" cy="${y}" r="3.2" fill="${col}"/>`); }
+      else s += pw(id, SYM.xM, y, pin === 'VDD' ? '3V3' : 'GND', -1);
+    });
+    // USB e pull-ups
+    const yU = symY(12) + 56, usb = usbNow();
+    s += `<line x1="${SYM.xE + 80}" y1="${yU}" x2="${SYM.xE + 80}" y2="${symY(12) + 30}" stroke="${usb ? 'var(--w-pwr)' : 'var(--muted)'}" stroke-width="2.4"${usb ? '' : ' stroke-dasharray="4 3"'}/><rect x="${SYM.xE + 20}" y="${yU}" width="120" height="26" rx="4" fill="${usb ? 'var(--w-pwr)' : 'var(--surface2)'}" stroke="var(--fg)"${usb ? '' : ' stroke-dasharray="4 3"'}/><text x="${SYM.xE + 80}" y="${yU + 17}" text-anchor="middle" style="${F};fill:${usb ? '#fff' : 'var(--muted)'}">USB 5 V ${usb ? 'ligado' : 'desligado'}</text>`;
+    s += `<text class="t-dim" x="30" y="${symY(12) + 72}" style="${F}">T_IRQ e os 4 pinos do cartão SD ficam</text><text class="t-dim" x="30" y="${symY(12) + 86}" style="${F}">sem ligar. O touch tem um SPI só dele.</text>`;
+    s += `<text class="t-dim" x="30" y="30" style="font-size:11px">Linha reta = fio ligado. Símbolo com 3 traços = terra (GND). Símbolo com 1 traço = alimentação (+3V3).</text>`;
+    // pontos de medida
+    Object.entries(P).forEach(([n, [x, y]]) => { if ((n === 'esp:L1')) return; s += pointEl(n, x, y, 7); });
+    s += probeMarks(n => P[n] || null);
+    return `<svg id="svg" class="${S.zoom === 1 ? 'fit' : ''}" viewBox="0 0 900 ${symY(12) + 110}" width="${Math.round(900 * S.zoom)}" role="img" aria-label="Esquema elétrico com símbolos: os pinos do ESP32 ligados aos pinos da tela e do microfone por fios retos, com símbolos de alimentação e de terra">${s}</svg>`;
+  }
+
+  // =====================================================================================
+  // 6. PAINEIS
+  // =====================================================================================
+  const VIEWHINT = { phys: 'Clique em um ponto do desenho (furo, pino ou trilho) para encostar a ponta do multímetro virtual. A primeira ponta é a vermelha, a segunda é a preta.',
+    blocks: 'Mesmo circuito, mostrando quem fala com quem. Os extras aparecem só na vista física. Clique nos pinos para medir.', sym: 'Mesmo circuito como esquema elétrico. Os pinos aparecem agrupados por função, não pela ordem física. Os extras aparecem só na vista física. Clique nos pinos para medir.' };
+  function renderLegend() {
+    $('legend').innerHTML = `<span><i style="background:var(--w-spi)"></i>SPI</span><span><i style="background:var(--w-i2c)"></i>SPI do touch</span><span><i style="background:var(--w-i2s)"></i>I2S</span><span><i style="background:var(--w-pwr)"></i>3V3</span><span><i style="background:var(--w-gnd)"></i>GND</span><span><i class="gh"></i>ainda não montado</span><span style="color:var(--bad)"><i style="background:none;border-top:2px dashed var(--bad);height:0"></i>desligado por você</span>`;
+  }
+  function renderCanvas() {
+    $('canvas').innerHTML = S.view === 'phys' ? drawPhys() : S.view === 'blocks' ? drawBlocks() : drawSym();
+    $('viewhint').textContent = VIEWHINT[S.view];
+    document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view)));
+    document.querySelectorAll('#zoom button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.z === S.zoom)));
+  }
+  function renderSteps() {
+    let html = '', last = -1;
+    STEPS.forEach(st => {
+      if (st.stage !== last) { html += `<div class="stage-name">${STAGES[st.stage].name}</div>`; last = st.stage; }
+      html += `<button type="button" class="step-btn${S.done.includes(st.idx) ? ' done' : ''}" data-step="${st.idx}" ${st.idx === S.cur ? 'aria-current="step"' : ''}><span class="n">${st.idx + 1}</span><span class="t">${esc(st.title)}${st.optional ? ' (opcional)' : ''}</span></button>`;
+    });
+    $('steps').innerHTML = html;
+    const core = STEPS.filter(x => !x.extra); $('progress').style.width = `${Math.round(100 * S.done.filter(i => !STEPS[i].extra).length / core.length)}%`;
+  }
+  function renderParts() {
+    let html = '';
+    STAGES.slice(1).forEach(sg => {
+      const ids = Object.keys(E).filter(id => E[id].stage === sg.id); if (!ids.length) return;
+      html += `<div class="parts-grp"><h3>${sg.name}</h3>` + ids.map(id => { const e = E[id], st = elState(id);
+        return `<div class="part${curIds().has(id) ? ' cur' : ''}"><button type="button" class="sw" role="switch" aria-checked="${effOn(id)}" aria-label="${esc(e.label)}" data-sw="${id}"></button><span>${esc(e.label)}<small>${st === 'on' ? 'ativo' : (E[id].extra && !S.extras[E[id].extra]) ? 'extra desligado' : st === 'future' ? 'ainda não montado neste passo' : '<span class="off">desligado por você</span>'}</small></span></div>`; }).join('') + `</div>`;
+    });
+    $('parts').innerHTML = html;
+    const offs = Object.keys(E).filter(id => elState(id) === 'off');
+    $('conseq').innerHTML = offs.length ? `<div class="note bad"><b>O que deixa de funcionar:</b><ul style="margin:6px 0 0;padding-left:18px">${offs.map(id => `<li><b>${esc(E[id].label)}.</b> ${rich(E[id].cons)}</li>`).join('')}</ul></div>` : `<p class="hint">Nada desligado por você. Desligue uma peça para ver a consequência.</p>`;
+  }
+  const MODE_NAME = { cont: 'continuidade', volt: 'tensão contínua (V⎓)', res: 'resistência (Ω)' };
+  function renderMeter() {
+    const on = onSet(), nets = buildNets(on, usbNow(), S.pressed);
+    const avail = n => { if (n.startsWith('esp:')) return on.has('esp'); if (n.startsWith('tela:')) return on.has('tela'); if (n.startsWith('mic:')) return on.has('mic'); if (n === 'amp:OUT+' || n === 'amp:OUT-') return on.has('x.spk') && on.has('x.amp'); if (n.startsWith('amp:')) return on.has('x.amp'); return true; };
+    const opts = (cur) => {
+      const groups = [['Trilhos', ['rail:3V3', 'rail:GND']], ['ESP32 (lado esquerdo)', LEFT.map((p, i) => `esp:L${i}`)], ['Tela', TELA.map(w => `tela:${w.pin}`)], ['Microfone', MIC.map(w => `mic:${w.pin}`)], ['Furos livres', Array.from({ length: 22 }, (_, i) => `bbB:${BB_C0 + i}`).concat(Array.from({ length: 6 }, (_, i) => `bbB:${MIC_C0 + i}`))], ['Extras', extraNodes()]];
+      const all = new Set(groups.flatMap(g => g[1]));
+      let h = '<option value="">(nenhum)</option>' + groups.map(([g, ns]) => { const l = ns.filter(avail); return l.length ? `<optgroup label="${g}">` + l.map(n => `<option value="${n}"${cur === n ? ' selected' : ''}>${esc(POINT_LABEL[n])}</option>`).join('') + '</optgroup>' : ''; }).join('');
+      if (cur && !all.has(cur)) h += `<option value="${cur}" selected>${esc(POINT_LABEL[cur])}</option>`;
+      return h;
+    };
+    let readout = '<div class="mm-explain hint">Escolha dois pontos (clicando no desenho ou nas listas) para ver a leitura.</div>', lcd = '——', unit = '', beepOn = false, warn = '';
+    if (S.red && S.black && avail(S.red) && avail(S.black)) {
+      const m = measure(nets, S.mode, S.red, S.black); lcd = m.disp; unit = m.unit; beepOn = m.beep;
+      readout = `<div class="mm-explain">${esc(m.why)}</div>`;
+      if (S.mode === 'cont' && m.warnPower) warn = '<div class="warn">Atenção: com o USB ligado, o modo continuidade não é confiável. No mundo real, desligue o USB antes.</div>';
+      if (m.warn) warn = '<div class="warn">' + (S.mode === 'res' ? 'Desligue o USB para medir resistência.' : 'Curto detectado. Desligue o USB.') + '</div>';
+    }
+    $('mm').innerHTML = `<h3>Multímetro virtual</h3>
+      <div class="mm-body">
+        <div class="mm-lcd"><small>${{ cont: 'CONTINUIDADE', volt: 'TENSÃO V⎓', res: 'RESISTÊNCIA Ω' }[S.mode]}<br>${usbNow() ? 'USB ligado' : 'USB desligado'}</small><span>${lcd}<small style="display:inline;margin-left:6px">${unit}</small></span></div>
+        <div class="seg2" role="group" aria-label="Modo"><button type="button" data-mode="volt" aria-pressed="${S.mode === 'volt'}">Tensão (V⎓)</button><button type="button" data-mode="cont" aria-pressed="${S.mode === 'cont'}">Continuidade</button><button type="button" data-mode="res" aria-pressed="${S.mode === 'res'}">Resistência (Ω)</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="beep${beepOn ? ' on' : ''}">${beepOn ? 'BIIIP' : 'silêncio'}</span>
+          <label style="font-size:12px;color:#e3e6ea;display:flex;gap:6px;align-items:center"><input type="checkbox" id="usbsw" ${usbNow() ? 'checked' : ''}> cabo USB ligado</label></div>
+        ${on.has('x.btn') ? `<label style="font-size:12px;color:#e3e6ea;display:flex;gap:6px;align-items:center"><input type="checkbox" id="pressedsw" ${S.pressed ? 'checked' : ''}> segurando o botão</label>` : ''}
+      </div>
+      <label class="fld"><span><span class="probe-dot" style="background:var(--bad)"></span>Ponta vermelha</span><select id="selRed">${opts(S.red)}</select></label>
+      <label class="fld"><span><span class="probe-dot" style="background:#111"></span>Ponta preta</span><select id="selBlack">${opts(S.black)}</select></label>
+      <div style="display:flex;gap:8px"><button type="button" class="btn" id="swapP">Inverter pontas</button><button type="button" class="btn" id="clearP">Limpar</button></div>
+      ${readout}${warn}`;
+  }
+
+  function codeText(id) { const el = document.getElementById('code-' + id); return el ? el.textContent : ''; }
+  function pinTable(st) {
+    if (st.table) return `<div class="tbl"><table><thead><tr><th>Fio</th><th>Número no código</th><th>Para quê</th></tr></thead><tbody>${st.table.map(r => `<tr><td><code>${esc(r[0])}</code></td><td><code>${esc(r[1])}</code></td><td>${rich(r[2])}</td></tr>`).join('')}</tbody></table></div>`;
+    const buses = st.showPins || [];
+    const rows = Object.values(E).filter(e => e.kind === 'wire' && e.gpio && buses.includes(e.bus)).map(e => `<tr><td><code>${e.mod === 'tela' ? 'Tela' : 'Microfone'} ${e.pin}</code></td><td><code>GPIO ${e.gpio}</code></td><td>${rich(e.why)}</td></tr>`).join('');
+    return `<div class="tbl"><table><thead><tr><th>Fio</th><th>Número no código</th><th>Para quê</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function renderStep() {
+    const st = STEPS[S.cur], typeLabel = { info: 'Entender', place: 'Posicionar', wire: 'Ligar um fio', test: 'Testar', action: 'Medir', code: 'Programa' }[st.type];
+    const reqKey = `${st.idx}`;
+    let h = `<div class="step-head"><span class="badge">${STAGES[st.stage].name}</span><span class="badge">${typeLabel}</span>${st.optional ? '<span class="badge optional">opcional</span>' : ''}<span class="hint">passo ${st.idx + 1} de ${STEPS.length}</span></div><h2>${esc(st.title)}</h2>`;
+    if (st.extra) h += `<div class="note"><label class="extrasw"><button type="button" class="sw" role="switch" aria-checked="${!!S.extras[st.extra]}" data-extra="${st.extra}" aria-label="Montar este extra"></button><span><b>Montar este extra</b><small>${S.extras[st.extra] ? 'ligado: as peças deste extra entram no desenho e no multímetro conforme os passos' : 'desligado: as peças aparecem em fantasma e o multímetro as ignora'}</small></span></label></div>`;
+    if (st.do) h += `<div class="sec"><h3>O que fazer</h3><ul>${st.do.map(t => `<li>${rich(t)}</li>`).join('')}</ul></div>`;
+    if (st.why) h += `<div class="sec"><h3>Por quê</h3><p>${rich(st.why)}</p></div>`;
+    if (st.verify) {
+      const v = st.verify, nom = nominalSet(S.cur), nets = buildNets(nom, v.usb, v.pressed), m = measure(nets, v.mode, v.a, v.b), answered = S.ans[reqKey];
+      const choices = choicesFor(v.mode);
+      const right = resultLabel(v.mode, m);
+      h += `<div class="sec"><h3>Como verificar no multímetro</h3>
+        <p>Modo <b>${MODE_NAME[v.mode]}</b>, com o USB <b>${v.usb ? 'ligado' : 'desligado'}</b>${v.pressed ? ' e o botão <b>apertado</b>' : ''}. Ponta vermelha em <b>${esc(POINT_LABEL[v.a])}</b>, preta em <b>${esc(POINT_LABEL[v.b])}</b>.</p>
+        <p class="hint">Objetivo: ${rich(v.goal)}.</p>
+        <p><b>Antes de medir, o que você espera?</b></p>
+        <div class="opts" id="predict">${choices.map((c, i) => `<button type="button" class="opt${answered !== undefined ? (c === right ? ' right' : (answered === i ? ' wrong' : '')) : ''}" data-pred="${i}" data-choice="${esc(c)}" ${answered !== undefined ? 'disabled' : ''}>${esc(c)}</button>`).join('')}</div>`;
+      if (answered !== undefined) {
+        const ok = choices[answered] === right;
+        h += `<div class="note ${ok ? 'good' : 'bad'}"><b>${ok ? 'Acertou.' : 'Quase.'}</b> O esperado é <b>${esc(right)}</b>. ${esc(m.why)}</div>
+          <div class="nav"><button type="button" class="btn primary" data-act="show">Mostrar no multímetro</button><button type="button" class="btn" data-act="report">Não bateu</button></div>`;
+        if (st.counter) { const c = st.counter, cm = measure(buildNets(nom, c.usb, c.pressed), c.mode, c.a, c.b); h += `<p class="hint">Contraprova: ${rich(c.goal)}. Esperado: <b>${esc(resultLabel(c.mode, cm))}</b>. <button type="button" class="btn" data-act="showc">Mostrar no multímetro</button></p>`; }
+      }
+      h += `</div>`;
+    }
+    if (st.type === 'code') {
+      h += `<div class="sec"><h3>Programa</h3>${st.flag ? `<p class="note">Neste passo, deixe <code>#define ${st.flag}</code> no começo do programa.</p>` : ''}
+        <div class="codewrap"><div class="cap"><span>${esc(st.code)}.ino</span><button type="button" data-copy="${st.code}">Copiar</button></div><pre class="code"><code>${esc(codeText(st.code))}</code></pre></div></div>`;
+      h += `<div class="sec"><h3>Os fios que o programa usa</h3>${pinTable(st)}</div>`;
+      h += `<div class="sec"><h3>O programa, bloco a bloco</h3>${st.blocks.map(([c, n]) => `<div class="block"><pre class="mini"><code>${esc(c)}</code></pre><p>${rich(n)}</p></div>`).join('')}</div>`;
+      h += `<div class="sec"><h3>Passou quando</h3><div class="note good">${rich(st.ok)}</div>
+        <details><summary>Se não passar</summary><div class="tbl"><table><tbody>${st.fail.map(([a, b]) => `<tr><td><b>${esc(a)}</b></td><td>${rich(b)}</td></tr>`).join('')}</tbody></table></div></details>
+        <div class="nav"><button type="button" class="btn" data-act="report">Não bateu</button></div></div>`;
+    }
+    if (st.ifNot) h += `<div class="sec"><h3>${st.type === 'wire' ? 'Se este fio ficar de fora' : st.type === 'info' ? 'Se você pular isto' : 'O que acontece se der errado'}</h3><div class="note bad">${rich(st.ifNot)}</div></div>`;
+    if (S.report) h += reportBox(st);
+    h += `<div class="nav" style="padding-top:10px;border-top:1px solid var(--line)"><button type="button" class="btn" data-act="prev" ${S.cur === 0 ? 'disabled' : ''}>← Passo anterior</button>
+      <button type="button" class="btn" data-act="done">${S.done.includes(S.cur) ? 'Desmarcar como feito' : 'Marcar como feito'}</button>
+      <button type="button" class="btn primary" data-act="next" ${S.cur === STEPS.length - 1 ? 'disabled' : ''}>Próximo passo →</button></div>
+      <p class="hint">Atalhos: setas ← → mudam de passo.</p>`;
+    $('stepcard').innerHTML = h;
+  }
+  function reportBox(st) {
+    return `<div class="sec"><h3>Relatório "Não bateu"</h3>
+      <label class="fld">O que você mediu ou viu<textarea id="rpMed" rows="2" placeholder="Ex.: marcou 0,00 e não apitou"></textarea></label>
+      <label class="fld">O que você estranhou (opcional)<textarea id="rpObs" rows="2"></textarea></label>
+      <div class="nav"><button type="button" class="btn primary" data-act="mkreport">Gerar resumo</button><button type="button" class="btn" data-act="closereport">Fechar</button></div>
+      <textarea id="rpOut" rows="10" readonly placeholder="O resumo aparece aqui. Copie e cole na conversa."></textarea><button type="button" class="btn" data-act="copyreport">Copiar resumo</button></div>`;
+  }
+  function makeReport() {
+    const st = STEPS[S.cur], on = onSet(), nets = buildNets(on, usbNow(), S.pressed);
+    const parts = Object.keys(E).filter(id => effOn(id)).map(id => E[id].label);
+    const off = Object.keys(E).filter(id => elState(id) === 'off').map(id => E[id].label);
+    let probe = 'sem pontas escolhidas', got = '';
+    if (S.red && S.black) { const m = measure(nets, S.mode, S.red, S.black); probe = `${S.mode === 'cont' ? 'continuidade' : 'tensão'} · vermelha: ${POINT_LABEL[S.red]} · preta: ${POINT_LABEL[S.black]}`; got = `multímetro virtual mostrava ${pt(m.disp)} ${m.unit}`; }
+    const exp = st.verify ? (() => { const v = st.verify, m = measure(buildNets(nominalSet(S.cur), v.usb, v.pressed), v.mode, v.a, v.b); return `${POINT_LABEL[v.a]} ↔ ${POINT_LABEL[v.b]}: ${resultLabel(v.mode, m)} (USB ${v.usb ? 'ligado' : 'desligado'})`; })() : 'este passo não tem medida';
+    return `Manual do mascote · relatório\nEtapa: ${STAGES[st.stage].name}\nPasso ${st.idx + 1} de ${STEPS.length}: ${st.title}\nUSB: ${usbNow() ? 'ligado' : 'desligado'}\nExtras ligados: ${Object.keys(S.extras).filter(k => S.extras[k]).join(', ') || 'nenhum'}\nPeças e fios ativos: ${parts.join('; ') || 'nenhum'}\n${off.length ? 'Desligados por mim no manual: ' + off.join('; ') + '\n' : ''}Esperado: ${exp}\nMultímetro virtual: ${probe}${got ? ' (' + got + ')' : ''}\nO que eu medi/vi de verdade: ${($('rpMed') || {}).value || '(não preenchido)'}\nObservações: ${($('rpObs') || {}).value || '-'}`;
+  }
+
+  function renderAll() { renderSteps(); renderCanvas(); renderStep(); renderParts(); renderMeter(); renderLegend(); save(); }
+
+  // =====================================================================================
+  // 7. EVENTOS
+  // =====================================================================================
+  const go = k => { S.cur = Math.max(0, Math.min(STEPS.length - 1, k)); S.usbOv = null; S.pressed = false; S.report = false; renderAll(); window.scrollTo({ top: 0 }); };
+  const setProbe = node => {
+    if (S.pick === 'red') { S.red = node; S.pick = 'black'; } else { S.black = node; S.pick = 'red'; }
+    renderCanvas(); renderMeter();
+  };
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button, .pt, .gl'); if (!t) { hideGl(); return; }
+    if (t.classList.contains('gl')) { showGl(t); return; }
+    hideGl();
+    if (t.classList.contains('pt')) { setProbe(t.dataset.node); return; }
+    if (t.dataset.step !== undefined) return go(+t.dataset.step);
+    if (t.dataset.sw) { const id = t.dataset.sw, nom = nominalOn(id), cur = effOn(id); if (!cur === nom) delete S.ov[id]; else S.ov[id] = !cur; renderAll(); return; }
+    if (t.dataset.extra) { S.extras[t.dataset.extra] = !S.extras[t.dataset.extra]; if (!S.extras[t.dataset.extra]) Object.keys(S.ov).forEach(id => { if (E[id] && E[id].extra === t.dataset.extra) delete S.ov[id]; }); renderAll(); return; }
+    if (t.dataset.view) { S.view = t.dataset.view; renderAll(); return; }
+    if (t.dataset.z) { S.zoom = +t.dataset.z; renderAll(); return; }
+    if (t.dataset.mode) { S.mode = t.dataset.mode; renderMeter(); return; }
+    if (t.dataset.pred !== undefined) { S.ans[`${S.cur}`] = +t.dataset.pred; renderStep(); save(); return; }
+    if (t.dataset.copy) { const txt = codeText(t.dataset.copy), old = t.textContent; const done = ok => { t.textContent = ok ? 'Copiado' : 'Selecione e copie'; setTimeout(() => (t.textContent = old), 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => done(true), () => { selectIn(t.closest('.codewrap').querySelector('code')); done(false); }); else { selectIn(t.closest('.codewrap').querySelector('code')); done(false); } return; }
+    switch (t.dataset.act) {
+      case 'prev': return go(S.cur - 1);
+      case 'next': if (!S.done.includes(S.cur)) S.done.push(S.cur); return go(S.cur + 1);
+      case 'done': S.done = S.done.includes(S.cur) ? S.done.filter(x => x !== S.cur) : S.done.concat(S.cur); return renderAll();
+      case 'show': case 'showc': { const v = t.dataset.act === 'show' ? STEPS[S.cur].verify : STEPS[S.cur].counter; S.mode = v.mode; S.red = v.a; S.black = v.b; S.pick = 'red'; S.usbOv = v.usb; S.pressed = !!v.pressed; renderAll(); return; }
+      case 'report': S.report = true; renderStep(); document.getElementById('rpMed') && document.getElementById('rpMed').focus(); return;
+      case 'closereport': S.report = false; return renderStep();
+      case 'mkreport': $('rpOut').value = makeReport(); return;
+      case 'copyreport': { const o = $('rpOut'); if (!o.value) o.value = makeReport(); o.select(); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(o.value).catch(() => {}); return; }
+    }
+    if (t.id === 'resetOv') { S.ov = {}; S.usbOv = null; S.pressed = false; return renderAll(); }
+    if (t.id === 'resetAll') { S.cur = 0; S.done = []; S.ov = {}; S.usbOv = null; S.ans = {}; S.red = S.black = null; S.pressed = false; return renderAll(); }
+    if (t.id === 'swapP') { [S.red, S.black] = [S.black, S.red]; return renderAll(); }
+    if (t.id === 'clearP') { S.red = S.black = null; S.pick = 'red'; return renderAll(); }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.id === 'selRed') { S.red = e.target.value || null; renderCanvas(); renderMeter(); }
+    if (e.target.id === 'selBlack') { S.black = e.target.value || null; renderCanvas(); renderMeter(); }
+    if (e.target.id === 'usbsw') { S.usbOv = e.target.checked; renderAll(); }
+    if (e.target.id === 'pressedsw') { S.pressed = e.target.checked; renderAll(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'Escape') hideGl();
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('pt')) { e.preventDefault(); setProbe(e.target.dataset.node); return; }
+    if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
+    if (e.key === 'ArrowRight') go(S.cur + 1); if (e.key === 'ArrowLeft') go(S.cur - 1);
+  });
+  function selectIn(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+  // glossario
+  let pop = null;
+  function hideGl() { if (pop) { pop.remove(); pop = null; } }
+  function showGl(btn) {
+    hideGl(); const g = GLOSS[btn.dataset.gl]; if (!g) return;
+    pop = document.createElement('div'); pop.className = 'gl-pop'; pop.setAttribute('role', 'dialog'); pop.innerHTML = `<b>${esc(g[0])}</b>${esc(g[1])}`;
+    document.body.appendChild(pop); const r = btn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left)) + 'px'; pop.style.top = Math.min(innerHeight - pop.offsetHeight - 8, r.bottom + 6) + 'px';
+  }
+
+  // API minima para testes automaticos
+  window.__manual = { S, STEPS, E, buildNets, measure, onSet, nominalSet, go, usbNow };
+  renderAll();
+})();
+</script>
+</body>
+</html>

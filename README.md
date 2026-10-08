@@ -12,6 +12,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `hardware/manual-montagem.html` — manual interativo da protoboard (Parte 1): passos curtos, peças ligáveis/desligáveis, multímetro virtual, 3 vistas (física, blocos, símbolos); extras opcionais (capacitores de 100 nF, pull-ups do touch, botão, som) com multímetro de tensão, continuidade e resistência
 - `hardware/manual-placa-ilhada.html` — manual interativo da placa ilhada 6×8 cm (Parte 2): soquetes, barramentos, fios do verso, layout ajustável, extras de botão e som. **Não validado com as peças reais**
 - `hardware/esquema-ligacoes.html` — esquema visual das ligações (abra no navegador)
+- `hardware/manual-montagem-ili9488.html` e `hardware/esquema-ligacoes-ili9488.html` — manual (Parte 1) e esquema para a tela de teste 3,5" ILI9488 com touch resistivo XPT2046 (touch em SPI próprio, GPIO 9, 5, 8, 4)
 - `hardware/entendendo-os-componentes.html` — o que é cada peça da lista, com desenhos (capacitor, resistor, botão, protoboard, multímetro)
 - `hardware/caixa-desenho.html` — desenhos e recomendações da caixa impressa (vistas, corte, layout interno, impressão)
 - `docs/bom.md` — lista de componentes (Santa Ifigênia)

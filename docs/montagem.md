@@ -46,8 +46,25 @@ O esquema desenhado, com cada fio colorido, está em `hardware/esquema-ligacoes.
 | RST | GPIO 5 | |
 | VCC / GND | 3V3 / GND | Costuma vir no mesmo conector da tela |
 
-Se a sua tela vier com touch **resistivo** (XPT2046), ele usa o mesmo SPI da tela:
-`T_CLK`, `T_DIN` e `T_DO` vão junto com SCK, MOSI e MISO, `T_CS` no **GPIO 1** e `T_IRQ` no **GPIO 2**.
+### Variante de teste: tela ILI9488 com touch resistivo (XPT2046)
+
+Para a tela vermelha de 3,5" com ILI9488 (comprada para testar enquanto a capacitiva não chega).
+Os 9 fios da tela são **iguais** aos da ST7796 acima. O touch muda: ele ganha um **SPI só dele**
+(SPI3), nos mesmos GPIO que o touch capacitivo usaria. Não divida o SPI da tela com o touch:
+o ILI9488 não solta o fio SDO, e isso estraga a leitura do touch.
+
+| Pino da tela | ESP32-S3 | Observação |
+|---|---|---|
+| T_CLK | GPIO 9 | Relógio do SPI do touch |
+| T_CS | GPIO 5 | |
+| T_DIN | GPIO 8 | Do ESP32 para o touch |
+| T_DO | GPIO 4 | Do touch para o ESP32 |
+| T_IRQ | sem ligar | O programa pergunta ao chip se há toque |
+| SD_* (4 pinos do outro lado) | sem ligar | Cartão SD, não usado |
+
+O VCC fica no 3V3, como na ST7796. Programa de teste: `firmware/testes/etapa2_3_tela_touch_ili9488`.
+Manual e esquema desta variante: `hardware/manual-montagem-ili9488.html` e `hardware/esquema-ligacoes-ili9488.html`.
+O touch resistivo funciona **apertando** e precisa de calibração (x_min, x_max, y_min, y_max no programa).
 
 ### Microfone INMP441 (I2S)
 
@@ -187,6 +204,7 @@ Ficam em `firmware/testes/`, um por etapa:
 |---|---|---|
 | 1 | `etapa1_psram` | Imprime PSRAM e flash no Serial |
 | 2 e 3 | `etapa2_3_tela_touch` | Pinta a tela; com `USAR_TOUCH 1`, desenha um ponto a cada toque |
+| 2 e 3 | `etapa2_3_tela_touch_ili9488` | Igual, para a tela de teste ILI9488 com touch resistivo (sem scanner I2C) |
 | 3 | `etapa3_i2c_scan` | Procura o chip do touch no I2C |
 | 4 | `etapa4_microfone` | Mostra o volume do microfone no Serial |
 | extra | `extra_botao` | Mostra no Serial quando o botão é apertado e solto (GPIO 21) |
