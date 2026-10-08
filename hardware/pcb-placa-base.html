@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Placa-base do Mascote</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Placa-base (PCB) onde os modulos encaixam. Esquema, posicoes, lista de redes e pecas
+   nascem da mesma lista PARTS/NETS em JS, para o desenho e as tabelas nunca discordarem.
+   Esquema no estilo de rotulos de rede: mesmo nome = mesmo fio, como no EasyEDA. */
+:root {
+  --bg: #e9ebee; --surface: #f6f7f9; --surface2: #eceef1; --fg: #1d2024; --muted: #5f6670; --line: #cfd3d9;
+  --accent: #d97757; --bad: #c93030;
+  --n-spi: #c4561f; --n-tp: #2a63c4; --n-i2s: #23864f; --n-3v3: #c93030; --n-5v: #a1408f; --n-gnd: #4b525b; --n-io: #7a5a12;
+  --pcb: #1d4f3e; --pcb-edge: #0f2a21; --pcb-fg: #e8efe9; --pcb-dim: #9fc0b2; --gold: #d6b25e; --silk: #f2f2ee;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1d2024; --surface2: #24282d; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+    --accent: #e08562; --bad: #f26b6b;
+    --n-spi: #ef8a5a; --n-tp: #6fa3f2; --n-i2s: #5cc58a; --n-3v3: #f26b6b; --n-5v: #d989c9; --n-gnd: #aab1ba; --n-io: #d9b45a;
+    --pcb: #17402f; --pcb-edge: #061710;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1d2024; --surface2: #24282d; --fg: #e8eaed; --muted: #9aa1aa; --line: #2f343a;
+  --accent: #e08562; --bad: #f26b6b;
+  --n-spi: #ef8a5a; --n-tp: #6fa3f2; --n-i2s: #5cc58a; --n-3v3: #f26b6b; --n-5v: #d989c9; --n-gnd: #aab1ba; --n-io: #d9b45a;
+  --pcb: #17402f; --pcb-edge: #061710;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 28px 16px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 30px/1.1 var(--font-display); text-wrap: balance; }
+h2 { margin: 0 0 6px; font-size: 20px; line-height: 1.25; font-weight: 600; }
+h3 { margin: 0; font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.lead, .sub { color: var(--muted); max-width: 70ch; }
+section { display: grid; gap: 14px; min-width: 0; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.scroller svg { display: block; width: 100%; height: auto; min-width: 820px; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 75ch; }
+.warn { border-left: 4px solid var(--accent); background: var(--surface); padding: 12px 14px; border-radius: 0 8px 8px 0; max-width: 75ch; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.card p { color: var(--muted); font-size: 14px; }
+
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--fg); }
+svg .t-title { font-family: var(--font-body); font-size: 13px; font-weight: 600; }
+svg .t-dim { fill: var(--muted); }
+svg .t-pcb { fill: var(--pcb-fg); }
+svg .t-silk { fill: var(--silk); font-size: 9px; }
+.net { cursor: pointer; transition: opacity .15s; }
+svg[data-hl] .net { opacity: .14; }
+svg[data-hl] .net.hl { opacity: 1; }
+svg[data-hl] .net.hl .lbl { stroke: var(--fg); stroke-width: 1.5; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; font: 500 12.5px/1 var(--font-mono); }
+.chip i { width: 14px; height: 4px; border-radius: 2px; background: var(--c); display: inline-block; }
+.chip[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 12px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 7px; vertical-align: -1px; }
+td.mono { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 75ch; }
+@media (max-width: 560px) { h1 { font-size: 23px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">hardware · modelo final · pcb · rascunho para revisar</div>
+    <h1>Placa-base do Mascote</h1>
+    <p class="lead">Uma placa de 80 × 60 mm onde todos os módulos encaixam em soquetes: o ESP32-S3 DevKit, a tela, o microfone e o amplificador. Ela substitui a placa ilhada de 6 × 8 cm dentro da caixa em cunha. Só tem peças de furo (nada de SMD), então você solda tudo com o ferro comum.</p>
+    <p class="warn"><b>Ainda é rascunho.</b> As ligações são as mesmas do mapa de pinos da protoboard, que ainda não foi testado com as peças reais. Mande fazer a placa só depois que a protoboard funcionar, e depois de medir com paquímetro as três coisas marcadas em <b>Confirmar antes de mandar fazer</b>, no fim da página.</p>
+  </header>
+
+  <section>
+    <h2>O que tem na placa</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <h2>O esquema</h2>
+    <p class="sub">Cada pino termina num rótulo colorido com o nome da rede. Rótulos com o mesmo nome estão ligados, mesmo sem fio desenhado. É assim que o EasyEDA faz com os <i>net labels</i>. Clique numa rede (aqui embaixo ou no desenho) para destacar tudo o que está nela.</p>
+    <div class="chips" id="netchips" role="group" aria-label="Destacar rede"></div>
+    <figure>
+      <div class="scroller"><svg id="sch" viewBox="0 0 1000 800" role="img" aria-label="Esquema elétrico da placa-base: o ESP32-S3 DevKit no centro, com suas duas fileiras de 22 pinos; à esquerda, o conector da tela de 14 pinos, os capacitores do 3V3, a ponte do brilho e os resistores opcionais do touch; à direita, o microfone, o amplificador, o capacitor de 470 µF, o botão e o conector do botão externo. Cada pino termina num rótulo com o nome da rede."></svg></div>
+      <figcaption>Os nomes dentro das caixas são os impressos em cada módulo. Pinos sem rótulo ficam sem ligar. As redes <b>TP9, TP5, TP8 e TP4</b> são as do touch: servem para as duas telas (veja a tabela das redes).</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Onde fica cada peça na placa</h2>
+    <p class="sub">Vista de cima, em escala (80 × 60 mm). É uma sugestão de posição pensada para a caixa: tela à esquerda, microfone no topo (embaixo do furo), USB do ESP32 virado para a fenda da direita. Você pode mover as peças no EasyEDA, desde que respeite as áreas marcadas.</p>
+    <figure>
+      <div class="scroller"><svg id="lay" viewBox="0 0 900 700" role="img" aria-label="Vista de cima da placa de 80 por 60 milímetros, com quatro furos de parafuso nos cantos. O ESP32-S3 DevKit ocupa a parte de baixo, com o USB na borda direita e a antena à esquerda, sobre uma área sem cobre. O conector de 14 pinos da tela fica em pé na borda esquerda. O microfone fica no topo, o amplificador e o capacitor grande à direita, o botão no meio."></svg></div>
+      <figcaption>A área tracejada vermelha embaixo da antena do ESP32 fica <b>sem cobre nas duas camadas</b>: cobre ali piora o Wi-Fi. O microfone fica longe do amplificador para não captar ruído dele.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>As redes (o que liga em quê)</h2>
+    <p class="sub">É a mesma informação do esquema, em lista. Serve para conferir no EasyEDA, rede por rede, antes de gerar a placa.</p>
+    <div class="tbl"><table><thead><tr><th>Rede</th><th>GPIO</th><th>Liga</th><th>Para quê</th></tr></thead><tbody id="nettbl"></tbody></table></div>
+    <h3>O touch nas duas telas</h3>
+    <p class="sub">Os pinos 10 a 13 do conector da tela vão aos mesmos GPIO nas duas telas. Por isso a placa serve para a ILI9488 de teste e para a capacitiva final; só o programa muda.</p>
+    <div class="tbl"><table><thead><tr><th>Pino do conector</th><th>Rede</th><th>Tela capacitiva (ST7796)</th><th>Tela de teste (ILI9488)</th></tr></thead><tbody id="tptbl"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Lista de peças da placa</h2>
+    <p class="sub">Só o que vai soldado na placa-base. Os módulos (ESP32, tela, microfone, amplificador e alto-falante) você já tem. No EasyEDA, procure cada peça pela descrição na biblioteca da LCSC e escolha uma <b>de furo (THT)</b> com o mesmo espaçamento.</p>
+    <div class="tbl"><table><thead><tr><th>Ref.</th><th>Qtd</th><th>Peça</th><th>Detalhe</th></tr></thead><tbody id="bomtbl"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Regras para desenhar no EasyEDA</h2>
+    <div class="cards" id="rules"></div>
+  </section>
+
+  <section>
+    <h2>Confirmar antes de mandar fazer</h2>
+    <ol class="steps">
+      <li><b>Distância entre as duas fileiras do ESP32.</b> O desenho usa 22,86 mm (9 furos de 2,54 mm), a mesma que cabe na protoboard. Meça de centro a centro nos seus pinos. Se errar aqui, o ESP32 não encaixa.</li>
+      <li><b>Ordem dos pinos do microfone INMP441.</b> O desenho usa SCK, WS, SD, L/R, VDD, GND numa fileira. Muitos módulos têm outra ordem ou duas fileiras de 3. Ajuste o conector J2 à serigrafia do seu.</li>
+      <li><b>Posição do conector na tela capacitiva.</b> Quando ela chegar, meça onde fica a fileira de 14 pinos. Se der para a tela encaixar direto na placa (sanduíche), eu reposiciono o J1 para isso. Senão, fica como está, com um cabo curto.</li>
+      <li><b>Teste da protoboard.</b> Tela, touch, microfone e som funcionando com este mesmo mapa de pinos.</li>
+      <li><b>Revisão do arquivo.</b> Antes de pagar, exporte o esquema e o PCB do EasyEDA (PDF ou imagem) e me mande. Eu confiro rede por rede com esta página.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Como montar no EasyEDA</h2>
+    <ol class="steps">
+      <li>Crie um projeto novo. No esquema, coloque os conectores e peças da lista acima (procure por “header female 1x22 2.54”, “header 1x14”, “electrolytic 470uF 10V radial” e assim por diante).</li>
+      <li>Em cada pino, ponha um <b>net label</b> com o nome da rede deste esquema (3V3, GND, LCD_CS…). Não precisa desenhar fio entre as peças.</li>
+      <li>Use <b>Design → Update PCB</b>. Desenhe o contorno de 80 × 60 mm, os 4 furos de 3,2 mm a 3 mm das bordas e posicione as peças como na vista de cima.</li>
+      <li>Desenhe a área sem cobre embaixo da antena (<i>keep-out</i> nas duas camadas).</li>
+      <li>Rode o roteamento automático, depois engrosse à mão as trilhas de 5V, 3V3 e GND. Coloque um plano de GND nas duas camadas.</li>
+      <li>Rode o <b>DRC</b> (checagem de regras) até não ter erro. Gere os Gerbers e mande para a JLCPCB: 2 camadas, 1,6 mm, quantidade 5.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  // ---- redes -----------------------------------------------------------------------------
+  // grupo define a cor; gpio e o pino do ESP32; what explica a rede
+  const NETS = {
+    '3V3':      { g: '3v3', what: 'Alimentação de 3,3 V que sai do regulador do DevKit. Tela, touch e microfone.' },
+    '5V':       { g: '5v',  what: 'Os 5 V do USB, direto do DevKit. Só o amplificador usa.' },
+    'GND':      { g: 'gnd', what: 'Terra comum de tudo. Vira um plano de cobre nas duas camadas.' },
+    'LCD_CS':   { g: 'spi', gpio: 10, what: 'Seleciona a tela' },
+    'LCD_RST':  { g: 'spi', gpio: 6,  what: 'Reinicia a tela' },
+    'LCD_DC':   { g: 'spi', gpio: 14, what: 'Comando ou pixel (RS no módulo)' },
+    'SPI_MOSI': { g: 'spi', gpio: 11, what: 'Dados do ESP32 para a tela (SDI)' },
+    'SPI_SCK':  { g: 'spi', gpio: 12, what: 'Relógio do SPI da tela' },
+    'SPI_MISO': { g: 'spi', gpio: 13, what: 'Dados da tela para o ESP32 (SDO). Opcional' },
+    'LCD_BL':   { g: 'io',  gpio: 7,  what: 'Brilho da tela (PWM). Vai à ponte JP1' },
+    'BL':       { g: 'io',  what: 'Saída da ponte JP1 para o pino LED da tela: ou o GPIO 7 (brilho ajustável) ou o 3V3 (sempre aceso)' },
+    'TP9':      { g: 'tp',  gpio: 9,  what: 'Touch: SCL (capacitiva) ou T_CLK (ILI9488)' },
+    'TP5':      { g: 'tp',  gpio: 5,  what: 'Touch: RST (capacitiva) ou T_CS (ILI9488)' },
+    'TP8':      { g: 'tp',  gpio: 8,  what: 'Touch: SDA (capacitiva) ou T_DIN (ILI9488)' },
+    'TP4':      { g: 'tp',  gpio: 4,  what: 'Touch: INT (capacitiva) ou T_DO (ILI9488)' },
+    'I2S_BCLK': { g: 'i2s', gpio: 15, what: 'Relógio dos bits do áudio. Microfone e amplificador dividem' },
+    'I2S_WS':   { g: 'i2s', gpio: 16, what: 'Esquerda/direita de cada amostra. Microfone e amplificador dividem' },
+    'MIC_SD':   { g: 'i2s', gpio: 17, what: 'Som do microfone para o ESP32' },
+    'AMP_DIN':  { g: 'i2s', gpio: 18, what: 'Som do ESP32 para o amplificador' },
+    'BTN':      { g: 'io',  gpio: 21, what: 'Botão para o GND, com pull-up interno do ESP32' }
+  };
+  const GC = { spi: 'var(--n-spi)', tp: 'var(--n-tp)', i2s: 'var(--n-i2s)', '3v3': 'var(--n-3v3)', '5v': 'var(--n-5v)', gnd: 'var(--n-gnd)', io: 'var(--n-io)' };
+  const col = n => GC[NETS[n].g];
+
+  // ---- pecas -----------------------------------------------------------------------------
+  // fileiras do DevKit (nomes da serigrafia, pino 1 perto da antena)
+  const ROW_J1 = ['3V3', '3V3', 'RST', '4', '5', '6', '7', '15', '16', '17', '18', '8', '3', '46', '9', '10', '11', '12', '13', '14', '5V', 'GND'];
+  const ROW_J3 = ['GND', 'TX', 'RX', '1', '2', '42', '41', '40', '39', '38', '37', '36', '35', '0', '45', '48', '47', '21', '20', '19', 'GND', 'GND'];
+  const byGpio = Object.fromEntries(Object.entries(NETS).filter(([, v]) => v.gpio !== undefined).map(([k, v]) => [String(v.gpio), k]));
+  const devNet = p => (p === '3V3' ? '3V3' : p === '5V' ? '5V' : p === 'GND' ? 'GND' : byGpio[p] || null);
+  const pinLabel = p => (/^\d+$/.test(p) ? 'GPIO' + p : p);
+
+  const J1 = [ // tela, nomes da tela capacitiva (anuncio) e da ILI9488
+    ['VCC', 'VCC', '3V3'], ['GND', 'GND', 'GND'], ['LCD_CS', 'CS', 'LCD_CS'], ['LCD_RST', 'RESET', 'LCD_RST'], ['LCD_RS', 'DC/RS', 'LCD_DC'],
+    ['SDI(MOSI)', 'SDI', 'SPI_MOSI'], ['SCK', 'SCK', 'SPI_SCK'], ['LED', 'LED', 'BL'], ['SDO(MISO)', 'SDO', 'SPI_MISO'],
+    ['CTP_SCL', 'T_CLK', 'TP9'], ['CTP_RST', 'T_CS', 'TP5'], ['CTP_SDA', 'T_DIN', 'TP8'], ['CTP_INT', 'T_DO', 'TP4'], ['SD_CS', 'T_IRQ', null]
+  ];
+  const J2 = [['SCK', 'I2S_BCLK'], ['WS', 'I2S_WS'], ['SD', 'MIC_SD'], ['L/R', 'GND'], ['VDD', '3V3'], ['GND', 'GND']];
+  const J3 = [['LRC', 'I2S_WS'], ['BCLK', 'I2S_BCLK'], ['DIN', 'AMP_DIN'], ['GAIN', null], ['SD', null], ['GND', 'GND'], ['VIN', '5V']];
+  const SMALL = [ // ref, valor, tipo, rede de cima, rede de baixo
+    ['C1', '10 µF', 'cap', '3V3', 'GND'], ['C2', '100 nF', 'cap', '3V3', 'GND'],
+    ['R1', '4,7 kΩ', 'res', '3V3', 'TP8'], ['R2', '4,7 kΩ', 'res', '3V3', 'TP9'],
+    ['C3', '100 nF', 'cap', '3V3', 'GND'], ['C4', '470 µF', 'pol', '5V', 'GND'], ['C5', '100 nF', 'cap', '5V', 'GND'],
+    ['SW1', 'botão', 'sw', 'BTN', 'GND'], ['J4', 'botão ext.', 'hdr2', 'BTN', 'GND']
+  ];
+
+  // ---- desenho do esquema ---------------------------------------------------------------------
+  const NS_ = []; // elementos por rede, para destacar
+  let s = '';
+  const lbl = (x, y, net, dir) => { // rotulo de rede; dir: 1 = estende para a direita
+    if (!net) return `<g><line x1="${x}" y1="${y - 4}" x2="${x + 8 * dir}" y2="${y + 4}" stroke="var(--muted)" stroke-width="1.4"/><line x1="${x}" y1="${y + 4}" x2="${x + 8 * dir}" y2="${y - 4}" stroke="var(--muted)" stroke-width="1.4"/></g>`;
+    const w = net.length * 6.9 + 12, x0 = dir > 0 ? x : x - w, c = col(net);
+    return `<g class="net" data-net="${net}"><rect class="lbl" x="${x0}" y="${y - 8}" width="${w}" height="16" rx="3" fill="${c}"/><text x="${x0 + w / 2}" y="${y + 3.6}" text-anchor="middle" style="fill:#fff;font-size:10.5px;font-weight:500">${net}</text></g>`;
+  };
+  const stub = (x1, x2, y, net) => `<line class="${net ? 'net' : ''}" ${net ? `data-net="${net}"` : ''} x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${net ? col(net) : 'var(--muted)'}" stroke-width="2"/>`;
+  const box = (x, y, w, h, ref, title, sub) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="var(--surface2)" stroke="var(--fg)" stroke-width="1.6"/><text class="t-title" x="${x + w / 2}" y="${y - 22}" text-anchor="middle">${ref} · ${title}</text><text class="t-dim" x="${x + w / 2}" y="${y - 8}" text-anchor="middle" style="font-size:10px">${sub}</text>`;
+
+  // DevKit no centro
+  {
+    const x = 400, y = 90, w = 200, P = 26, h = P * 22 + 12;
+    s += box(x, y, w, h, 'H1 + H2', 'ESP32-S3-DevKitC-1', 'dois soquetes fêmea 1×22');
+    s += `<text class="t-dim" x="${x + w / 2}" y="${y + h / 2}" text-anchor="middle" transform="rotate(-90 ${x + w / 2} ${y + h / 2})" style="font-size:12px">USB para este lado →</text>`;
+    ROW_J1.forEach((p, i) => { const yy = y + 18 + P * i, n = devNet(p);
+      s += `<text x="${x + 8}" y="${yy + 3.6}" style="font-size:10.5px${n ? '' : ';fill:var(--muted)'}">${pinLabel(p)}</text><text class="t-dim" x="${x - 4}" y="${yy - 4}" text-anchor="end" style="font-size:8.5px">${i + 1}</text>`;
+      s += stub(x - 30, x, yy, n) + lbl(x - 30, yy, n, -1); });
+    ROW_J3.forEach((p, i) => { const yy = y + 18 + P * i, n = devNet(p);
+      s += `<text x="${x + w - 8}" y="${yy + 3.6}" text-anchor="end" style="font-size:10.5px${n ? '' : ';fill:var(--muted)'}">${pinLabel(p)}</text><text class="t-dim" x="${x + w + 4}" y="${yy - 4}" style="font-size:8.5px">${i + 1}</text>`;
+      s += stub(x + w, x + w + 30, yy, n) + lbl(x + w + 30, yy, n, 1); });
+    s += `<text class="t-dim" x="${x + w / 2}" y="${y + h + 18}" text-anchor="middle" style="font-size:10px">H1 = fileira J1 do DevKit (esquerda)</text><text class="t-dim" x="${x + w / 2}" y="${y + h + 32}" text-anchor="middle" style="font-size:10px">H2 = fileira J3 (direita)</text>`;
+  }
+  // conector generico com pinos na vertical; side = lado dos rotulos (1 direita, -1 esquerda)
+  const conn = (x, y, ref, title, sub, rows, side, w = 130) => {
+    const P = 24, h = P * rows.length + 8;
+    let o = box(x, y, w, h, ref, title, sub);
+    rows.forEach(([name, alt, net], i) => { const yy = y + 16 + P * i, px = side > 0 ? x + w : x;
+      o += `<text x="${side > 0 ? x + w - 8 : x + 8}" y="${yy + 3.6}" text-anchor="${side > 0 ? 'end' : 'start'}" style="font-size:10.5px">${name}</text>`;
+      if (alt) o += `<text class="t-dim" x="${side > 0 ? x + 8 : x + w - 8}" y="${yy + 3.6}" text-anchor="${side > 0 ? 'start' : 'end'}" style="font-size:9px">${alt}</text>`;
+      o += `<text class="t-dim" x="${px + side * 4}" y="${yy - 4}" text-anchor="${side > 0 ? 'start' : 'end'}" style="font-size:8.5px">${i + 1}</text>`;
+      o += stub(px, px + side * 22, yy, net) + lbl(px + side * 22, yy, net, side); });
+    return o;
+  };
+  s += conn(40, 90, 'J1', 'Tela', 'fêmea 1×14 · cinza = nome na ILI9488', J1.map(([a, b, n]) => [a, b === a ? '' : b, n]), 1, 150);
+  s += conn(810, 90, 'J2', 'Microfone INMP441', 'fêmea 1×6 · conferir ordem', J2.map(([a, n]) => [a, '', n]), -1, 120);
+  s += conn(810, 330, 'J3', 'Amplificador MAX98357A', 'fêmea 1×7', J3.map(([a, n]) => [a, '', n]), -1, 120);
+
+  // pecas pequenas (verticais, rotulo em cima e embaixo)
+  const sym = (t, x, y) => {
+    if (t === 'cap' || t === 'pol') return `<line x1="${x - 10}" y1="${y - 3}" x2="${x + 10}" y2="${y - 3}" stroke="var(--fg)" stroke-width="2"/>` + (t === 'pol' ? `<path d="M${x - 10} ${y + 5} Q${x} ${y} ${x + 10} ${y + 5}" fill="none" stroke="var(--fg)" stroke-width="2"/><text x="${x - 16}" y="${y - 6}" style="font-size:10px">+</text>` : `<line x1="${x - 10}" y1="${y + 3}" x2="${x + 10}" y2="${y + 3}" stroke="var(--fg)" stroke-width="2"/>`) + `<line x1="${x}" y1="${y - 14}" x2="${x}" y2="${y - 3}" stroke="var(--fg)" stroke-width="1.6"/><line x1="${x}" y1="${y + (t === 'pol' ? 2 : 3)}" x2="${x}" y2="${y + 14}" stroke="var(--fg)" stroke-width="1.6"/>`;
+    if (t === 'res') return `<rect x="${x - 5}" y="${y - 12}" width="10" height="24" fill="none" stroke="var(--fg)" stroke-width="1.6"/><line x1="${x}" y1="${y - 14}" x2="${x}" y2="${y - 12}" stroke="var(--fg)"/><line x1="${x}" y1="${y + 12}" x2="${x}" y2="${y + 14}" stroke="var(--fg)"/>`;
+    if (t === 'sw') return `<line x1="${x}" y1="${y - 14}" x2="${x}" y2="${y - 7}" stroke="var(--fg)" stroke-width="1.6"/><line x1="${x}" y1="${y + 7}" x2="${x}" y2="${y + 14}" stroke="var(--fg)" stroke-width="1.6"/><line x1="${x}" y1="${y + 7}" x2="${x - 9}" y2="${y - 6}" stroke="var(--fg)" stroke-width="1.8"/><circle cx="${x}" cy="${y - 7}" r="2" fill="var(--fg)"/><circle cx="${x}" cy="${y + 7}" r="2" fill="var(--fg)"/><line x1="${x - 14}" y1="${y - 2}" x2="${x - 6}" y2="${y - 2}" stroke="var(--fg)" stroke-width="1.6"/>`;
+    return `<rect x="${x - 7}" y="${y - 13}" width="14" height="26" rx="2" fill="none" stroke="var(--fg)" stroke-width="1.6"/><circle cx="${x}" cy="${y - 6}" r="2.6" fill="var(--gold)"/><circle cx="${x}" cy="${y + 6}" r="2.6" fill="var(--gold)"/>`;
+  };
+  const small = (x, y, [ref, val, t, a, b]) => `<text class="t-title" x="${x + 22}" y="${y - 1}" style="font-size:12px">${ref}</text><text class="t-dim" x="${x + 22}" y="${y + 13}" style="font-size:10px">${val}</text>` + sym(t, x, y)
+    + `<line class="net" data-net="${a}" x1="${x}" y1="${y - 14}" x2="${x}" y2="${y - 28}" stroke="${col(a)}" stroke-width="2"/>` + `<line class="net" data-net="${b}" x1="${x}" y1="${y + 14}" x2="${x}" y2="${y + 28}" stroke="${col(b)}" stroke-width="2"/>`
+    + lblV(x, y - 28, a, -1) + lblV(x, y + 28, b, 1);
+  const lblV = (x, y, net, dir) => { const w = net.length * 6.9 + 12, c = col(net), y0 = dir > 0 ? y : y - 16;
+    return `<g class="net" data-net="${net}"><rect class="lbl" x="${x - w / 2}" y="${y0}" width="${w}" height="16" rx="3" fill="${c}"/><text x="${x}" y="${y0 + 11.6}" text-anchor="middle" style="fill:#fff;font-size:10.5px;font-weight:500">${net}</text></g>`; };
+  // esquerda, embaixo da tela: capacitores do 3V3, pull-ups opcionais, ponte JP1
+  s += `<text class="t-title" x="40" y="490">Junto da tela</text>`;
+  s += small(64, 560, SMALL[0]) + small(150, 560, SMALL[1]);
+  s += small(64, 670, SMALL[2]) + small(150, 670, SMALL[3]);
+  s += `<text class="t-dim" x="40" y="734" style="font-size:10px">R1 e R2: não soldar (só se o touch capacitivo</text><text class="t-dim" x="40" y="747" style="font-size:10px">não aparecer no scanner I2C).</text><text class="t-dim" x="40" y="766" style="font-size:10px">JP1: vem fechada entre BL e LCD_BL (GPIO 7).</text><text class="t-dim" x="40" y="779" style="font-size:10px">Para brilho fixo, corte e feche BL com 3V3.</text>`;
+  { // JP1: ponte de solda de 3 ilhas
+    const x = 250, y = 610;
+    s += `<text class="t-title" x="${x - 20}" y="${y - 52}" style="font-size:12px">JP1 · brilho</text>`;
+    [-1, 0, 1].forEach(k => { s += `<rect x="${x + k * 16 - 6}" y="${y - 6}" width="12" height="12" rx="2" fill="var(--gold)"/>`; });
+    s += `<rect x="${x - 16}" y="${y - 2}" width="16" height="4" fill="var(--gold)"/>`;
+    s += `<line class="net" data-net="LCD_BL" x1="${x - 16}" y1="${y + 6}" x2="${x - 16}" y2="${y + 30}" stroke="${col('LCD_BL')}" stroke-width="2"/>` + lblV(x - 16, y + 30, 'LCD_BL', 1);
+    s += `<line class="net" data-net="BL" x1="${x}" y1="${y - 6}" x2="${x}" y2="${y - 30}" stroke="${col('BL')}" stroke-width="2"/>` + lblV(x, y - 30, 'BL', -1);
+    s += `<line class="net" data-net="3V3" x1="${x + 16}" y1="${y + 6}" x2="${x + 16}" y2="${y + 58}" stroke="${col('3V3')}" stroke-width="2"/>` + lblV(x + 16, y + 58, '3V3', 1);
+  }
+  // direita, embaixo do amplificador
+  s += `<text class="t-title" x="700" y="560">Microfone, som e botão</text>`;
+  s += small(700, 630, SMALL[4]) + small(770, 630, SMALL[5]) + small(840, 630, SMALL[6]);
+  s += small(700, 740, SMALL[7]) + small(800, 740, SMALL[8]);
+  document.getElementById('sch').innerHTML = s;
+
+  // ---- vista de cima (mm, origem embaixo a esquerda) -------------------------------------------
+  {
+    const K = 9.5, OX = 70, OY = 40, BW = 80, BH = 60;
+    const X = x => OX + x * K, Y = y => OY + (BH - y) * K;
+    let o = `<rect x="${X(0)}" y="${Y(BH)}" width="${BW * K}" height="${BH * K}" rx="${1.5 * K}" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    // keep-out da antena
+    o += `<rect x="${X(15)}" y="${Y(34)}" width="${11 * K}" height="${29 * K}" fill="none" stroke="var(--bad)" stroke-width="1.6" stroke-dasharray="6 4"/><text class="t-pcb" x="${X(20.5)}" y="${Y(35.4)}" text-anchor="middle" style="font-size:10px">sem cobre</text>`;
+    // furos
+    [[3, 3], [77, 3], [3, 57], [77, 57]].forEach(([x, y]) => { o += `<circle cx="${X(x)}" cy="${Y(y)}" r="${3 * K}" fill="none" stroke="var(--silk)" stroke-width="1" opacity=".5"/><circle cx="${X(x)}" cy="${Y(y)}" r="${1.6 * K}" fill="var(--bg)" stroke="var(--gold)" stroke-width="2"/>`; });
+    // DevKit: fileiras em y=8 e y=30,86; pino 1 em x=21,6
+    const P0 = 21.6, R1 = 8, R2 = 8 + 22.86, pitch = 2.54;
+    o += `<rect x="${X(16.6)}" y="${Y(R2 + 1.9)}" width="${(80 - 16.6) * K}" height="${(R2 - R1 + 3.8) * K}" rx="4" fill="#0e0f10" opacity=".35" stroke="var(--silk)" stroke-dasharray="4 3"/>`;
+    o += `<text class="t-silk" x="${X(48)}" y="${Y(20)}" text-anchor="middle" style="font-size:12px">ESP32-S3 DevKitC-1 (encaixado por cima)</text><text class="t-silk" x="${X(48)}" y="${Y(17)}" text-anchor="middle" style="font-size:10px;opacity:.8">antena ←          → USB-C na borda</text>`;
+    [R1, R2].forEach((ry, r) => { for (let i = 0; i < 22; i++) { const x = P0 + i * pitch, p = (r ? ROW_J3 : ROW_J1)[i], n = devNet(p);
+      o += `<rect x="${X(x) - 0.9 * K}" y="${Y(ry) - 0.9 * K}" width="${1.8 * K}" height="${1.8 * K}" fill="${n ? col(n) : 'var(--gold)'}" opacity="${n ? 1 : .55}"/>`; }
+      o += `<text class="t-silk" x="${X(P0 - 1.6)}" y="${Y(ry) + 3}" text-anchor="end">${r ? 'H2' : 'H1'}</text>`; });
+    o += `<text class="t-silk" x="${X(P0)}" y="${Y(R1 - 2.6)}" text-anchor="middle">1</text>`;
+    o += `<rect x="${X(80)}" y="${Y(23)}" width="${3 * K}" height="${8 * K}" fill="var(--muted)"/><rect x="${X(80)}" y="${Y(13.5)}" width="${3 * K}" height="${8 * K}" fill="var(--muted)"/>`;
+    // J1 tela, vertical na esquerda, pino 1 em cima
+    const J1X = 7, J1Y = 47;
+    o += `<rect x="${X(J1X - 1.4)}" y="${Y(J1Y + 1.4)}" width="${2.8 * K}" height="${(13 * 2.54 + 2.8) * K}" fill="#111" opacity=".6"/>`;
+    J1.forEach(([, , n], i) => { o += `<circle cx="${X(J1X)}" cy="${Y(J1Y - i * 2.54)}" r="${0.85 * K}" fill="${n ? col(n) : 'var(--gold)'}"/>`; });
+    o += `<text class="t-silk" x="${X(J1X)}" y="${Y(J1Y + 2.6)}" text-anchor="middle">J1 tela</text>`;
+    // J2 microfone, topo
+    const J2X = 30, J2Y = 55;
+    J2.forEach(([, n], i) => { o += `<circle cx="${X(J2X + i * 2.54)}" cy="${Y(J2Y)}" r="${0.85 * K}" fill="${col(n)}"/>`; });
+    o += `<text class="t-silk" x="${X(J2X + 6.35)}" y="${Y(J2Y - 2.8)}" text-anchor="middle">J2 microfone</text>`;
+    o += `<path d="M${X(J2X + 6.35)} ${Y(60)} v-${0.1 * K}" stroke="var(--accent)"/><text class="t-dim" x="${X(J2X + 6.35)}" y="${Y(60) - 10}" text-anchor="middle">↑ furo do microfone na caixa</text>`;
+    // J3 amplificador
+    const J3X = 52, J3Y = 41;
+    J3.forEach(([, n], i) => { o += `<circle cx="${X(J3X + i * 2.54)}" cy="${Y(J3Y)}" r="${0.85 * K}" fill="${n ? col(n) : 'var(--gold)'}"/>`; });
+    o += `<text class="t-silk" x="${X(J3X + 7.6)}" y="${Y(J3Y + 2.6)}" text-anchor="middle">J3 amplificador</text>`;
+    // C4 470uF
+    o += `<circle cx="${X(71)}" cy="${Y(47)}" r="${4 * K}" fill="none" stroke="var(--silk)" stroke-width="1.4"/><text class="t-silk" x="${X(71)}" y="${Y(47) + 3}" text-anchor="middle">C4</text>`;
+    // SW1 e J4
+    o += `<rect x="${X(41)}" y="${Y(53)}" width="${6 * K}" height="${6 * K}" fill="none" stroke="var(--silk)" stroke-width="1.4"/><circle cx="${X(44)}" cy="${Y(50)}" r="${1.8 * K}" fill="none" stroke="var(--silk)"/><text class="t-silk" x="${X(44)}" y="${Y(45.6)}" text-anchor="middle">SW1</text>`;
+    o += `<circle cx="${X(60)}" cy="${Y(55)}" r="${0.85 * K}" fill="${col('BTN')}"/><circle cx="${X(62.54)}" cy="${Y(55)}" r="${0.85 * K}" fill="${col('GND')}"/><text class="t-silk" x="${X(61.3)}" y="${Y(57.6)}" text-anchor="middle">J4</text>`;
+    // pecas pequenas
+    const sm = (ref, x, y, vert) => `<rect x="${X(x) - (vert ? 0.9 : 3.2) * K}" y="${Y(y) - (vert ? 3.2 : 0.9) * K}" width="${(vert ? 1.8 : 6.4) * K}" height="${(vert ? 6.4 : 1.8) * K}" rx="3" fill="none" stroke="var(--silk)" stroke-width="1.2"/><text class="t-silk" x="${X(x) + (vert ? 12 : 0)}" y="${Y(y) + (vert ? 3 : -12)}" text-anchor="${vert ? 'start' : 'middle'}">${ref}</text>`;
+    o += sm('C1', 12, 14, true) + sm('C2', 12, 21, true) + sm('JP1', 12, 30, true) + sm('R1', 12, 47, true) + sm('R2', 12, 54, true) + sm('C3', 25, 52, true) + sm('C5', 74, 37.5, true);
+    // cotas
+    o += `<line x1="${X(0)}" y1="${Y(0) + 26}" x2="${X(80)}" y2="${Y(0) + 26}" stroke="var(--muted)"/><text class="t-dim" x="${X(40)}" y="${Y(0) + 42}" text-anchor="middle">80 mm</text>`;
+    o += `<line x1="${X(0) - 26}" y1="${Y(0)}" x2="${X(0) - 26}" y2="${Y(60)}" stroke="var(--muted)"/><text class="t-dim" x="${X(0) - 34}" y="${Y(30)}" text-anchor="middle" transform="rotate(-90 ${X(0) - 34} ${Y(30)})">60 mm</text>`;
+    o += `<text class="t-dim" x="${X(3)}" y="${Y(0) + 42}">furos M3 (Ø 3,2) a 3 mm das bordas</text>`;
+    document.getElementById('lay').innerHTML = o;
+  }
+
+  // ---- tabelas e cartoes --------------------------------------------------------------------
+  const where = net => {
+    const out = [];
+    ROW_J1.forEach((p, i) => { if (devNet(p) === net) out.push(`H1.${i + 1} (${pinLabel(p)})`); });
+    ROW_J3.forEach((p, i) => { if (devNet(p) === net) out.push(`H2.${i + 1} (${pinLabel(p)})`); });
+    J1.forEach(([a, , n], i) => { if (n === net) out.push(`J1.${i + 1} (${a})`); });
+    J2.forEach(([a, n], i) => { if (n === net) out.push(`J2.${i + 1} (${a})`); });
+    J3.forEach(([a, n], i) => { if (n === net) out.push(`J3.${i + 1} (${a})`); });
+    SMALL.forEach(([r, , , a, b]) => { if (a === net) out.push(`${r}.1`); if (b === net) out.push(`${r}.2`); });
+    if (net === 'LCD_BL') out.push('JP1.1'); if (net === 'BL') out.push('JP1.2 (meio)'); if (net === '3V3') out.push('JP1.3');
+    return out;
+  };
+  document.getElementById('nettbl').innerHTML = Object.entries(NETS).map(([n, v]) => `<tr><td class="mono"><span class="dot" style="--c:${col(n)}"></span>${n}</td><td class="mono">${v.gpio ?? '—'}</td><td style="font-size:13px">${where(n).join(', ')}</td><td>${v.what}</td></tr>`).join('');
+  document.getElementById('tptbl').innerHTML = J1.slice(9).map(([a, b, n], i) => `<tr><td class="mono">J1.${i + 10}</td><td class="mono">${n ? `<span class="dot" style="--c:${col(n)}"></span>${n} (GPIO ${NETS[n].gpio})` : 'sem ligar'}</td><td class="mono">${a}</td><td class="mono">${b}</td></tr>`).join('');
+
+  const BOM = [
+    ['H1, H2', 2, 'Barra de pinos fêmea 1×22, 2,54 mm', 'Soquetes do ESP32-S3 DevKit. Fileiras a 22,86 mm uma da outra (confirmar).'],
+    ['J1', 1, 'Barra de pinos fêmea 1×14, 2,54 mm', 'Tela. Liga por cabo curto de 14 vias, ou a tela encaixa direto (se as medidas permitirem).'],
+    ['J2', 1, 'Barra de pinos fêmea 1×6, 2,54 mm', 'Microfone INMP441. Ordem conforme a serigrafia do seu módulo.'],
+    ['J3', 1, 'Barra de pinos fêmea 1×7, 2,54 mm', 'Amplificador MAX98357A. O alto-falante liga no borne do próprio módulo.'],
+    ['J4', 1, 'Barra de pinos macho 1×2, 2,54 mm (ou JST-XH 2 vias)', 'Botão externo na caixa, em paralelo com o SW1. Opcional.'],
+    ['SW1', 1, 'Botão tátil 6×6 mm, de furo', 'Apertar para falar ou mudo (GPIO 21).'],
+    ['C1', 1, 'Capacitor 10 µF 16 V (cerâmico ou eletrolítico), de furo', 'Reserva de energia do 3V3 junto da tela.'],
+    ['C2, C3, C5', 3, 'Capacitor cerâmico 100 nF (104), passo 2,54 ou 5,08 mm', 'Filtro rápido: C2 na tela, C3 no microfone, C5 no amplificador.'],
+    ['C4', 1, 'Capacitor eletrolítico 470 µF 10 V, radial', 'Segura os picos do amplificador. Atenção à polaridade.'],
+    ['R1, R2', 2, 'Resistor 4,7 kΩ, de furo', 'Não soldar (DNP). Só se o touch capacitivo não aparecer no scanner I2C.'],
+    ['JP1', 1, 'Ponte de solda de 3 ilhas', 'Brilho: GPIO 7 (padrão, já fechada no cobre) ou 3V3 (sempre aceso).'],
+    ['—', 4, 'Furo de fixação M3 (Ø 3,2 mm)', 'Nos cantos, casando com as colunas da tampa da caixa.']
+  ];
+  document.getElementById('bomtbl').innerHTML = BOM.map(r => `<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+
+  const card = (t, p) => `<article class="card"><h3>${t}</h3><p>${p}</p></article>`;
+  document.getElementById('cards').innerHTML = [
+    card('ESP32-S3 DevKit', 'Encaixa em dois soquetes fêmea de 22 pinos. Continua alimentado e programado pelo USB-C dele, que fica na borda da placa.'),
+    card('Tela (J1)', 'Conector de 14 pinos. Serve para a tela capacitiva final e para a ILI9488 de teste: os fios são os mesmos, só o programa muda.'),
+    card('Microfone (J2) e som (J3)', 'INMP441 no topo, embaixo do furo da caixa. O amplificador MAX98357A fica longe dele e divide os relógios do I2S.'),
+    card('Extras', 'Botão no GPIO 21 (na placa e num conector para um botão na caixa), capacitores de filtro e uma ponte para escolher o brilho fixo ou ajustável.')
+  ].join('');
+  document.getElementById('rules').innerHTML = [
+    card('Trilhas', 'Sinais: 0,25 mm. 3V3 e 5V: 0,6 mm ou mais. GND: plano de cobre nas duas camadas, ligado por vias.'),
+    card('Antena', 'Nada de cobre (trilha ou plano) embaixo da antena do ESP32, nas duas camadas. Marque como keep-out.'),
+    card('Ruído', 'Microfone longe do amplificador e do C4. As trilhas I2S curtas. O C3 colado no microfone, o C2 colado no J1, o C4 e o C5 colados no J3.'),
+    card('Fabricação', 'JLCPCB: 2 camadas, 1,6 mm, acabamento HASL. Cor livre (preta combina com a caixa). Quantidade mínima de 5.'),
+    card('Serigrafia', 'Escreva o nome de cada pino ao lado dos conectores, a polaridade do C4 (+) e o pino 1 do J1. Ajuda muito na hora de encaixar.'),
+    card('Altura', 'O DevKit fica uns 8,5 mm acima da placa pelos soquetes. Pode passar trilha embaixo dele, menos na área da antena.')
+  ].join('');
+
+  // ---- destaque de rede ------------------------------------------------------------------------
+  const svg = document.getElementById('sch'), chips = document.getElementById('netchips');
+  chips.innerHTML = `<button class="chip" type="button" data-net="" aria-pressed="true">todas</button>` + Object.keys(NETS).map(n => `<button class="chip" type="button" data-net="${n}" aria-pressed="false" style="--c:${col(n)}"><i></i>${n}</button>`).join('');
+  const hl = net => {
+    if (!net || svg.dataset.hl === net) { delete svg.dataset.hl; net = ''; } else svg.dataset.hl = net;
+    svg.querySelectorAll('.net').forEach(e => e.classList.toggle('hl', e.dataset.net === net));
+    chips.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.net === net)));
+  };
+  chips.addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) hl(b.dataset.net); });
+  svg.addEventListener('click', e => { const g = e.target.closest('.net'); hl(g ? g.dataset.net : ''); });
+})();
+</script>
+</body>
+</html>

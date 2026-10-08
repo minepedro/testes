@@ -14,6 +14,7 @@ Fase 0: definição (grill-me). Lista de compras pronta em `docs/bom.md`; nada c
 - `hardware/esquema-ligacoes.html` — esquema visual das ligações (abra no navegador)
 - `hardware/manual-montagem-ili9488.html` e `hardware/esquema-ligacoes-ili9488.html` — manual (Parte 1) e esquema para a tela de teste 3,5" ILI9488 com touch resistivo XPT2046 (touch em SPI próprio, GPIO 9, 5, 8, 4)
 - `hardware/entendendo-os-componentes.html` — o que é cada peça da lista, com desenhos (capacitor, resistor, botão, protoboard, multímetro)
+- `hardware/pcb-placa-base.html` — rascunho da PCB do modelo final (placa-base de 80 × 60 mm onde os módulos encaixam): esquema com rótulos de rede, posição das peças, lista de redes e de peças, regras para o EasyEDA. Serve para as duas telas
 - `hardware/caixa-desenho.html` — desenhos e recomendações da caixa impressa (vistas, corte, layout interno, impressão)
 - `docs/bom.md` — lista de componentes (Santa Ifigênia)
 - `docs/guia-de-compras.pdf` — guia ilustrado: marcas, alternativas, onde achar, preço estimado, ferramentas extras
