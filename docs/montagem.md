@@ -136,6 +136,10 @@ void loop() {}
 Se vier PSRAM 0 mesmo com a opção certa, você recebeu uma placa sem PSRAM. Peça troca,
 é por isso que a lista tem uma placa reserva.
 
+**Resultado (10/out):** passou. Placa genérica "YD" com módulo S3-N16R8: PSRAM 8388608, Flash 16777216,
+ESP32-S3 a 240 MHz. Gravada pela porta COM (COM5 no Windows, chip USB CH343), Arduino IDE 2.3.10 com pacote esp32 3.3.12.
+3V3 medido: 3,3 V.
+
 ## Etapa 2: a tela (só imagem)
 
 Objetivo: acender a tela e pintar cores.
