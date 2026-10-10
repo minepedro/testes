@@ -14,7 +14,8 @@ etapa que você acabou de fazer.
 1. **Desligue o USB antes de mexer em qualquer fio.** Nunca ligue ou desligue jumper com a placa energizada.
 2. Tudo trabalha em **3,3 V**. Só ligue algo em 5 V se o módulo disser que aceita.
 3. Antes de ligar a tela, meça com o multímetro: pino `3V3` do ESP32 contra `GND` deve dar perto de 3,3 V.
-4. Não use estes pinos do ESP32-S3: **0, 3, 45, 46** (boot), **19, 20** (USB), **26 a 37** (memória flash e PSRAM), **43, 44** (porta serial), **38 e 48** (LED da placa, depende da versão).
+5. **Pino 5VIN sem energia (placa genérica "YD", com pinos amarelos):** medido em 10/out, o 3V3 dá 3,3 V, mas o 5VIN dá só 0,5 V com o USB ligado. A ponte de solda **IN-OUT**, na frente das portas USB, vem aberta. Tela, touch e microfone não usam 5 V. Para o amplificador de som: feche a ponte IN-OUT com uma gota de solda (e nunca ligue outra fonte no 5VIN com o USB conectado), ou alimente o VIN do amplificador no 3V3 (volume menor). Não mexa na ponte USB-OTG.
+6. Não use estes pinos do ESP32-S3: **0, 3, 45, 46** (boot), **19, 20** (USB), **26 a 37** (memória flash e PSRAM), **43, 44** (porta serial), **38 e 48** (LED da placa, depende da versão).
 
 ## Mapa de pinos
 

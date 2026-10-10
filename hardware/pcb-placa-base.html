@@ -141,6 +141,7 @@ ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 75
     <h2>Confirmar antes de mandar fazer</h2>
     <ol class="steps">
       <li><b>Distância entre as duas fileiras do ESP32.</b> O desenho usa 22,86 mm (9 furos de 2,54 mm), a mesma que cabe na protoboard. Meça de centro a centro nos seus pinos. Se errar aqui, o ESP32 não encaixa.</li>
+      <li><b>Ponte IN-OUT do ESP32 fechada.</b> O amplificador (J3) pega 5 V do pino 5VIN do DevKit. Na placa genérica que você tem, esse pino só recebe o 5 V do USB com a ponte de solda IN-OUT fechada (ela vem aberta: o 5VIN mediu 0,5 V).</li>
       <li><b>Ordem dos pinos do microfone INMP441.</b> O desenho usa SCK, WS, SD, L/R, VDD, GND numa fileira. Muitos módulos têm outra ordem ou duas fileiras de 3. Ajuste o conector J2 à serigrafia do seu.</li>
       <li><b>Posição do conector na tela capacitiva.</b> Quando ela chegar, meça onde fica a fileira de 14 pinos. Se der para a tela encaixar direto na placa (sanduíche), eu reposiciono o J1 para isso. Senão, fica como está, com um cabo curto.</li>
       <li><b>Teste da protoboard.</b> Tela, touch, microfone e som funcionando com este mesmo mapa de pinos.</li>
