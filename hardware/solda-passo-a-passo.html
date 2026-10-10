@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solda dos Pinos</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura; cada passo e um cartao com um corte lateral desenhado
+   (placa, anel de cobre, pino, plastico amarelo, ferro e fio de solda). Os desenhos
+   nascem de uma unica cena em JS, mudando so o que cada passo mostra. */
+:root {
+  --bg: #eef0ec; --surface: #f8f9f6; --fg: #1c211d; --muted: #5d665f; --line: #d3d8d1;
+  --accent: #e0662f; --heat: #ff8a3d; --good: #23864f; --bad: #c93030;
+  --pcb: #1f5a45; --pcb-edge: #0f2f24; --gold: #c9a24a; --pin: #b9bec4; --pin-edge: #7d838a;
+  --solder: #dfe3e7; --solder-edge: #8e959c; --yellow: #f2c418; --iron: #8a9097; --iron-dark: #4a5057; --handle: #2b2f33; --wire: #c7ccd1;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151916; --surface: #1d221f; --fg: #e6ebe7; --muted: #9ba59e; --line: #2f3631;
+    --accent: #f08a57; --heat: #ff9d5c; --good: #5cc58a; --bad: #f26b6b;
+    --pcb: #1c5a44; --pcb-edge: #07170f; --gold: #d9b25e; --pin: #c9ced4; --pin-edge: #8b929a;
+    --solder: #e8ecef; --solder-edge: #9aa1a8; --yellow: #f2c418; --iron: #9aa0a7; --iron-dark: #5a6067; --handle: #3a3f44; --wire: #d3d8dc;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151916; --surface: #1d221f; --fg: #e6ebe7; --muted: #9ba59e; --line: #2f3631;
+  --accent: #f08a57; --heat: #ff9d5c; --good: #5cc58a; --bad: #f26b6b;
+  --pcb: #1c5a44; --pcb-edge: #07170f; --gold: #d9b25e; --pin: #c9ced4; --pin-edge: #8b929a;
+  --solder: #e8ecef; --solder-edge: #9aa1a8; --yellow: #f2c418; --iron: #9aa0a7; --iron-dark: #5a6067; --handle: #3a3f44; --wire: #d3d8dc;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--font-body); }
+.wrap { max-width: 940px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 700 30px/1.1 var(--font-display); text-wrap: balance; }
+h2 { margin: 0; font-size: 21px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+h3 { margin: 0; font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 14px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.step header { display: flex; gap: 10px; align-items: baseline; }
+.num { font: 700 20px/1 var(--font-display); color: var(--accent); min-width: 1.6em; }
+.step svg { display: block; width: 100%; height: auto; }
+.step p { color: var(--muted); font-size: 15px; }
+.step p b { color: var(--fg); }
+.tag { display: inline-block; font: 600 12px/1 var(--font-mono); padding: 4px 8px; border-radius: 999px; }
+.tag.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.tag.no { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.note { border-left: 4px solid var(--accent); background: var(--surface); padding: 12px 14px; border-radius: 0 10px 10px 0; max-width: 70ch; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.scroller svg { display: block; width: 100%; min-width: 620px; height: auto; }
+svg text { font-family: var(--font-body); font-size: 13px; fill: var(--fg); }
+svg .lbl-mono { font-family: var(--font-mono); font-size: 11px; }
+svg .dim { fill: var(--muted); }
+ol.plain { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 70ch; }
+@media (max-width: 560px) { h1 { font-size: 23px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">mascote · etapa 2 · soldar os pinos do ESP32</div>
+    <h1>Solda dos Pinos</h1>
+    <p class="lead">Desenhos de lado, como se a placa fosse cortada ao meio num pino. Cada pino leva uns 3 segundos. Faça devagar: os primeiros 4 são treino, depois fica automático.</p>
+  </header>
+
+  <section>
+    <h2>O que você está vendo nos desenhos</h2>
+    <div class="step"><svg id="legend" viewBox="0 0 560 230" role="img" aria-label="Corte lateral: a placa azul-esverdeada atravessada por um pino metálico. Em volta do pino, em cima da placa, fica o anel dourado. Embaixo da placa, o plástico amarelo da barra de pinos, e a parte comprida do pino entra na protoboard."></svg>
+      <p>O <b>anel dourado</b> é o cobre da placa em volta do furo (aquele com o nome do pino escrito do lado). A solda precisa grudar <b>no anel e no pino ao mesmo tempo</b>: é ela que vira o fio entre os dois.</p></div>
+  </section>
+
+  <section>
+    <h2>Passo a passo de um pino</h2>
+    <div class="grid" id="steps"></div>
+  </section>
+
+  <section>
+    <h2>Por que o fio não vai na ponta do ferro</h2>
+    <div class="grid" id="why"></div>
+    <p class="note">A solda sempre corre para o <b>lugar mais quente</b>. Se você esquenta o pino e o anel e encosta o fio neles, a solda escorre e abraça os dois. Se derrete o fio na ponta do ferro e "leva" a gota até o pino, ela cai num metal frio, não gruda e vira uma bolinha solta (a <b>solda fria</b>), que funciona mal ou para de funcionar depois.</p>
+  </section>
+
+  <section>
+    <h2>Como conferir cada solda</h2>
+    <div class="grid" id="results"></div>
+  </section>
+
+  <section>
+    <h2>Em que ordem soldar</h2>
+    <div class="scroller"><svg id="order" viewBox="0 0 640 240" role="img" aria-label="A placa vista de cima com as duas fileiras de 22 pinos. Os quatro pinos das pontas estão marcados de 1 a 4: solde-os primeiro. Depois o resto, um por um."></svg></div>
+    <ol class="plain">
+      <li>Solde os <b>4 cantos</b> primeiro (1 a 4 no desenho). Eles prendem a placa.</li>
+      <li>Olhe a placa de lado: tem que estar reta e encostada no plástico amarelo nas duas fileiras. Se não estiver, esquente um canto e ajeite com o dedo do outro lado (sem tocar no ferro).</li>
+      <li>Solde o resto, um pino de cada vez, pulando de lado se a placa esquentar muito.</li>
+      <li>No fim, com o USB desligado, multímetro em continuidade: vizinho com vizinho não apita, 3V3 com GND não apita.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  // ---- cena lateral de um pino (viewBox 0 0 300 220) -------------------------------------
+  const P = { x: 150, top: 92, board: 132, boardH: 18 };  // pino no meio; placa de y=132 a 150
+  const pad = (x) => `<rect x="${x - 19}" y="${P.board - 4}" width="38" height="5" rx="1.5" fill="var(--gold)"/><rect x="${x - 19}" y="${P.board + P.boardH - 1}" width="38" height="4" rx="1.5" fill="var(--gold)"/>`;
+  const base = (x = P.x, yellow = true) =>
+    (yellow ? `<rect x="${x - 26}" y="${P.board + P.boardH + 3}" width="52" height="24" rx="2" fill="var(--yellow)"/>` : '') +
+    `<rect x="20" y="${P.board}" width="260" height="${P.boardH}" rx="2" fill="var(--pcb)" stroke="var(--pcb-edge)"/>` + pad(x) +
+    `<rect x="${x - 4.5}" y="${P.top}" width="9" height="122" rx="1.5" fill="var(--pin)" stroke="var(--pin-edge)" stroke-width="1"/>`;
+  // cone de solda: f = 0..1 (quanto ja escorreu)
+  const fillet = (x = P.x, f = 1) => { const h = 6 + 22 * f, w = 6 + 13 * f;
+    return `<path d="M${x - 4.5 - w} ${P.board - 3} Q${x - 5} ${P.board - 5} ${x - 4.5} ${P.board - 3 - h} L${x + 4.5} ${P.board - 3 - h} Q${x + 5} ${P.board - 5} ${x + 4.5 + w} ${P.board - 3} Z" fill="var(--solder)" stroke="var(--solder-edge)" stroke-width="1"/>`; };
+  // ferro de solda: ponta em (tx, ty), corpo subindo para a direita
+  const iron = (tx, ty, drop = false) => `<g transform="translate(${tx} ${ty}) rotate(-42)">
+      <polygon points="0,0 16,-5 64,-8 64,8 16,5" fill="var(--iron)" stroke="var(--iron-dark)"/>
+      <rect x="64" y="-11" width="40" height="22" rx="3" fill="var(--iron-dark)"/>
+      <rect x="104" y="-14" width="120" height="28" rx="10" fill="var(--handle)"/>
+      ${drop ? '<ellipse cx="4" cy="0" rx="6" ry="5" fill="var(--solder)" stroke="var(--solder-edge)"/>' : ''}</g>`;
+  // fio de solda: ponta em (tx, ty), vindo de cima a esquerda
+  const wire = (tx, ty) => `<g transform="translate(${tx} ${ty}) rotate(-140)"><rect x="0" y="-3" width="170" height="6" rx="3" fill="var(--wire)" stroke="var(--solder-edge)" stroke-width=".8"/></g>`;
+  const glow = (x, y, r = 26) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#heat)"/>`;
+  const defs = `<defs><radialGradient id="heat"><stop offset="0" stop-color="var(--heat)" stop-opacity=".7"/><stop offset="1" stop-color="var(--heat)" stop-opacity="0"/></radialGradient></defs>`;
+  const label = (x, y, t, anchor = 'start', cls = '') => `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${t}</text>`;
+  const leader = (x1, y1, x2, y2, c = 'var(--muted)') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="1.2"/><circle cx="${x2}" cy="${y2}" r="2.4" fill="${c}"/>`;
+  const mark = (x, y, ok) => ok
+    ? `<circle cx="${x}" cy="${y}" r="11" fill="var(--good)"/><path d="M${x - 5} ${y} l3.5 4 l6.5 -8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
+    : `<circle cx="${x}" cy="${y}" r="11" fill="var(--bad)"/><path d="M${x - 4.5} ${y - 4.5} l9 9 M${x + 4.5} ${y - 4.5} l-9 9" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>`;
+  const svg = (inner, aria, vb = '0 0 300 220') => `<svg viewBox="${vb}" role="img" aria-label="${aria}">${defs}${inner}</svg>`;
+  const J = { l: P.x - 7, r: P.x + 7, y: P.board - 4 };  // os dois cantos do encontro pino + anel
+
+  // legenda
+  document.getElementById('legend').innerHTML = defs + `<g transform="translate(-10 0)">${base()}</g>`
+    + leader(300, 100, 145, 100) + label(306, 104, 'pino (parte curta, em cima)')
+    + leader(300, 124, 160, 127) + label(306, 128, 'anel de cobre (dourado)')
+    + leader(300, 148, 262, 141) + label(306, 152, 'placa do ESP32')
+    + leader(300, 172, 166, 172) + label(306, 176, 'plástico amarelo')
+    + leader(300, 205, 145, 205) + label(306, 209, 'parte comprida: vai na protoboard');
+
+  // passos
+  const STEPS = [
+    { t: 'Estanhe a ponta', s: iron(205, 70, true) + label(14, 30, 'ponta com uma gotinha de solda', 'start', 'dim') + leader(120, 36, 202, 66),
+      p: 'Com o ferro já quente (3 a 5 min), derreta um pouco de solda <b>na ponta</b> e limpe na esponja úmida. Ela fica <b>prateada e brilhante</b>. Isso é só para preparar a ponta, não para soldar o pino.' },
+    { t: 'Encoste o ferro no pino e no anel', s: glow(J.r, J.y) + iron(J.r, J.y) + label(14, 30, 'a ponta toca os dois juntos', 'start', 'dim') + leader(110, 36, J.r - 1, J.y - 2) + label(14, 200, 'conte: 1… 2…', 'start'),
+      p: 'Apoie a ponta no <b>canto onde o pino encontra o anel</b>, encostando nos dois ao mesmo tempo. Espere <b>1 a 2 segundos</b>: o calor passa para o pino e para o anel.' },
+    { t: 'Encoste o fio do outro lado', s: glow(J.r, J.y) + iron(J.r, J.y) + wire(J.l - 1, J.y - 1) + mark(J.l - 30, J.y - 52, true) + label(14, 200, 'fio aqui: no pino + anel', 'start') + leader(70, 186, J.l - 2, J.y - 2, 'var(--good)') + mark(J.r + 48, J.y - 40, false) + label(290, 214, 'não na ponta do ferro', 'end', 'dim'),
+      p: 'Com o ferro parado, encoste o <b>fio de solda no pino e no anel, do lado oposto ao ferro</b>. O metal quente derrete o fio. Não encoste o fio na ponta do ferro (explicado mais abaixo).' },
+    { t: 'Deixe a solda escorrer', s: glow(J.r, J.y) + fillet(P.x, .55) + iron(J.r, J.y) + wire(J.l - 6, J.y - 18) + label(14, 30, 'a solda abraça o pino sozinha', 'start', 'dim') + leader(120, 36, P.x - 10, P.board - 8),
+      p: 'A solda derrete e <b>corre em volta do pino</b>, cobrindo o anel. Empurre só um pouquinho de fio, por uns <b>1 segundo</b>. Pino de barra precisa de pouca solda.' },
+    { t: 'Tire o fio primeiro', s: glow(J.r, J.y, 20) + fillet() + iron(J.r, J.y) + wire(J.l - 40, J.y - 60) + label(14, 30, '1º sai o fio', 'start'),
+      p: 'Afaste o <b>fio de solda</b> e mantenha o ferro mais meio segundo, para a solda assentar lisinha.' },
+    { t: 'Tire o ferro', s: fillet() + iron(J.r + 70, J.y - 70) + mark(P.x, 60, true) + label(14, 30, '2º sai o ferro', 'start') + label(14, 200, 'cone liso e brilhante', 'start', 'dim'),
+      p: 'Afaste o ferro <b>para cima</b>, sem arrastar. Não mexa na placa por 2 segundos enquanto esfria. Pronto: um <b>cone brilhante</b>, como um vulcãozinho em volta do pino.' }
+  ];
+  document.getElementById('steps').innerHTML = STEPS.map((st, i) => `<article class="step"><header><span class="num">${i + 1}</span><h3>${st.t}</h3></header>${svg(base() + st.s, st.t)}<p>${st.p}</p></article>`).join('');
+
+  // por que nao na ponta
+  const ball = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="13" ry="11" fill="var(--solder)" stroke="var(--solder-edge)"/>`;
+  document.getElementById('why').innerHTML = [
+    { ok: false, t: 'Errado: derreter na ponta do ferro', s: base() + iron(J.r + 46, J.y - 62, true) + wire(J.r + 44, J.y - 70) + ball(P.x, P.board - 12) + mark(40, 40, false) + label(60, 45, 'gota cai fria', 'start') + label(14, 205, 'vira bolinha, não gruda no anel', 'start', 'dim'),
+      p: 'O fluxo (a resina de dentro do fio, que limpa o metal) queima no ferro antes de chegar ao pino. A gota cai fria e não gruda.' },
+    { ok: true, t: 'Certo: esquentar a peça e encostar o fio nela', s: glow(J.r, J.y) + base() + fillet(P.x, .7) + iron(J.r, J.y) + wire(J.l - 1, J.y - 1) + mark(40, 40, true) + label(60, 45, 'calor no pino', 'start') + label(14, 205, 'a solda corre e gruda nos dois', 'start', 'dim'),
+      p: 'O pino e o anel quentes derretem o fio no lugar certo. O fluxo limpa o metal na hora e a solda gruda de verdade.' }
+  ].map(w => `<article class="step"><span class="tag ${w.ok ? 'ok' : 'no'}">${w.ok ? 'certo' : 'errado'}</span><h3>${w.t}</h3>${svg(w.s, w.t)}<p>${w.p}</p></article>`).join('');
+
+  // resultados (dois pinos lado a lado)
+  const two = (a, b, extra = '') => { const xa = 112, xb = 188;
+    return `<rect x="66" y="${P.board + P.boardH + 3}" width="168" height="24" rx="2" fill="var(--yellow)"/><rect x="20" y="${P.board}" width="260" height="${P.boardH}" rx="2" fill="var(--pcb)" stroke="var(--pcb-edge)"/>`
+      + pad(xa) + pad(xb) + [xa, xb].map(x => `<rect x="${x - 4.5}" y="${P.top}" width="9" height="122" rx="1.5" fill="var(--pin)" stroke="var(--pin-edge)"/>`).join('') + a(xa) + b(xb) + extra; };
+  const thin = x => `<path d="M${x - 9} ${P.board - 3} Q${x - 5} ${P.board - 4} ${x - 4.5} ${P.board - 8} L${x + 4.5} ${P.board - 8} Q${x + 5} ${P.board - 4} ${x + 9} ${P.board - 3} Z" fill="var(--solder)" stroke="var(--solder-edge)"/>`;
+  const blob = x => `<ellipse cx="${x}" cy="${P.board - 16}" rx="20" ry="18" fill="var(--solder)" stroke="var(--solder-edge)"/>`;
+  const RES = [
+    { ok: true, t: 'Bom', s: two(x => fillet(x), x => fillet(x)), p: 'Cone liso e brilhante, cobrindo todo o anel e subindo pelo pino. Dá para ver o formato do pino por baixo da solda.' },
+    { ok: false, t: 'Bolinha (solda fria)', s: two(x => ball(x, P.board - 14), x => fillet(x)), p: 'Uma bolinha em cima, com o anel aparecendo embaixo. Faltou calor. <b>Conserto:</b> encoste o ferro de novo no pino e no anel por 2 s, até a bolinha derreter e escorrer; se precisar, um tiquinho de fio.' },
+    { ok: false, t: 'Pouca solda', s: two(x => thin(x), x => fillet(x)), p: 'O anel não fica coberto, ou dá para ver o furo. <b>Conserto:</b> esquente e encoste mais um pouco de fio.' },
+    { ok: false, t: 'Ponte entre vizinhos', s: two(x => fillet(x), x => fillet(x), `<path d="M112 ${P.board - 18} Q150 ${P.board - 30} 188 ${P.board - 18} L188 ${P.board - 4} L112 ${P.board - 4} Z" fill="var(--solder)" stroke="var(--solder-edge)"/>`), p: 'A solda une dois pinos: é um <b>curto</b>. <b>Conserto:</b> limpe a ponta, encoste entre os dois pinos e puxe o ferro para fora, para longe da placa. A solda volta para cada pino.' },
+    { ok: false, t: 'Solda demais', s: two(x => blob(x), x => fillet(x)), p: 'Uma bola grande que esconde o pino. Costuma funcionar, mas pode encostar no vizinho. <b>Conserto:</b> esquente e puxe o excesso com a ponta limpa do ferro.' }
+  ];
+  document.getElementById('results').innerHTML = RES.map(r => `<article class="step"><header><span class="tag ${r.ok ? 'ok' : 'no'}">${r.ok ? 'assim' : 'refazer'}</span><h3>${r.t}</h3></header>${svg(r.s, r.t)}<p>${r.p}</p></article>`).join('');
+
+  // ordem: vista de cima
+  {
+    const x0 = 70, dx = 22, yA = 70, yB = 180;
+    let o = `<rect x="40" y="40" width="560" height="170" rx="8" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2"/>`;
+    o += `<rect x="40" y="70" width="40" height="110" fill="var(--pcb-edge)" opacity=".5"/><text x="60" y="130" text-anchor="middle" class="lbl-mono" style="fill:#fff" transform="rotate(-90 60 125)">antena</text>`;
+    o += `<rect x="600" y="85" width="22" height="30" rx="3" fill="var(--pin)"/><rect x="600" y="135" width="22" height="30" rx="3" fill="var(--pin)"/><text x="610" y="232" text-anchor="middle" class="lbl-mono dim">USB</text>`;
+    const corners = { 'A0': 1, 'A21': 2, 'B0': 3, 'B21': 4 };
+    ['A', 'B'].forEach(r => { for (let i = 0; i < 22; i++) { const x = x0 + 30 + dx * i, y = r === 'A' ? yA : yB, n = corners[r + i];
+      o += `<circle cx="${x}" cy="${y}" r="${n ? 9 : 5}" fill="${n ? 'var(--accent)' : 'var(--gold)'}"/>` + (n ? `<text x="${x}" y="${y + 4.5}" text-anchor="middle" style="fill:#fff;font-weight:600;font-size:12px">${n}</text>` : ''); } });
+    o += `<text x="${x0 + 30}" y="${yA - 16}" class="lbl-mono" style="fill:#fff">GND · TX · RX · 1 · 2 …</text><text x="${x0 + 30}" y="${yB + 26}" class="lbl-mono" style="fill:#fff">3V3 · 3V3 · RST · 4 · 5 …</text>`;
+    o += `<text x="${x0 + 30 + dx * 21}" y="${yB + 26}" text-anchor="end" class="lbl-mono" style="fill:#fff">… 5VIN · GND</text>`;
+    document.getElementById('order').innerHTML = o;
+  }
+})();
+</script>
+</body>
+</html>
