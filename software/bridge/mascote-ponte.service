@@ -1,0 +1,20 @@
+# Servico systemd para deixar a ponte rodando 24h na VPS.
+# Instalar (como root), ajustando o caminho e o token:
+#   cp mascote-ponte.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now mascote-ponte
+#   journalctl -u mascote-ponte -f      # ver o que a ponte esta fazendo
+[Unit]
+Description=Ponte do mascote do Claude
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=PONTE_TOKEN=troque-por-uma-senha-longa
+Environment=TZ=America/Sao_Paulo
+ExecStart=/usr/bin/python3 /opt/mascote/ponte.py --porta 8787
+Restart=always
+RestartSec=3
+DynamicUser=yes
+
+[Install]
+WantedBy=multi-user.target

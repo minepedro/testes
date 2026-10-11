@@ -3,3 +3,6 @@
 node_modules/
 __pycache__/
 *.log
+
+# segredos do firmware (senha do Wi-Fi e token da ponte)
+firmware/mascote/config.h
