@@ -9,6 +9,8 @@
 //     A seta do canto de cima volta.
 //
 // Antes de gravar: copie config.exemplo.h para config.h e preencha Wi-Fi e ponte.
+// Transporte: PONTE_URL com https:// usa TLS validado (raizes Let's Encrypt, relogio por SNTP).
+// Com PONTE_HTTPS_OBRIGATORIO 1, uma URL http:// e recusada (falha fechado). Ver docs/firmware-https.md.
 // Bibliotecas: LovyanGFX e ArduinoJson (Gerenciador de Bibliotecas).
 // Placa: ESP32S3 Dev Module, PSRAM "OPI PSRAM". Tela de teste ILI9488 + touch XPT2046.
 // Para a tela capacitiva final (ST7796): troque Panel_ILI9488 por Panel_ST7796 e o touch
@@ -16,10 +18,19 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <NetworkClientSecure.h>
+#include <time.h>
 #include <ArduinoJson.h>
 #include <vector>
 #include "config.h"
 #include "tipos.h"
+#include "transporte.h"
+#include "raizes_letsencrypt.h"
+
+// Seguro por padrao; HTTP exige opt-in explicito e so pode ser usado com a demo.
+#ifndef PONTE_HTTPS_OBRIGATORIO
+#define PONTE_HTTPS_OBRIGATORIO 1
+#endif
 
 #define LGFX_USE_V1
 #include <LovyanGFX.hpp>
@@ -139,10 +150,34 @@ uint32_t versaoVista = 0;
 
 int ordem(const String &st) { return st == "waiting" ? 0 : st == "working" ? 1 : st == "idle" ? 2 : 3; }
 
+// ---- transporte (http:// local ou https:// validado) -------------------------------------
+const EsquemaPonte esquema = esquemaPonte(PONTE_URL);
+const bool urlOk = urlPermitida(PONTE_URL, PONTE_HTTPS_OBRIGATORIO);
+
+// Prepara a conexao. Devolve false (sem abrir nada) quando a URL e proibida ou, em https,
+// quando o relogio ainda nao veio do SNTP: sem hora certa nao da para conferir a validade
+// do certificado, e o certificado nunca e aceito sem conferir (nada de setInsecure).
+bool abrirPonte(HTTPClient &http, NetworkClientSecure &cliente, const char *caminho) {
+  if (!urlOk) return false;
+  if (!podeAbrirConexao(esquema, (int64_t)time(nullptr))) {
+    static uint32_t avisado = 0;
+    if (millis() - avisado > 10000) { avisado = millis(); Serial.println("https: aguardando hora do SNTP"); }
+    return false;
+  }
+  String url = String(PONTE_URL) + caminho;
+  if (esquema == ESQ_HTTPS) return http.begin(cliente, url);   // valida cadeia, validade e nome/IP
+  return http.begin(url);                                    // http:// como antes (rede local)
+}
+
 void tarefaRede(void *) {
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_NOME, WIFI_SENHA);
+  NetworkClientSecure cliente;
+  cliente.setCACert(RAIZES_LETS_ENCRYPT);
+  cliente.setHandshakeTimeout(10);   // segundos
+  bool sntpIniciado = false;
+  if (!urlOk) Serial.println("PONTE_URL recusada: com PONTE_HTTPS_OBRIGATORIO 1 ela precisa comecar com https://");
   uint32_t proximaBusca = 0;
   for (;;) {
     if (WiFi.status() != WL_CONNECTED) {
@@ -153,6 +188,11 @@ void tarefaRede(void *) {
       vTaskDelay(pdMS_TO_TICKS(500));
       continue;
     }
+    // SNTP em segundo plano: nao bloqueia; abrirPonte espera a hora chegar.
+    if (esquema == ESQ_HTTPS && !sntpIniciado) {
+      configTime(0, 0, "pool.ntp.org", "time.google.com", "time.cloudflare.com");
+      sntpIniciado = true;
+    }
     // acao pendente primeiro
     String id, tipo;
     xSemaphoreTake(trava, portMAX_DELAY);
@@ -161,21 +201,25 @@ void tarefaRede(void *) {
     if (id.length()) {
       HTTPClient http;
       http.setTimeout(5000);
-      http.begin(String(PONTE_URL) + "/api/acao");
+      if (!abrirPonte(http, cliente, "/api/acao")) { Serial.println("acao descartada: ponte indisponivel"); }
+      else {
       http.addHeader("X-Token", PONTE_TOKEN);
       http.addHeader("Content-Type", "application/json");
       int cod = http.POST("{\"id\":\"" + id + "\",\"acao\":\"" + tipo + "\"}");
       Serial.printf("acao %s em %s: HTTP %d\n", tipo.c_str(), id.c_str(), cod);
       http.end();
+      }
       proximaBusca = 0;
     }
     if (millis() >= proximaBusca) {
       proximaBusca = millis() + 3000;
       HTTPClient http;
       http.setTimeout(5000);
-      http.begin(String(PONTE_URL) + "/api/estado");
-      http.addHeader("X-Token", PONTE_TOKEN);
-      int cod = http.GET();
+      int cod = -1;
+      if (abrirPonte(http, cliente, "/api/estado")) {
+        http.addHeader("X-Token", PONTE_TOKEN);
+        cod = http.GET();
+      }
       Link novo = SEM_PONTE;
       std::vector<Sessao> lidas;
       String h;
@@ -194,7 +238,7 @@ void tarefaRede(void *) {
           }
           std::stable_sort(lidas.begin(), lidas.end(), [](const Sessao &a, const Sessao &b) { return ordem(a.status) < ordem(b.status); });
         } else Serial.printf("json invalido: %s\n", erro.c_str());
-      } else Serial.printf("ponte: HTTP %d (%s)\n", cod, cod == 401 ? "token errado" : http.errorToString(cod).c_str());
+      } else if (cod != -1 || esquema == ESQ_HTTP) Serial.printf("ponte: HTTP %d (%s)\n", cod, cod == 401 ? "token errado" : http.errorToString(cod).c_str());
       http.end();
       xSemaphoreTake(trava, portMAX_DELAY);
       bool mudou = novo != redeLink || lidas.size() != redeSessoes.size() || h != redeHora;
