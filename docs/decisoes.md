@@ -75,3 +75,13 @@ Risco: compartilhar BCLK e WS entre microfone e amplificador (mesma porta I2S, e
 **Na VPS, com o Claude Code e a assinatura do Pedro (`claude setup-token`), não na nuvem do claude.ai/code.**
 Motivo: não há API documentada para um programa de fora ver ou responder pedidos de permissão das sessões da nuvem. Rodando na VPS, a ponte recebe cada pedido (comando, edição, pergunta de opção) antes de executar e espera o toque no mascote.
 Desejo: ver e usar as mesmas sessões também pelo app do Claude (Remote Control). **A confirmar em teste**: o modo `claude -p` com hook "defer" (que pausa e retoma) não é uma sessão contínua, então pode não aparecer no app. Alternativa a testar: sessão interativa com Remote Control e um hook PreToolUse que espera a decisão do mascote por alguns minutos e, sem resposta, devolve "ask" (o pedido cai no app).
+
+## 21. O que o mascote é
+**Um controle remoto do Claude Code com voz e corpo.** Tudo o que o app do Claude faz numa sessão do Remote Control na VPS, o mascote também deve fazer: ver as sessões, criar sessão escolhendo repositório e branch, aprovar e recusar, escolher opções, aprovar planos e mandar mensagens. A diferença é que o mascote é controlado por voz e tem um corpo.
+Respostas de texto livre dependem da voz (microfone).
+
+## 22. Repositórios na VPS
+**Todos os repositórios do GitHub do Pedro ficam disponíveis na VPS, pelo GitHub CLI (`gh`).** A ponte lista os repositórios e as branches com `gh` e clona cada um na primeira vez que uma sessão for aberta nele (não clona tudo de uma vez, para não encher o disco). O `gh` também serve de credencial do git para commit e push.
+
+## 23. Comandos perigosos
+**Só pelo app.** O mascote aprova os pedidos comuns, mas, quando o pedido é perigoso, mostra um aviso ("aprove pelo app") e não oferece o botão Aprovar. Lista inicial de perigosos: `rm -rf`, `git push --force`/`-f`, `git reset --hard`, apagar branch remota, deploy/publicação, `sudo`, mudanças em `.env` ou credenciais, e qualquer comando com `curl ... | sh`. A lista fica na ponte e pode ser ajustada.
