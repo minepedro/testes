@@ -85,3 +85,7 @@ Respostas de texto livre dependem da voz (microfone).
 
 ## 23. Comandos perigosos
 **Só pelo app.** O mascote aprova os pedidos comuns, mas, quando o pedido é perigoso, mostra um aviso ("aprove pelo app") e não oferece o botão Aprovar. Lista inicial de perigosos: `rm -rf`, `git push --force`/`-f`, `git reset --hard`, apagar branch remota, deploy/publicação, `sudo`, mudanças em `.env` ou credenciais, e qualquer comando com `curl ... | sh`. A lista fica na ponte e pode ser ajustada.
+
+## 24. Sessões da nuvem no mascote
+**O mascote mostra as sessões do Remote Control (VPS) e também as da nuvem (claude.ai/code).**
+Nas da nuvem, o mascote mostra a lista, o estado e a última resposta e manda mensagens (quando isso for confirmado em teste), mas **não aprova nem escolhe opções**: isso fica no app. Na lista, as da nuvem levam um ícone diferente, e um pedido pendente nelas aparece como aviso "responda pelo app".
