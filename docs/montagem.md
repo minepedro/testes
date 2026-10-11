@@ -161,6 +161,10 @@ Objetivo: acender a tela e pintar cores.
 
 Com a tela funcionando, o protótipo web que fizemos (480×320) pode ser portado para ela.
 
+**Resultado (11/out), tela de teste ILI9488:** passou. Programa `etapa2_3_tela_touch_ili9488` com `USAR_TOUCH 0`
+mostrou "Mascote Claude" e "Tela 480x320 ok". Lição: os problemas até aqui foram todos de jumper mal encaixado
+(trilho com 0,6 V, GND da tela solto); conferir cada fio com o multímetro em continuidade antes de ligar.
+
 ## Etapa 3: o touch
 
 1. Desligue o USB e ligue SDA, SCL, INT e RST do touch.
