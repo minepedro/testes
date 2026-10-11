@@ -8,7 +8,7 @@ mesmos metodos listar() e agir().
 
 So usa a biblioteca padrao do Python 3.8+. Para rodar:
 
-    PONTE_TOKEN=uma-senha-longa python3 ponte.py            # porta 8787
+    python3 ponte.py --token uma-senha-longa              # porta 8787 (Windows: python ponte.py ...)
     PONTE_TOKEN=uma-senha-longa python3 ponte.py --porta 9000
 
 API (todas pedem o cabecalho X-Token com o mesmo valor de PONTE_TOKEN):
@@ -183,10 +183,12 @@ def main():
     ap = argparse.ArgumentParser(description='Ponte do mascote (demo)')
     ap.add_argument('--porta', type=int, default=8787)
     ap.add_argument('--host', default='0.0.0.0')
+    ap.add_argument('--token', help='senha da ponte (ou use a variavel PONTE_TOKEN)')
     args = ap.parse_args()
-    token = os.environ.get('PONTE_TOKEN', '')
+    token = (args.token or os.environ.get('PONTE_TOKEN', '')).strip()
     if len(token) < 12:
-        raise SystemExit('Defina PONTE_TOKEN com pelo menos 12 caracteres (o mesmo valor vai no config.h do mascote).')
+        raise SystemExit('Falta a senha: rode  python ponte.py --token uma-senha-com-12-letras-ou-mais  '
+                         '(o mesmo valor vai no config.h do mascote).')
     servidor = ThreadingHTTPServer((args.host, args.porta), criar_handler(FonteDemo(), token))
     print(f'Ponte do mascote (demo) ouvindo em {args.host}:{args.porta}. Teste: http://<ip>:{args.porta}/saude', flush=True)
     try:
