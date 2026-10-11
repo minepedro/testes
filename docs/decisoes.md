@@ -70,3 +70,8 @@ Risco: compartilhar BCLK e WS entre microfone e amplificador (mesma porta I2S, e
 
 ## 19. Botão físico opcional
 **GPIO 21 para o GND**, com o pull-up interno do ESP32 (extra A da Parte 2). Serve de apertar-para-falar ou mudo, sem depender da tela. O GPIO 21 fica no lado J3 da placa, longe dos pinos reservados (USB 19/20, flash/PSRAM 26–37).
+
+## 20. Onde rodam as sessões que o mascote controla
+**Na VPS, com o Claude Code e a assinatura do Pedro (`claude setup-token`), não na nuvem do claude.ai/code.**
+Motivo: não há API documentada para um programa de fora ver ou responder pedidos de permissão das sessões da nuvem. Rodando na VPS, a ponte recebe cada pedido (comando, edição, pergunta de opção) antes de executar e espera o toque no mascote.
+Desejo: ver e usar as mesmas sessões também pelo app do Claude (Remote Control). **A confirmar em teste**: o modo `claude -p` com hook "defer" (que pausa e retoma) não é uma sessão contínua, então pode não aparecer no app. Alternativa a testar: sessão interativa com Remote Control e um hook PreToolUse que espera a decisão do mascote por alguns minutos e, sem resposta, devolve "ask" (o pedido cai no app).
