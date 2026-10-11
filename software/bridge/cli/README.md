@@ -41,13 +41,19 @@ Remover: `cp ~/.claude/settings.json.bak-20261011-192536 ~/.claude/settings.json
    (evento `control_request can_use_tool`); quando a ponte responde, chega `control_cancel_request`
    ao app. Sem resposta em 5 min -> dialogo normal continua (testado). Nao testado: app respondendo
    primeiro enquanto o hook espera. "Sempre": 1a versao (sugestao addDirectories) NAO criou regra;
-   versao corrigida (addRules do comando) so coberta por teste unitario - teste real ficou bloqueado.
+   versao corrigida (addRules do comando): teste real em 2026-10-11 (CLI 2.1.287, modo manual so no
+   teste): 1 pedido, "sempre" -> o mesmo comando rodou 2x sem 2o pedido; nenhum settings de projeto criado.
    Com ask rule de projeto, a ask rule prevalece sobre o allow da sessao (esperado pela doc).
 3. AskUserQuestion multiSelect via PreToolUse + updatedInput.answers ("Azul, Vermelho"): FUNCIONA na
-   sessao Remote Control real. ExitPlanMode: documentado (PreToolUse allow com input/plan injetado);
-   NAO testado real.
-4. Perigosos: classificador com testes unitarios OK; caso real (`rm -rf ./lixo-inexistente-teste`)
-   nao executado.
+   sessao Remote Control real. ExitPlanMode: FUNCIONA real (modo plan). O hook recebe `plan` e
+   `planFilePath`; aprovar -> sessao saiu do plano e seguiu; o Write seguinte virou outro pedido
+   (PermissionRequest), aprovado pela ponte, e o arquivo foi criado. Obs: depois do plano a sessao
+   ficou em modo manual (o modo anterior era plan; no app o usuario escolhe o modo de saida).
+4. Perigosos: FUNCIONA real em modo auto. `rm -rf ./lixo-inexistente-teste` -> pedido
+   `perigoso=true, so_no_app=true`; ponte recusa aprovar (409 `so_no_app`); terminal/app mostram
+   "Hook PreToolUse:Bash requires confirmation ... Perigoso (rm -rf): aprove pelo app"; recusado no
+   terminal (Esc), nada executado. PermissionRequest nao duplicou o pedido.
+   Script dos testes reais: `testes_reais.py sempre|perigoso|plano`.
 5. Mensagem nova para sessao RC: SEM FORMA DOCUMENTADA para programa externo. `tmux send-keys` na
    sessao interativa FUNCIONA (nao documentado) e a mensagem aparece no app como evento `user`.
 6. Estado via hooks: FUNCIONA. `/sessoes` mostra repo, branch, estado (trabalhando/parada/esperando/
