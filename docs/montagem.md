@@ -177,6 +177,10 @@ mostrou "Mascote Claude" e "Tela 480x320 ok". Lição: os problemas até aqui fo
 | Nenhum dispositivo | SDA e SCL trocados, ou `RST` do touch sem ligar |
 | Coordenadas invertidas | Normal: ajuste a calibração/rotação no código |
 
+**Resultado (11/out), touch resistivo XPT2046 da ILI9488:** passou. Com `USAR_TOUCH 1`, T_CLK 9, T_CS 5,
+T_DIN 8, T_DO 4 (SPI3) e T_IRQ sem ligar, o ponto amarelo aparece onde se aperta, com a calibração padrão
+(x 300 a 3900, y 200 a 3900) e `offset_rotation` 0.
+
 ## Etapa 4: o microfone
 
 1. Desligue o USB e ligue o INMP441: VDD, GND, **L/R no GND**, SCK, WS e SD.
