@@ -40,10 +40,14 @@ Remover: `cp ~/.claude/settings.json.bak-20261011-192536 ~/.claude/settings.json
    com o motivo). Enquanto o hook espera, o pedido aparece TAMBEM no terminal e no app
    (evento `control_request can_use_tool`); quando a ponte responde, chega `control_cancel_request`
    ao app. Sem resposta em 5 min -> dialogo normal continua (testado). Nao testado: app respondendo
-   primeiro enquanto o hook espera. "Sempre": 1a versao (sugestao addDirectories) NAO criou regra;
+   primeiro enquanto o hook espera -> testado depois (abaixo). "Sempre": 1a versao (sugestao addDirectories) NAO criou regra;
    versao corrigida (addRules do comando): teste real em 2026-10-11 (CLI 2.1.287, modo manual so no
    teste): 1 pedido, "sempre" -> o mesmo comando rodou 2x sem 2o pedido; nenhum settings de projeto criado.
    Com ask rule de projeto, a ask rule prevalece sobre o allow da sessao (esperado pela doc).
+   App respondendo primeiro (2026-10-11, celular do Pedro): a aprovacao do app vale e o comando roda.
+   1a versao do hook NAO percebia e deixava o pedido "pendente" na ponte ate expirar (5 min).
+   Corrigido (`resolvido_fora`: procura tool_result do tool_use no transcript a cada 1 s):
+   2o teste real -> pedido marcado `respondido_app` ~3 s depois, sem hook parado esperando.
 3. AskUserQuestion multiSelect via PreToolUse + updatedInput.answers ("Azul, Vermelho"): FUNCIONA na
    sessao Remote Control real. ExitPlanMode: FUNCIONA real (modo plan). O hook recebe `plan` e
    `planFilePath`; aprovar -> sessao saiu do plano e seguiu; o Write seguinte virou outro pedido
