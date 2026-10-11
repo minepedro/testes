@@ -1,6 +1,7 @@
 import json, os, subprocess, sys, threading, time, unittest, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mascote_hook import classificar
+from mascote_hook import classificar, resolvido_fora
+import tempfile
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,6 +28,26 @@ class Classificador(unittest.TestCase):
         self.assertTrue(classificar("Write", {"file_path": "/home/hermes/repos/x/.env"}))
         self.assertTrue(classificar("Edit", {"file_path": "/a/id_ed25519"}))
         self.assertIsNone(classificar("Write", {"file_path": "/a/src/env.py"}))
+
+
+class RespondidoNoApp(unittest.TestCase):
+    def transcript(self, linhas):
+        f = tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
+        for o in linhas:
+            f.write(json.dumps(o) + "\n")
+        f.close(); self.addCleanup(os.unlink, f.name)
+        return f.name
+
+    def test_pendente_e_respondido(self):
+        inp = {"command": "touch x"}
+        uso = {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": inp}]}}
+        res = {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t1", "content": ""}]}}
+        self.assertFalse(resolvido_fora(self.transcript([uso]), "Bash", inp))
+        self.assertTrue(resolvido_fora(self.transcript([uso, res]), "Bash", inp))
+        # resultado de um uso ANTERIOR identico nao conta para o pedido novo
+        uso2 = {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "t2", "name": "Bash", "input": inp}]}}
+        self.assertFalse(resolvido_fora(self.transcript([uso, res, uso2]), "Bash", inp))
+        self.assertFalse(resolvido_fora("/nao/existe.jsonl", "Bash", inp))
 
 
 class HookPonte(unittest.TestCase):

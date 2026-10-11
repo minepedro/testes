@@ -85,6 +85,33 @@ def ultimo_texto_assistente(transcript_path, n=1500):
     return ""
 
 
+def resolvido_fora(transcript_path, tool, inp, tool_use_id=None):
+    """True se o pedido ja foi respondido em outro lugar (app/terminal): existe tool_result
+    para o tool_use deste pedido no transcript. Evita que um toque atrasado no mascote
+    pareca valer depois que o app ja decidiu."""
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, 2); tam = f.tell(); f.seek(max(0, tam - 600000))
+            linhas = f.read().decode("utf-8", "ignore").splitlines()
+    except (OSError, TypeError):
+        return False
+    alvo = tool_use_id
+    resultados = set()
+    for l in linhas:
+        try:
+            o = json.loads(l)
+        except ValueError:
+            continue
+        for c in (o.get("message") or {}).get("content") or []:
+            if not isinstance(c, dict):
+                continue
+            if c.get("type") == "tool_use" and not tool_use_id and c.get("name") == tool and c.get("input") == inp:
+                alvo = c.get("id")  # o mais recente com mesmo nome+input
+            elif c.get("type") == "tool_result":
+                resultados.add(c.get("tool_use_id"))
+    return bool(alvo) and alvo in resultados
+
+
 def resumo(tool, inp):
     if tool == "Bash":
         return (inp.get("description", "") + ": " if inp.get("description") else "") + inp.get("command", "")
@@ -102,9 +129,16 @@ def out(obj):
     sys.exit(0)
 
 
-def esperar(pid):
+def esperar(pid, d=None):
+    d = d or {}
     fim = time.time() + ESPERA
     while time.time() < fim:
+        if resolvido_fora(d.get("transcript_path"), d.get("tool_name"), d.get("tool_input") or {}, d.get("tool_use_id")):
+            try:
+                req("POST", "/pedidos/%s/fim" % pid, {"status": "respondido_app"})
+            except Exception:
+                pass
+            return None
         try:
             p = req("GET", "/pedidos/" + pid)
         except Exception:
@@ -172,7 +206,7 @@ def main():
         pid = req("POST", "/pedidos", dict(base, tool=tool, tool_input=inp, texto=resumo(tool, inp),
                                            explicacao=ultimo_texto_assistente(d.get("transcript_path", "")),
                                            origem=ev))["id"]
-        p = esperar(pid)
+        p = esperar(pid, d)
         if not p:
             out({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "ask"}})
         if p["decisao"] == "recusar":
@@ -192,7 +226,7 @@ def main():
         pid = req("POST", "/pedidos", dict(base, tool=tool, tool_input=inp, texto=resumo(tool, inp),
                                            explicacao=ultimo_texto_assistente(d.get("transcript_path", "")),
                                            sugestoes=d.get("permission_suggestions"), origem=ev))["id"]
-        p = esperar(pid)
+        p = esperar(pid, d)
         if not p:
             sys.exit(0)  # sem resposta: dialogo normal (terminal/app)
         if p["decisao"] == "recusar":
