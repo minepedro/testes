@@ -14,6 +14,7 @@ Comandos externos via self.run / self.tmux (injetaveis para testes).
 import hashlib
 import json
 import os
+import secrets
 import shlex
 import subprocess
 import threading
@@ -174,30 +175,59 @@ class FonteVPS:
             self.run([TMUX, 'send-keys', '-t', nome, *teclas], timeout=5)
 
     # ---- criar sessao ----
+    def _worktree_novo(self, base, branch_base, nova_branch, nome_slug):
+        """Worktree NOVO com branch propria. Nunca faz checkout de <branch> (ela ja esta no clone base).
+        Sem nova_branch usa mascote/<slug>. Se pasta/branch ja existir, gera outro slug."""
+        existentes = set()
+        try:
+            existentes = set(self.run(['git', '-C', base, 'branch', '--format=%(refname:short)']).split())
+        except Exception:  # noqa: BLE001
+            pass
+        ref = f'origin/{branch_base}' if branch_base else 'HEAD'
+        for i in range(20):
+            sl = nome_slug if i == 0 else f'{nome_slug}-{secrets.token_hex(2)}'
+            br = nova_branch or f'mascote/{sl}'
+            wt = f'{base}--{sl}'
+            if os.path.exists(wt) or (br in existentes and not nova_branch):
+                continue
+            if nova_branch and br in existentes:
+                raise ValueError('branch ja existe: ' + br)
+            self.run(['git', '-C', base, 'worktree', 'add', '-b', br, wt, ref])
+            return wt, br
+        raise ValueError('nao achei nome livre para o worktree')
+
     def preparar_pasta(self, repo, branch, nova_branch, nome_slug):
         if not repo:
             p = os.path.join(self.dir_repos, '_sem-repo', nome_slug)
             os.makedirs(p, exist_ok=True)
             return p, None
         base = self.repos.garantir_clone(repo)
-        wt = f"{base}--{nome_slug}"
-        if os.path.exists(wt):
-            raise ValueError('worktree ja existe: ' + os.path.basename(wt))
-        if nova_branch:
-            self.run(['git', '-C', base, 'worktree', 'add', '-b', nova_branch, wt, f'origin/{branch}'])
-            return wt, nova_branch
-        if branch:
-            # branch remota existente: cria local acompanhando a remota (ou usa a local)
+        return self._worktree_novo(base, branch, nova_branch, nome_slug)
+
+    def vincular(self, sid, repo, branch):
+        """Sessao sem repo: clona, cria worktree mascote/<slug> e avisa a sessao. Devolve (pasta, branch)."""
+        s = self.get(sid)
+        nome_slug = slug(s.get('titulo') or 'sessao', 24) + '-' + secrets.token_hex(2)
+        base = self.repos.garantir_clone(repo)
+        if not branch:
             try:
-                self.run(['git', '-C', base, 'worktree', 'add', wt, branch])
-            except RuntimeError:
-                self.run(['git', '-C', base, 'worktree', 'add', '--track', '-b', branch, wt, f'origin/{branch}'])
-            return wt, branch
-        self.run(['git', '-C', base, 'worktree', 'add', '--detach', wt])
-        return wt, None
+                branch = self.run(['git', '-C', base, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD']).strip()
+                branch = branch.removeprefix('origin/') or None
+            except Exception:  # noqa: BLE001
+                branch = None
+        pasta, br = self._worktree_novo(base, branch, None, nome_slug)
+        texto = (f'O repositorio {repo} foi clonado em {pasta} na branch {br}. '
+                 'A partir de agora trabalhe nessa pasta (use cd e caminhos absolutos).')
+        with self.trava:
+            for d in (self.sessoes.get(sid), self.criadas.get(sid)):
+                if d is not None:
+                    d.update(repo=repo, branch=br, cwd_trabalho=pasta)
+            self._salvar()
+        ok = self.mensagem(sid, texto)
+        return pasta, br, ok
 
     def criar(self, repo, branch, nova_branch, titulo, prompt, espera_inicio=90):
-        nome_slug = slug(titulo, 24) + '-' + hashlib.sha1(str(time.time()).encode()).hexdigest()[:4]
+        nome_slug = slug(titulo, 24) + '-' + secrets.token_hex(2)
         pasta, br = self.preparar_pasta(repo, branch, nova_branch, nome_slug)
         sid = id_de_cwd(pasta)
         tmux = 'mascote-' + nome_slug

@@ -263,7 +263,22 @@ class Ponte:
             novas[n['sid']] = {'id': n['sid'], 'origem': origem, 'somente_leitura': ro, 'titulo': n['titulo'],
                                'repo': n['repo'], 'branch': n['branch'],
                                'estado': ESTADO_NUVEM.get(n['status'], 'parada'), 'atualizado': n['atualizado'],
-                               'ultima_resposta': antigo.get('ultima_resposta', ''), '_status': n['status']}
+                               'ultima_resposta': antigo.get('ultima_resposta', ''),
+                               'ultimo_prompt': antigo.get('ultimo_prompt', ''), '_status': n['status'],
+                               '_lido': antigo.get('_lido')}
+        # respostas: busca eventos quando updated_at mudou (ou nunca lido); no maximo N por ciclo
+        trocar = sorted((s for s in novas.values() if s['_lido'] != s['atualizado']),
+                        key=lambda s: -(s['atualizado'] or 0))[:int(self.cfg.get('nuvem_respostas_ciclo', 5))]
+        for s in trocar:
+            try:
+                ev = self.nuvem.eventos(s['id'])
+            except Exception as e:  # noqa: BLE001
+                log('nuvem eventos falhou', s['id'][-6:], type(e).__name__)
+                continue
+            s['ultima_resposta'] = self.nuvem.ultima_resposta(ev) or s['ultima_resposta']
+            s['ultimo_prompt'] = self.nuvem.ultimo_prompt(ev) or s['ultimo_prompt']
+            s['_lido'] = s['atualizado']
+            self.nuvem_detalhe[s['id']] = (time.time(), s['ultima_resposta'], s['ultimo_prompt'])
         with self.trava:
             self.nuvem_sessoes = novas
         # pedidos: so sessoes da nuvem (nao bridge) com requires_action
@@ -333,8 +348,10 @@ class Ponte:
             last = s['ultima_resposta_resumo']
             if ask:
                 last = 'Pede: ' + ask['text'][:150]
-            elif s['estado'] == 'trabalhando' and det and det.get('ultimo_prompt'):
-                last = 'Trabalhando: ' + resumo_curto(det['ultimo_prompt'], 140)
+            elif s['estado'] == 'trabalhando':
+                up = (det or self.nuvem_sessoes.get(s['id']) or {}).get('ultimo_prompt')
+                if up:
+                    last = 'Trabalhando: ' + resumo_curto(up, 140)
             titulo = s['titulo'] + (' (nuvem)' if s['origem'] == 'nuvem' else '')
             out.append({'id': s['id'], 'title': titulo, 'repo': s['repo'], 'branch': s['branch'],
                         'status': ESTADO_COMPAT.get(s['estado'], 'idle'), 'ago': s['ha_quanto'],
@@ -427,6 +444,30 @@ class Ponte:
         if not ok:
             return 504, {'erro': 'sem confirmacao (UserPromptSubmit) em 10 s', 'experimental': True}
         return 202, {'ok': True, 'via': 'tmux send-keys (experimental)'}
+
+    def vincular(self, sid, c):
+        repo, branch = c.get('repo') or '', c.get('branch') or None
+        if not re.fullmatch(r'[\w.-]+/[\w.-]+', repo) or (branch and not re.fullmatch(r'[\w./-]+', branch)):
+            return 400, {'erro': 'repo deve ser dono/nome'}
+        s = next((x for x in self.sessoes() if x['id'] == sid), None)
+        if not s or s['origem'] != 'vps' or sid.startswith('session_') or not self.vps.get(sid):
+            return 404, {'erro': 'sessao vps nao existe'}
+        if s.get('repo'):
+            return 409, {'erro': 'sessao ja tem repo'}
+        if s['estado'] != 'parada':
+            return 409, {'erro': 'sessao ' + s['estado']}
+        v = self.vps.get(sid)
+        if not (v.get('iniciada') or v.get('ultimo_prompt') or v.get('ultima_resposta')):
+            return 409, {'erro': 'sessao iniciando'}
+        try:
+            pasta, br, ok = self.vps.vincular(sid, repo, branch)
+        except LookupError as e:
+            return 409, {'erro': str(e)}
+        except Exception as e:  # noqa: BLE001
+            log('vincular falhou', type(e).__name__, str(e)[:300])
+            return 500, {'erro': 'falha ao vincular', 'msg': ascii_tela(str(e))[:200]}
+        log('vincular', sid, repo, br, 'confirmado' if ok else 'sem confirmacao')
+        return 202, {'repo': repo, 'branch': br, 'pasta': pasta, 'confirmado': ok}
 
     def _msg_nuvem(self, sid, texto):
         try:
@@ -547,6 +588,8 @@ def criar_handler(ponte, token_aparelho, token_hook):
                 return self._json(*ponte.responder(p[1], d))
             if p == ['sessoes']:
                 return self._json(*ponte.criar_sessao(d))
+            if len(p) == 3 and p[0] == 'sessoes' and p[2] == 'vincular':
+                return self._json(*ponte.vincular(p[1], d))
             if len(p) == 3 and p[0] == 'sessoes' and p[2] == 'mensagem':
                 return self._json(*ponte.mensagem(p[1], d.get('texto')))
             return self._json(404, {'erro': 'nao existe'})

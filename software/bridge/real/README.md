@@ -56,11 +56,21 @@ So age com cwd sob `~/repos/` ou `~/mascote-cli-lab/`; ponte fora do ar em 2 s -
   VPS: clone -> worktree `~/repos/<nome>--<slug>` -> tmux `mascote-<slug>` com
   `claude --remote-control 'TITULO' --permission-mode auto` -> aceita confianca -> prompt por send-keys.
   Id VPS = `v` + sha1(cwd)[:10]. Nuvem: exige repo e prompt.
+  Branch: o worktree SEMPRE ganha branch propria criada a partir de `origin/<branch>`: `nova_branch` se vier,
+  senao `mascote/<slug>` (nunca faz checkout de `<branch>`, que ja esta no clone base). Nome ocupado -> outro slug.
+  `repo:null` -> pasta `~/repos/_sem-repo/<slug>`.
+- `POST /api/sessoes/{id}/vincular {repo:'dono/nome', branch|null}` (so VPS sem repo e `parada`) -> clona, cria worktree
+  `~/repos/<nome>--<slug>` na branch `mascote/<slug>` (de `origin/<branch>` ou da padrao) e manda para a sessao, por
+  tmux com confirmacao, "O repositorio ... foi clonado em <pasta> na branch ... A partir de agora trabalhe nessa pasta".
+  A sessao continua com o mesmo id/titulo; repo/branch/cwd_trabalho sao atualizados.
+  -> 202 `{repo, branch, pasta, confirmado}` | 400 | 404 | 409 (nao parada, iniciando ou ja tem repo)
 - `GET /api/pedidos[?pendentes=1]` -> `[{id, sessao_id, origem, tipo:permissao|pergunta|plano, ferramenta, resumo, detalhe, explicacao, perguntas:[{pergunta, cabecalho, multipla, opcoes:[{rotulo, descricao}]}], perigoso, so_no_app, motivo_so_no_app, criado_em, estado}]`
 - `POST /api/pedidos/{id}/resposta {decisao:aprovar|recusar|sempre, respostas:{pergunta: rotulo|[r1,r2]}, motivo}`
   -> 200 | 400 | 403 (so_no_app; `sempre` na nuvem) | 404 | 409 (ja respondido/expirado) | 502 (nuvem falhou -> pedido vira so_no_app)
 - `POST /api/sessoes/{id}/mensagem {texto}` -> 202 | 409 (esperando/trabalhando/encerrada/sem tmux) | 403 (somente leitura) | 504 (sem `UserPromptSubmit` em 10 s)
 - Compat firmware: `GET /api/estado` -> `{hora, sessoes:[{id,title,repo,branch,status,ago,last,reply,ask}]}` (max 20);
+  `reply` = ultima resposta completa (ate 1500), `last` = resumo (ou `Pede:`/`Trabalhando:`). VPS: vem do hook Stop.
+  Nuvem: o laco da nuvem rele os eventos quando `updated_at` muda (max `nuvem_respostas_ciclo`=5 sessoes por ciclo).
   `POST /api/acao {id: <sessao>, acao}`: vale so para o pedido servido no ultimo `/api/estado` daquela sessao e ainda
   pendente (senao 409). so_no_app -> `ask.text` "APROVE PELO APP: ..." e acao 403. Pergunta -> acao 409.
 

@@ -260,6 +260,100 @@ class TestPonte(unittest.TestCase):
         self.assertEqual(p.criar_sessao({'origem': 'marte', 'titulo': 'x'})[0], 400)
 
 
+
+class ReposFake:
+    def __init__(self, base):
+        self.base = base
+
+    def garantir_clone(self, nome):
+        os.makedirs(self.base, exist_ok=True)
+        return self.base
+
+
+class RunGrava:
+    def __init__(self, branches=''):
+        self.cmds, self.branches = [], branches
+
+    def __call__(self, args, **kw):
+        self.cmds.append(args)
+        if 'branch' in args and '--format=%(refname:short)' in args:
+            return self.branches
+        if 'symbolic-ref' in args:
+            return 'origin/main\n'
+        if 'list-sessions' in args:
+            return 'mascote-t\n'
+        return ''
+
+
+class TestRepoBranch(unittest.TestCase):
+    def fonte(self, run):
+        base = os.path.join(TMP, 'rb-%d' % time.time_ns(), 'testes')
+        return FonteVPS(repos=ReposFake(base), run=run, dir_repos=os.path.dirname(base),
+                        dir_estado=os.path.join(TMP, 'e-%d' % time.time_ns())), base
+
+    def test_main_sem_nova_branch_cria_mascote(self):
+        run = RunGrava('main\n')
+        f, base = self.fonte(run)
+        wt, br = f.preparar_pasta('minepedro/testes', 'main', None, 'meu-teste-ab12')
+        self.assertEqual(br, 'mascote/meu-teste-ab12')
+        self.assertEqual(wt, base + '--meu-teste-ab12')
+        self.assertIn(['git', '-C', base, 'worktree', 'add', '-b', 'mascote/meu-teste-ab12', wt, 'origin/main'], run.cmds)
+        self.assertFalse(any(c[-1] == 'main' and 'worktree' in c for c in run.cmds))
+
+    def test_nome_ocupado_gera_outro(self):
+        run = RunGrava('main\nmascote/x-1\n')
+        f, base = self.fonte(run)
+        wt, br = f.preparar_pasta('minepedro/testes', 'main', None, 'x-1')
+        self.assertNotEqual(br, 'mascote/x-1')
+        self.assertTrue(br.startswith('mascote/x-1-'))
+
+    def test_nova_branch_explicita(self):
+        run = RunGrava('main\n')
+        f, base = self.fonte(run)
+        wt, br = f.preparar_pasta('minepedro/testes', 'main', 'feat/y', 's')
+        self.assertEqual(br, 'feat/y')
+
+    def test_vincular(self):
+        run = RunGrava('main\n')
+        f, base = self.fonte(run)
+        p = ponte_real.Ponte(f, None, None, dict(comum.CONFIG_PADRAO, nuvem_ativa=False))
+        cwd = os.path.join(TMP, 'semrepo-%d' % time.time_ns())
+        os.makedirs(cwd)
+        sid = f.sessao_de({'cwd': cwd})['id']
+        self.assertEqual(p.vincular(sid, {'repo': 'a/b'}), (409, {'erro': 'sessao iniciando'}))
+        f.evento({'evento': 'SessionStart', 'cwd': cwd, 'session_id': 'c9'})
+        f.sessoes[sid]['tmux'] = 'mascote-t'
+        enviados = []
+        f.mensagem = lambda i, t, **k: enviados.append((i, t)) or True
+        self.assertEqual(p.vincular(sid, {'repo': 'x'})[0], 400)
+        self.assertEqual(p.vincular('vnada', {'repo': 'a/b'})[0], 404)
+        f.evento({'evento': 'UserPromptSubmit', 'cwd': cwd, 'prompt': 'oi'})
+        self.assertEqual(p.vincular(sid, {'repo': 'minepedro/testes'})[0], 409)
+        f.evento({'evento': 'Stop', 'cwd': cwd})
+        code, r = p.vincular(sid, {'repo': 'minepedro/testes', 'branch': None})
+        self.assertEqual(code, 202, r)
+        self.assertTrue(r['branch'].startswith('mascote/'))
+        self.assertIn('origin/main', run.cmds[-1])
+        self.assertIn(r['pasta'], enviados[0][1])
+        self.assertEqual(f.get(sid)['repo'], 'minepedro/testes')
+        self.assertEqual(p.vincular(sid, {'repo': 'minepedro/testes'})[0], 409)
+
+
+class TestRespostaNuvem(unittest.TestCase):
+    def test_reply_atualizado_no_laco(self):
+        p = nova_ponte()
+        n = p.nuvem
+        n.ev.insert(0, {'type': 'user', 'message': {'content': 'faz X'}})
+        n.ev.append({'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'Resposta completa ' * 20}]}})
+        p.atualizar_nuvem()
+        e = {x['id']: x for x in p.estado_compat()['sessoes']}
+        self.assertIn('Resposta completa', e['session_N1']['reply'])
+        n.ev.append({'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'Nova resposta'}]}})
+        p.nuvem_sessoes['session_N1']['_lido'] = None  # simula updated_at novo
+        p.atualizar_nuvem()
+        e = {x['id']: x for x in p.estado_compat()['sessoes']}
+        self.assertIn('Nova resposta', e['session_N1']['reply'])
+
 class TestHTTP(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
