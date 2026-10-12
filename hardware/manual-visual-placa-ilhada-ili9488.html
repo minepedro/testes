@@ -357,6 +357,10 @@ void loop() {
     };
   }
   modelo();
+  // capacitores na FRENTE, em furos livres ao lado dos pinos; no verso, uma gota de estanho liga cada perna ao pino vizinho
+  const capPos = () => { const c = M.pos.VDD[0] + 1;
+    return { c1: [[c, M.pos.VDD[1]], [c, M.pos.GND[1]]], p1: [M.pos.VDD, M.pos.GND],
+             c2: [[tc('VCC'), TR + 1], [tc('GND'), TR + 1]], c3: [[tc('VCC'), TR - 1], [tc('GND'), TR - 1]], p2: [[tc('VCC'), TR], [tc('GND'), TR]] }; };
   const busMm = s => Math.round((s[1] - s[0]) * 2.54 + 10);
 
   // ================= desenho da placa =================
@@ -442,8 +446,30 @@ void loop() {
       const cx = (x(MC0) + x(M.cB)) / 2, cy = y(MR0 + 1), R = (x(M.cB) - x(1)) / 2 + 16;
       s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#1f3a6e" stroke="#0e1f40" stroke-width="2" opacity=".92"/><circle cx="${cx}" cy="${cy}" r="5" fill="#0a0a0a"/>` + T(cx, cy + R - 8, 'INMP441', { size: 9, halo: '#0e1f40' });
     }
+    if (o.caps) {
+      const cp = capPos(), lbl = (c, r, t, dx = 0, dy = -16) => T(x(c) + dx, y(r) + dy, t, { size: 10, w: 700 });
+      if (!verso) {
+        [[cp.c1, 'C1'], [cp.c2, 'C2']].forEach(([[a, b], nome]) => {
+          const mx = (x(a[0]) + x(b[0])) / 2, my = (y(a[1]) + y(b[1])) / 2, vert = a[0] === b[0];
+          s += `<circle cx="${x(a[0])}" cy="${y(a[1])}" r="3" fill="#aab1ba"/><circle cx="${x(b[0])}" cy="${y(b[1])}" r="3" fill="#aab1ba"/>`
+            + `<ellipse cx="${mx + (vert ? 9 : 0)}" cy="${my + (vert ? 0 : -9)}" rx="${vert ? 6 : 11}" ry="${vert ? 11 : 6}" fill="#e3a23a" stroke="#8a5a10" stroke-width="1.5"/>`
+            + `<line x1="${x(a[0])}" y1="${y(a[1])}" x2="${mx + (vert ? 9 : 0)}" y2="${my + (vert ? 0 : -9)}" stroke="#aab1ba" stroke-width="1.6"/><line x1="${x(b[0])}" y1="${y(b[1])}" x2="${mx + (vert ? 9 : 0)}" y2="${my + (vert ? 0 : -9)}" stroke="#aab1ba" stroke-width="1.6"/>`
+            + T(mx + (vert ? 26 : 0), my + (vert ? 4 : -20), nome, { size: 11, w: 700, fill: '#ffd27a' });
+        });
+        const [a, b] = cp.c3, mx = (x(a[0]) + x(b[0])) / 2, my = y(a[1]);
+        s += `<circle cx="${mx}" cy="${my}" r="12" fill="#223a6a" stroke="#0b1530" stroke-width="1.5"/><path d="M${mx + 4} ${my - 11.3} A12 12 0 0 1 ${mx + 4} ${my + 11.3} Z" fill="#d6dbe1"/>`
+          + T(x(a[0]) - 2, my + 22, '+', { size: 14, w: 700, fill: '#ff9b9b' }) + T(x(b[0]) + 2, my + 22, '−', { size: 14, w: 700, fill: '#cfe0ef' }) + T(mx, my - 18, 'C3', { size: 11, w: 700, fill: '#ffd27a' });
+      } else {
+        [[cp.c1, cp.p1], [cp.c2, cp.p2], [cp.c3, cp.p2]].forEach(([furos, pinos]) => furos.forEach((f, i) => {
+          const q = pinos[i];
+          s += `<line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda-borda)" stroke-width="17" stroke-linecap="round"/><line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda)" stroke-width="15" stroke-linecap="round"/><circle cx="${x(f[0])}" cy="${y(f[1])}" r="2.6" fill="#8a9099"/>`;
+        }));
+      }
+    }
     (o.sondas || []).forEach(([c, r, t, cor]) => { s += `<circle cx="${x(c)}" cy="${y(r)}" r="11" fill="${cor || 'var(--ruim)'}" stroke="#fff" stroke-width="2"/>` + T(x(c), y(r) + 4, t, { size: 10, w: 700, fill: '#fff', halo: cor || 'var(--ruim)' }); });
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Placa vista ${verso ? 'pelo verso' : 'pela frente'}">${s}</svg>`;
+    let vb = `0 0 ${W} ${H}`;
+    if (o.crop) { const [c1, c2, r1, r2] = o.crop, xs = [x(c1), x(c2)], ys = [y(r1), y(r2)]; vb = `${Math.min(...xs) - 26} ${Math.min(...ys) - 26} ${Math.abs(xs[1] - xs[0]) + 52} ${Math.abs(ys[1] - ys[0]) + 52}`; }
+    return `<svg viewBox="${vb}" role="img" aria-label="Placa vista ${verso ? 'pelo verso' : 'pela frente'}">${s}</svg>`;
   }
 
   // ================= desenhos avulsos =================
@@ -610,14 +636,25 @@ void loop() {
     s += `<text x="150" y="162" text-anchor="middle" font-size="11" fill="#eef4f0">uma gota de estanho liga cada perna ao furo de cima</text>`;
     return `<svg viewBox="0 0 300 180" role="img" aria-label="Pontes de estanho no verso">${s}</svg>`;
   }
+  function figCapLado2() {
+    let s = `<rect x="10" y="96" width="280" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/><text x="292" y="88" text-anchor="end" font-size="11" fill="var(--muted)">FRENTE (peças) ↑</text><text x="292" y="148" text-anchor="end" font-size="11" fill="var(--muted)">VERSO (solda) ↓</text>`;
+    [[90, 'pino do soquete'], [150, 'perna do capacitor']].forEach(([px]) => s += `<rect x="${px - 13}" y="92" width="26" height="4" fill="var(--cobre)"/><rect x="${px - 13}" y="114" width="26" height="4" fill="var(--cobre)"/>`);
+    s += `<rect x="62" y="56" width="56" height="36" rx="2" fill="#1d2125"/><text x="90" y="78" text-anchor="middle" font-size="10" fill="#c9ced3">soquete</text><rect x="87" y="70" width="6" height="56" fill="#c9a84a"/>`
+      + `<line x1="150" y1="70" x2="150" y2="126" stroke="#aab1ba" stroke-width="2.6"/><ellipse cx="150" cy="58" rx="14" ry="12" fill="#e3a23a" stroke="#8a5a10"/><text x="150" y="62" text-anchor="middle" font-size="8.5" font-weight="700" fill="#3a2400">104</text>`
+      + `<path d="M74 118 Q90 132 120 128 Q150 132 166 118 Z" fill="var(--solda)" stroke="var(--solda-borda)"/>`
+      + `<text x="150" y="162" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ok)">no verso, uma gota liga a perna ao pino</text>`
+      + `<text x="150" y="36" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--fg)">capacitor em pé, no furo ao lado do pino</text>`;
+    return `<svg viewBox="0 20 300 150" role="img" aria-label="Capacitor visto de lado">${s}</svg>`;
+  }
+  const zoomCaps = vista => { const cp = capPos(), cs = [...cp.c1, ...cp.c3, ...cp.c2, ...cp.p1].map(p => p[0]), rs = [...cp.c1, ...cp.c3, ...cp.c2].map(p => p[1]);
+    return placa({ vista, tem: new Set(['s.J1', 's.J3', 'j.J1', 'j.J3', 's.tela', 'j.tela', 's.mic', 'j.mic', 'b3', 'bg']), novo: new Set(), caps: true, crop: [1, Math.max(...cs) + 2, Math.min(...rs) - 1, Math.max(...rs) + 1] }); };
   const closeCap = () => `<div class="closes">
       <figure><div class="fig">${figCapConheca()}</div><figcaption>Os dois tipos. O cerâmico não tem lado; o eletrolítico tem: a faixa clara marca o <b>−</b> e a perna mais longa é o <b>+</b>.</figcaption></figure>
       <figure><div class="fig">${figCap104()}</div><figcaption>Como ler o número do cerâmico.</figcaption></figure>
-      <figure><div class="fig">${figCapVerso(true, LN(M.pos.VDD[1]) + M.pos.VDD[0] + ' VDD', LN(M.pos.GND[1]) + M.pos.GND[0] + ' GND')}</div><figcaption><b>C1</b> no verso do microfone: uma perna em cada solda, o corpo deitado ao lado.</figcaption></figure>
-      <figure><div class="fig">${figCapVerso(false, LN(TR) + tc('GND') + ' GND', LN(TR) + tc('VCC') + ' VCC')}</div><figcaption><b>C2</b> no verso do soquete da tela (no verso, o GND fica à esquerda do VCC).</figcaption></figure>
-      <figure><div class="fig">${figCapLado()}</div><figcaption>Visto de lado: as pernas encostam nas soldas que já existem. Reaqueça e a perna afunda.</figcaption></figure>
-      <figure><div class="fig">${figEletroFrente(true)}</div><figcaption><b style="color:var(--ok)">C3 certo:</b> em pé na frente, + no P9 e − no P10.</figcaption></figure>
-      <figure><div class="fig">${figEletroVerso()}</div><figcaption>C3 no verso: cada perna ganha uma ponte de estanho até o furo de cima do soquete.</figcaption></figure>
+      <figure><div class="fig">${figCapLado2()}</div><figcaption>A regra é a mesma de toda peça: <b>o capacitor fica na frente</b>, com as pernas atravessando a placa. No verso, a perna ganha uma gota de estanho até o pino do lado.</figcaption></figure>
+      <figure><div class="fig">${zoomCaps('frente')}</div><figcaption><b>FRENTE</b>, de perto: onde cada capacitor encaixa (C1 e C2 em pé, C3 visto de cima).</figcaption></figure>
+      <figure><div class="fig">${zoomCaps('verso')}</div><figcaption><b>VERSO</b>, de perto: as gotas de estanho que ligam cada perna ao pino vizinho (no verso tudo aparece espelhado).</figcaption></figure>
+      <figure><div class="fig">${figEletroFrente(true)}</div><figcaption><b style="color:var(--ok)">C3 certo:</b> + no 3V3, − no GND.</figcaption></figure>
       <figure><div class="fig">${figEletroFrente(false)}</div><figcaption><b style="color:var(--ruim)">Errado:</b> faixa clara no 3V3.</figcaption></figure>
     </div>`;
   const figBarra = () => `<svg viewBox="0 0 560 120" role="img" aria-label="Cortando a barra fêmea">
@@ -720,14 +757,17 @@ void loop() {
     passo({ t: 'Fios do microfone', vista: true, novo: ['mSCK', 'mWS', 'mSD', 'mVDD', 'mGND', 'mLR'], fios: ['mSCK', 'mWS', 'mSD', 'mVDD', 'mGND', 'mLR'], antes: 'Desligue o USB e tire o ESP32.', html: () => `<p>3 fios <b>verdes</b> (sinal), 1 vermelho (VDD) e 2 pretos (GND e L/R). O L/R vai no GND de propósito: escolhe o canal esquerdo.</p><p class="nota">Posição atual do microfone: ${micTxt()}. Se não bater com o seu, ajuste no passo 4.</p>` + comoFio });
     passo({ t: 'Encaixe o microfone e teste', vista: true, novo: [], esp: true, mic: true, html: () => `<ol><li>Encaixe o microfone nos dois soquetes de 3, do mesmo jeito que estava no gabarito: ${micTxt()}.</li><li>Encaixe o ESP32 e ligue o USB. Tensão entre VDD e GND do microfone: <b>3,3 V</b>.</li><li>Grave o programa e bata palma perto: o número e a barra de # sobem.</li></ol>${bloco('mic', 'etapa4_microfone.ino')}<details><summary>Se não funcionar</summary><ul><li><b>Sempre zero:</b> L/R solto ou SD no pino errado.</li><li><b>Falha ao iniciar o I2S:</b> confira SCK (GPIO 15) e WS (GPIO 16).</li></ul></details>` });
     parte('Fechamento');
-    passo({ t: 'Capacitores (recomendado)', vista: true, novo: [], sondas: [[M.pos.VDD[0], M.pos.VDD[1], 'C1', '#c98a1a'], [M.pos.GND[0], M.pos.GND[1], 'C1', '#c98a1a'], [tc('VCC'), TR, 'C2', '#c98a1a'], [tc('GND'), TR, 'C2', '#c98a1a'], [tc('VCC'), TR - 1, '+', '#223a6a'], [tc('GND'), TR - 1, '−', '#223a6a']], html: () => `<p>Capacitor é um “reservatório” pequeno de energia. Quando o Wi-Fi transmite ou a tela acende, o consumo dá um pico e a tensão balança um pouquinho; o capacitor perto da peça segura essa tensão e tira o chiado do microfone.</p>
-        <ul>
-          <li><b>C1 · 100 nF (cerâmico, escrito 104) no microfone.</b> No <b>verso</b>, solde uma perna na solda do pino <b>VDD</b> (${LN(M.pos.VDD[1])}${M.pos.VDD[0]}) e a outra na solda do <b>GND</b> (${LN(M.pos.GND[1])}${M.pos.GND[0]}). Corte as pernas curtinhas e deixe o capacitor deitado na placa. Não tem lado certo.</li>
-          <li><b>C2 · 100 nF (104) na tela.</b> Mesmo jeito, no verso, entre as soldas do <b>VCC</b> (${LN(TR)}${tc('VCC')}) e do <b>GND</b> (${LN(TR)}${tc('GND')}) do soquete da tela.</li>
-          <li><b>C3 · eletrolítico de 10 a 100 µF (opcional).</b> Na <b>frente</b>, em pé, com a perna <b>+</b> (a mais comprida) no furo ${LN(TR - 1)}${tc('VCC')} e a perna <b>−</b> (a do lado da faixa clara) no ${LN(TR - 1)}${tc('GND')}. No verso, ligue cada perna à solda vizinha de cima (${LN(TR)}${tc('VCC')} e ${LN(TR)}${tc('GND')}) com uma gota de estanho.</li>
-        </ul>
-        ${closeCap()}<p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Invertido, ele esquenta e pode estourar. Guarde os de 470 µF para o amplificador de som.</p>
-        <div class="confere"><b>Confira (USB desligado):</b> entre 3V3 e GND não pode apitar direto. Com o eletrolítico, o multímetro pode dar um bipe curtinho e parar: é ele carregando, está certo.</div>` });
+    passo({ t: 'Capacitores (recomendado)', vista: true, novo: [], caps: true, html: () => { const cp = capPos(), h = p => LN(p[1]) + p[0]; return `<p>Capacitor é um “reservatório” pequeno de energia. Quando o Wi-Fi transmite ou a tela acende, o consumo dá um pico e a tensão balança; o capacitor perto da peça segura a tensão e tira o chiado do microfone.</p>
+        <p><b>Todos ficam na FRENTE</b>, em pé, em furos livres logo ao lado dos pinos. <b>No verso</b>, cada perna ganha uma gota de estanho até o pino vizinho:</p>
+        <div class="tab"><table><thead><tr><th>Capacitor</th><th>Pernas (frente)</th><th>Gota de estanho no verso</th></tr></thead><tbody>
+          <tr><td><b>C1</b> · 100 nF (104), microfone</td><td class="num">${h(cp.c1[0])} e ${h(cp.c1[1])}</td><td class="num">${h(cp.c1[0])}→${h(cp.p1[0])} (VDD) · ${h(cp.c1[1])}→${h(cp.p1[1])} (GND)</td></tr>
+          <tr><td><b>C2</b> · 100 nF (104), tela</td><td class="num">${h(cp.c2[0])} e ${h(cp.c2[1])}</td><td class="num">${h(cp.c2[0])}→${h(cp.p2[0])} (VCC) · ${h(cp.c2[1])}→${h(cp.p2[1])} (GND)</td></tr>
+          <tr><td><b>C3</b> · eletrolítico 10 a 100 µF (opcional)</td><td class="num">+ em ${h(cp.c3[0])}, − em ${h(cp.c3[1])}</td><td class="num">${h(cp.c3[0])}→${h(cp.p2[0])} · ${h(cp.c3[1])}→${h(cp.p2[1])}</td></tr>
+        </tbody></table></div>
+        <ol><li>Enfie as pernas pela frente e dobre um pouco no verso para não cair.</li><li>No verso, encoste o ferro na perna e no pino vizinho ao mesmo tempo e ponha estanho até formar uma gota que pega os dois.</li><li>Corte o que sobrou da perna.</li></ol>
+        ${closeCap()}
+        <p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Guarde os de 470 µF para o amplificador de som.</p>
+        <div class="confere"><b>Confira (USB desligado):</b> entre 3V3 e GND não pode ficar apitando. Com o eletrolítico, um bipe curtinho que para sozinho é normal (é ele carregando).</div>`; } });
     passo({ t: 'Limpe e inspecione', html: () => `<ul><li>USB desligado. Álcool isopropílico e escova de dentes velha no verso para tirar o fluxo.</li><li>Com lupa: bolinhas de estanho soltas, fios de cobre soltos, juntas opacas. Refaça o que estiver feio.</li></ul>` });
     passo({ t: 'Confira tudo com o multímetro', vista: true, novo: [], html: () => `<p>USB desligado. Em continuidade, cada linha tem que <b>apitar</b>:</p>${fiosTab(Object.keys(FIOS))}` });
     passo({ t: 'Grave o mascote', vista: true, novo: [], esp: true, mic: true, html: () => `<ol><li>Abra a pasta do mascote no Arduino IDE (com o seu <code>config.h</code>).</li><li>ESP32S3 Dev Module, PSRAM <b>OPI PSRAM</b>, porta COM5, Upload.</li><li>O mascote aparece e mostra as sessões, como na protoboard.</li></ol><p class="dica">Quando a ST7796 chegar, você só troca os jumpers da tela. A placa continua igual.</p>` });
@@ -757,7 +797,7 @@ void loop() {
     progresso();
   }
   function desenhar(p, sel) {
-    const o = { tem: p.tem, novo: p.novo, esp: p.esp, mic: p.mic, sondas: p.sondas, sel };
+    const o = { tem: p.tem, novo: p.novo, esp: p.esp, mic: p.mic, sondas: p.sondas, caps: p.caps, sel };
     ['frente', 'verso'].forEach(v => { const el = document.querySelector(`[data-fig="${p.n}-${v}"]`); if (el) el.innerHTML = placa(Object.assign({ vista: v }, o)); });
     const ej = document.querySelector(`[data-fig="${p.n}-jump"]`); if (ej) ej.innerHTML = figJumpers(sel, o);
   }
