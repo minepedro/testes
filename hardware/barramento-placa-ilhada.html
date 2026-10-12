@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barramento na Placa Ilhada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: uma coluna de passos; cada passo tem o texto e o desenho da placa logo abaixo. */
+:root {
+  --bg: #eef1ee; --fg: #18201c; --muted: #55625a; --line: #d3dad5; --card: #ffffff;
+  --accent: #b9542f;
+  --pcb: #2f6b52; --pcb-borda: #1f4a38; --cobre: #d9a441; --furo: #12201a; --tinta-placa: #eef4f0;
+  --fio: #cfd4d9; --fio-luz: #ffffff; --solda: #b9c0c7; --solda-borda: #7d868f;
+  --v33: #e04848; --gnd: #4a8fe0; --ok: #2f8a4f; --ruim: #c93838;
+  --f-display: "Silkscreen", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121614; --fg: #e6ece8; --muted: #9caaa2; --line: #2a332e; --card: #1a201d;
+    --accent: #e08562; --pcb: #275a45; --pcb-borda: #163628; --ok: #5cc58a; --ruim: #f07070;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121614; --fg: #e6ece8; --muted: #9caaa2; --line: #2a332e; --card: #1a201d;
+  --accent: #e08562; --pcb: #275a45; --pcb-borda: #163628; --ok: #5cc58a; --ruim: #f07070;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 5vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lead { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.passo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 18px; display: grid; gap: 10px; min-width: 0; }
+.passo h2 { margin: 0; font-size: 19px; line-height: 1.3; display: flex; gap: 10px; align-items: baseline; text-wrap: balance; }
+.passo h2 .n { font-family: var(--f-display); font-weight: 400; font-size: 15px; color: var(--accent); flex: none; }
+.passo p, .passo ul { margin: 0; max-width: 64ch; }
+.passo ul { padding-left: 20px; display: grid; gap: 4px; }
+.fig { overflow-x: auto; border-radius: 8px; }
+.fig svg { display: block; width: 100%; height: auto; min-width: 320px; }
+.legenda { font-size: 14px; color: var(--muted); }
+.alerta { border-left: 3px solid var(--ruim); padding: 6px 12px; background: color-mix(in srgb, var(--ruim) 8%, transparent); border-radius: 0 6px 6px 0; }
+.dica { border-left: 3px solid var(--ok); padding: 6px 12px; background: color-mix(in srgb, var(--ok) 8%, transparent); border-radius: 0 6px 6px 0; }
+svg text { font-family: var(--f-body); }
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Barramento na placa ilhada</h1>
+    <p class="lead">Na protoboard, as linhas vermelha e azul das bordas já vêm ligadas por dentro. Na placa ilhada não existe nada pronto: cada furo é uma ilha separada. O barramento é você fazendo essa linha, com um fio sem capa soldado no verso.</p>
+  </header>
+
+  <section class="passo">
+    <h2><span class="n">0</span>O problema: nenhum furo se toca</h2>
+    <p>Cada furo tem um anel de cobre só dele. Dois furos vizinhos <b>não estão ligados</b>. Se você encaixar a tela e o microfone e quiser levar 3,3 V para os dois, precisa ligar os furos você mesmo.</p>
+    <div class="fig" id="f0"></div>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">1</span>Arrume um fio sem capa</h2>
+    <p>O barramento é um fio de cobre <b>nu</b> (sem plástico em volta), meio durinho, para ficar reto. Qualquer um destes serve:</p>
+    <ul>
+      <li><b>Sobra de perna</b> de resistor ou de capacitor, depois de soldar (é o mais comum).</li>
+      <li><b>Fio de cabo de rede</b>: tire um dos fiozinhos de dentro e descasque inteiro.</li>
+      <li>Fio de cobre estanhado 0,5 a 0,6 mm (vende em loja de eletrônica).</li>
+    </ul>
+    <div class="fig" id="f1"></div>
+    <p class="legenda">Comprimento: o manual calcula para você (passo “Solde o barramento do 3V3”). Uns 5 a 7 cm costumam bastar.</p>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">2</span>Deite o fio no verso, em cima de uma linha de ilhas</h2>
+    <p>Vire a placa (lado sem peças para cima). Escolha uma linha de furos, por exemplo a linha 3. Deite o fio <b>reto, encostado nas ilhas</b>, do primeiro ao último furo que vai precisar de 3,3 V.</p>
+    <div class="fig" id="f2"></div>
+    <p class="dica">Para o fio não fugir: dobre 2 mm de cada ponta e enfie num furo das pontas, ou segure com fita crepe enquanto solda.</p>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">3</span>Solde o fio nas ilhas</h2>
+    <p>Solde as <b>duas pontas</b> primeiro. Depois solde mais alguns furos no meio, a cada 3 ou 4 furos. Em cada solda: encoste o ferro <b>no fio e na ilha ao mesmo tempo</b>, conte 2 segundos e encoste o estanho. Ele escorre e “cola” o fio na ilha.</p>
+    <div class="fig" id="f3"></div>
+    <p>Visto de lado, cada solda abraça o fio e a ilha:</p>
+    <div class="fig" id="f3b"></div>
+    <p class="legenda">Pronto: o fio e todas as ilhas soldadas viraram uma coisa só. Tudo que for soldado nessa linha recebe 3,3 V.</p>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">4</span>Faça o segundo barramento, o do GND</h2>
+    <p>Mesmo jeito, outro fio nu, em <b>outra linha</b>, com algumas linhas vazias de distância (no manual, a linha 8). Agora a placa tem dois “trilhos”: um de <b style="color:var(--v33)">3V3</b> e um de <b style="color:var(--gnd)">GND</b>.</p>
+    <div class="fig" id="f4"></div>
+    <p class="alerta"><b>Os dois nunca podem se encostar.</b> Se um pingo de solda ou uma ponta de fio ligar o 3V3 ao GND, é curto: o regulador do ESP32 esquenta e pode queimar.</p>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">5</span>Ligue o ESP32 e os módulos aos barramentos</h2>
+    <ul>
+      <li><b>Um fio</b> (com capa, vermelho) do furo do pino <b>3V3 do ESP32</b> até o barramento 3V3. Esse é o fio que “enche” o trilho de energia.</li>
+      <li><b>Um fio</b> (com capa, azul ou preto) do furo do pino <b>GND do ESP32</b> até o barramento GND.</li>
+      <li>Cada módulo pega energia no <b>ponto do trilho mais perto dele</b>, com um fio curtinho: o VDD do microfone vai ao 3V3, o GND do microfone vai ao GND, e o mesmo para a tela.</li>
+    </ul>
+    <div class="fig" id="f5"></div>
+    <p class="dica">Onde o fio do módulo chega no trilho, solde a ponta dele <b>na mesma ilha</b> em que o fio nu está soldado. Se aquela ilha ainda não tinha solda, faça uma ali.</p>
+  </section>
+
+  <section class="passo">
+    <h2><span class="n">6</span>Teste com o multímetro (USB desligado)</h2>
+    <p>Multímetro no modo <b>continuidade</b> (o do apito):</p>
+    <div class="fig" id="f6"></div>
+    <ul>
+      <li><b>Teste A:</b> uma ponta em cada extremo do barramento 3V3. <b style="color:var(--ok)">Tem que apitar</b>. Se não apitar, alguma solda do meio não pegou.</li>
+      <li><b>Teste B:</b> uma ponta no 3V3, outra no GND. <b style="color:var(--ruim)">Não pode apitar</b>. Se apitar, procure a ponte de solda entre os dois e tire antes de ligar o USB.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const PX = 26, M = 30, ML = 58;
+  const x = c => ML + (c - 1) * PX, y = r => M + (r - 1) * PX;
+  const T = (tx, ty, s, o = {}) => `<text x="${tx}" y="${ty}" font-size="${o.size || 12}" fill="${o.fill || 'var(--tinta-placa)'}" text-anchor="${o.anchor || 'start'}" font-weight="${o.w || 400}" style="paint-order:stroke;stroke:var(--pcb-borda);stroke-width:4px;stroke-linejoin:round">${s}</text>`;
+  function placa(cols, rows, inner, extraH = 0) {
+    const W = ML + M + (cols - 1) * PX, H = M * 2 + (rows - 1) * PX + extraH;
+    let s = `<rect x="4" y="4" width="${W - 8}" height="${H - 8 - extraH}" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="3"/>`;
+    for (let c = 1; c <= cols; c++) for (let r = 1; r <= rows; r++) s += `<circle cx="${x(c)}" cy="${y(r)}" r="8.5" fill="var(--cobre)"/><circle cx="${x(c)}" cy="${y(r)}" r="3.2" fill="var(--furo)"/>`;
+    return `<svg viewBox="0 0 ${W} ${H}" role="img">${s}${inner}</svg>`;
+  }
+  const fioNu = (r, c1, c2) => `<line x1="${x(c1) - 6}" y1="${y(r)}" x2="${x(c2) + 6}" y2="${y(r)}" stroke="var(--fio)" stroke-width="5" stroke-linecap="round"/><line x1="${x(c1) - 6}" y1="${y(r) - 1.3}" x2="${x(c2) + 6}" y2="${y(r) - 1.3}" stroke="var(--fio-luz)" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>`;
+  const solda = (c, r) => `<ellipse cx="${x(c)}" cy="${y(r)}" rx="10.5" ry="9.5" fill="var(--solda)" stroke="var(--solda-borda)" stroke-width="1.3"/><ellipse cx="${x(c) - 3}" cy="${y(r) - 3}" rx="3.5" ry="2.4" fill="#fff" opacity=".6"/>`;
+  const fioCapa = (c1, r1, c2, r2, cor) => `<path d="M${x(c1)} ${y(r1)} L${x(c2)} ${y(r2)}" stroke="#0007" stroke-width="7.5" stroke-linecap="round" fill="none"/><path d="M${x(c1)} ${y(r1)} L${x(c2)} ${y(r2)}" stroke="${cor}" stroke-width="5" stroke-linecap="round" fill="none"/>` + solda(c1, r1) + solda(c2, r2);
+  const soquete = (r, c1, c2) => `<rect x="${x(c1) - 12}" y="${y(r) - 11}" width="${x(c2) - x(c1) + 24}" height="22" rx="3" fill="#1d2125" stroke="#000" stroke-width="1.5"/>` + Array.from({ length: c2 - c1 + 1 }, (_, i) => `<rect x="${x(c1 + i) - 4}" y="${y(r) - 4}" width="8" height="8" fill="#050607"/>`).join('');
+  const rot = (r, s, cor) => `<rect x="8" y="${y(r) - 10}" width="36" height="20" rx="4" fill="${cor}"/>` + `<text x="26" y="${y(r) + 4}" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">${s}</text>`;
+  const $ = id => document.getElementById(id);
+
+  // 0: ilhas separadas
+  $('f0').innerHTML = placa(12, 4,
+    `<circle cx="${x(5)}" cy="${y(2)}" r="12" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="${x(6)}" cy="${y(2)}" r="12" fill="none" stroke="var(--accent)" stroke-width="3"/>` +
+    T(x(5) + 13, y(3) + 10, 'vizinhos, mas NÃO ligados', { anchor: 'middle', w: 700, size: 13 }));
+
+  // 1: perna de resistor
+  $('f1').innerHTML = `<svg viewBox="0 0 520 120" role="img">
+    <line x1="20" y1="60" x2="500" y2="60" stroke="var(--fio)" stroke-width="5" stroke-linecap="round"/>
+    <rect x="225" y="44" width="70" height="32" rx="12" fill="#d8c49a" stroke="#8a7a50" stroke-width="1.5"/>
+    <rect x="240" y="44" width="6" height="32" fill="#7a3fb0"/><rect x="254" y="44" width="6" height="32" fill="#e6c200"/><rect x="268" y="44" width="6" height="32" fill="#c93030"/><rect x="282" y="44" width="5" height="32" fill="#c9a83c"/>
+    <line x1="140" y1="30" x2="140" y2="90" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="140" y="22" font-size="13" text-anchor="middle" fill="var(--fg)" font-weight="700">corte aqui</text>
+    <text x="70" y="96" font-size="13" text-anchor="middle" fill="var(--muted)">esta parte vira o fio nu</text>
+    <text x="260" y="104" font-size="13" text-anchor="middle" fill="var(--muted)">resistor (sobra de outro projeto)</text>
+  </svg>`;
+
+  // 2: fio deitado
+  $('f2').innerHTML = placa(12, 4, fioNu(2, 2, 11) + rot(2, '3V3', 'var(--v33)') + T(x(6.5), y(3) + 14, 'fio nu deitado sobre a linha de ilhas (ainda sem solda)', { anchor: 'middle', size: 12 }));
+
+  // 3: soldado
+  $('f3').innerHTML = placa(12, 4, fioNu(2, 2, 11) + [2, 5, 8, 11].map(c => solda(c, 2)).join('') + rot(2, '3V3', 'var(--v33)') +
+    T(x(2), y(3) + 14, 'ponta', { anchor: 'middle' }) + T(x(11), y(3) + 14, 'ponta', { anchor: 'middle' }) + T(x(6.5), y(4) + 6, 'e alguns no meio', { anchor: 'middle' }));
+
+  // 3b: vista de lado
+  {
+    let s = `<text x="20" y="22" font-size="13" fill="var(--muted)">lado de cima (onde ficam as peças)</text>
+      <rect x="20" y="34" width="480" height="30" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    for (let i = 0; i < 10; i++) { const cx = 50 + i * 46; s += `<rect x="${cx - 4}" y="34" width="8" height="30" fill="var(--furo)"/><rect x="${cx - 14}" y="64" width="28" height="5" fill="var(--cobre)"/>`; }
+    s += `<line x1="36" y1="73" x2="484" y2="73" stroke="var(--fio)" stroke-width="7" stroke-linecap="round"/>`;
+    [0, 3, 6, 9].forEach(i => { const cx = 50 + i * 46; s += `<path d="M${cx - 16} 69 Q${cx} 98 ${cx + 16} 69 Z" fill="var(--solda)" stroke="var(--solda-borda)" stroke-width="1.3"/>`; });
+    s += `<text x="20" y="118" font-size="13" fill="var(--muted)">verso: ilha de cobre, o fio nu por cima e a solda abraçando os dois</text>`;
+    $('f3b').innerHTML = `<svg viewBox="0 0 520 128" role="img">${s}</svg>`;
+  }
+
+  // 4: dois barramentos
+  $('f4').innerHTML = placa(12, 7, fioNu(2, 2, 11) + fioNu(6, 2, 11) + [2, 5, 8, 11].map(c => solda(c, 2) + solda(c, 6)).join('') +
+    rot(2, '3V3', 'var(--v33)') + rot(6, 'GND', 'var(--gnd)') +
+    T(x(6.5), y(4) + 4, '3 linhas vazias de distância: nada pode encostar aqui', { anchor: 'middle', w: 700 }));
+
+  // 5: ligacoes
+  $('f5').innerHTML = placa(14, 9,
+    fioNu(2, 1, 14) + fioNu(6, 4, 14) + [1, 14].map(c => solda(c, 2)).join('') + [4, 14].map(c => solda(c, 6)).join('') +
+    soquete(9, 1, 7) + soquete(4, 8, 13) +
+    fioCapa(1, 9, 1, 2, 'var(--v33)') + fioCapa(6, 9, 6, 6, 'var(--gnd)') +
+    fioCapa(12, 4, 12, 2, 'var(--v33)') + fioCapa(13, 4, 13, 6, 'var(--gnd)') + fioCapa(11, 4, 11, 6, 'var(--gnd)') +
+    rot(2, '3V3', 'var(--v33)') + rot(6, 'GND', 'var(--gnd)') +
+    T(x(4), y(9) + 26, 'soquete do ESP32: pino 3V3 e pino GND', { anchor: 'middle', fill: 'var(--fg)', size: 12 }) +
+    T(x(10.5), y(4) - 16, 'soquete do microfone', { anchor: 'middle', size: 11 }) +
+    T(x(11), y(4) + 24, 'L/R', { anchor: 'middle', size: 10 }) + T(x(12), y(4) + 24, 'VDD', { anchor: 'middle', size: 10 }) + T(x(13), y(4) + 24, 'GND', { anchor: 'middle', size: 10 }), 22);
+
+  // 6: teste
+  const ponta = (c, r, cor, txt) => `<circle cx="${x(c)}" cy="${y(r)}" r="12" fill="${cor}" stroke="#fff" stroke-width="2"/>` + T(x(c), y(r) - 17, txt, { anchor: 'middle', w: 700, size: 12 });
+  $('f6').innerHTML = placa(12, 7, fioNu(2, 2, 11) + fioNu(6, 2, 11) + [2, 5, 8, 11].map(c => solda(c, 2) + solda(c, 6)).join('') +
+    rot(2, '3V3', 'var(--v33)') + rot(6, 'GND', 'var(--gnd)') +
+    ponta(2, 2, 'var(--ruim)', 'A') + ponta(11, 2, '#111', 'A') + T(x(6.5), y(3) + 6, 'A: pontas do 3V3 → apita', { anchor: 'middle', w: 700 }) +
+    ponta(4, 2, 'var(--ruim)', 'B') + ponta(4, 6, '#111', 'B') + T(x(6.5), y(5) + 2, 'B: 3V3 contra GND → silêncio', { anchor: 'middle', w: 700 }));
+})();
+</script>
+</body>
+</html>
