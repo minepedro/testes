@@ -66,7 +66,7 @@ o ILI9488 não solta o fio SDO, e isso estraga a leitura do touch.
 O VCC fica no 3V3, como na ST7796. Programa de teste: `firmware/testes/etapa2_3_tela_touch_ili9488`.
 Manual e esquema desta variante: `hardware/manual-montagem-ili9488.html` e `hardware/esquema-ligacoes-ili9488.html`.
 Placa ilhada com esta tela: `hardware/manual-placa-ilhada-ili9488.html` (a placa é a mesma da ST7796; só mudam os nomes dos 4 fios do touch).
-Versão visual, passo a passo, com desenho em cada etapa: `hardware/manual-visual-placa-ilhada-ili9488.html`. Esta é a referência atual: placa de 6 × 8 cm (25 × 20 furos) e microfone redondo em dois soquetes de 3. O manual interativo antigo (`manual-placa-ilhada*.html`) ainda usa o layout de 31 × 23 furos. Como fazer os barramentos: `hardware/barramento-placa-ilhada.html`.
+Versão visual, passo a passo, com desenho em cada etapa: `hardware/manual-visual-placa-ilhada-ili9488.html`. Esta é a referência atual: placa de 27 × 22 furos (linhas A a V, colunas 1 a 27), ESP32 com USB à esquerda e microfone redondo em dois soquetes de 3. O manual interativo antigo (`manual-placa-ilhada*.html`) ainda usa o layout de 31 × 23 furos. Como fazer os barramentos: `hardware/barramento-placa-ilhada.html`.
 O touch resistivo funciona **apertando** e precisa de calibração (x_min, x_max, y_min, y_max no programa).
 
 ### Microfone INMP441 (I2S)

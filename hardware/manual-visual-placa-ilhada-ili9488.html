@@ -97,7 +97,7 @@ svg text { font-family: var(--f-body); }
 <div class="wrap">
   <header>
     <h1>Montando a placa do mascote</h1>
-    <p class="lead">Placa ilhada com a tela de teste ILI9488 e o microfone INMP441 redondo. Em cada passo aparece a placa inteira dos dois lados: a <b>frente</b> (onde ficam as peças) e o <b>verso</b> (onde ficam as soldas e os fios). Os furos são chamados por <b>coluna</b> (contada da esquerda, olhando a frente) e <b>linha</b> (contada de cima).</p>
+    <p class="lead">Placa ilhada com a tela de teste ILI9488 e o microfone INMP441 redondo. Em cada passo aparece a placa inteira dos dois lados: a <b>frente</b> (onde ficam as peças) e o <b>verso</b> (onde ficam as soldas e os fios). Cada furo tem o nome que já vem impresso na placa: <b>letra da linha + número da coluna</b> (por exemplo, <b>K3</b>).</p>
   </header>
   <div class="barra"><div class="trilho"><i id="prog"></i></div><span id="progtxt"></span></div>
   <nav class="indice" id="indice" aria-label="Partes"></nav>
@@ -299,18 +299,21 @@ void loop() {
 (() => {
   // ================= memoria do navegador =================
   let mem = {};
-  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v3') || '{}'); } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v3', JSON.stringify(mem)); } catch (e) {} };
+  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v5') || '{}'); } catch (e) {}
+  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v5', JSON.stringify(mem)); } catch (e) {} };
   const LADO_A = ['SCK', 'WS', 'L/R'], LADO_B = ['SD', 'VDD', 'GND'];
   const perms = a => [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].map(p => p.map(i => a[i]));
   const cfg = Object.assign({ n: 4, a: 0, b: 0 }, mem.cfg || {});
 
   // ================= modelo da placa =================
-  const COLS = 25, ROWS = 20;
+  const COLS = 27, ROWS = 22;
+  const LN = r => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[r - 1];  // as linhas da placa vêm marcadas com letras
   const LEFT = ['3V3','3V3','RST','4','5','6','7','15','16','17','18','8','3','46','9','10','11','12','13','14','5V','GND'];
   const RIGHT = ['GND','TX','RX','1','2','42','41','40','39','38','37','36','35','0','45','48','47','21','20','19','GND','GND'];
-  const J1R = 10, J3R = 19, E0 = 3, TR = 6, T0 = 5, MR0 = 4, B3 = 2, BG = 8, MC0 = 19;
-  const gcol = g => E0 + LEFT.indexOf(String(g));
+  const J1R = 11, J3R = 20, E0 = 3, TR = 6, T0 = 9, MR0 = 4, B3 = 2, BG = 9, MC0 = 1;
+  // ESP32 com a antena para a DIREITA e o USB para a ESQUERDA: a fileira J1 fica em cima, com o 3V3 na ponta direita
+  const jcol = i => E0 + 21 - i;
+  const gcol = g => jcol(LEFT.indexOf(String(g)));
   const TELA = ['VCC','GND','CS','RESET','DC','SDI','SCK','LED','SDO','T_CLK','T_CS','T_DIN','T_DO'];
   const COR = { v33: ['var(--v33)', 'vermelho'], gnd: ['var(--gnd)', 'preto'], spi: ['var(--spi)', 'laranja'], tch: ['var(--tch)', 'azul'], i2s: ['var(--i2s)', 'verde'] };
   const tc = p => T0 + TELA.indexOf(p);
@@ -321,8 +324,8 @@ void loop() {
     M.pos = {}; A.forEach((p, i) => M.pos[p] = [MC0, MR0 + i]); B.forEach((p, i) => M.pos[p] = [cB, MR0 + i]);
     const F = (id, nome, de, ate, cor) => ({ id, nome, de, ate, cor, mm: Math.round(Math.hypot(de[0] - ate[0], de[1] - ate[1]) * 2.54 + 12) });
     FIOS = {
-      esp3: F('esp3', 'ESP32 3V3 → barramento 3V3', [E0, J1R], [E0, B3], 'v33'),
-      espg: F('espg', 'ESP32 GND → barramento GND', [E0 + 21, J1R], [E0 + 21, BG], 'gnd'),
+      esp3: F('esp3', 'ESP32 3V3 → barramento 3V3', [jcol(0), J1R], [jcol(0), B3], 'v33'),
+      espg: F('espg', 'ESP32 GND → barramento GND', [jcol(21), J1R], [jcol(21), BG], 'gnd'),
       tVCC: F('tVCC', 'Tela VCC → barramento 3V3', [tc('VCC'), TR], [tc('VCC'), B3], 'v33'),
       tGND: F('tGND', 'Tela GND → barramento GND', [tc('GND'), TR], [tc('GND'), BG], 'gnd'),
       tCS: F('tCS', 'Tela CS → GPIO 10', [tc('CS'), TR], [gcol(10), J1R], 'spi'),
@@ -339,17 +342,17 @@ void loop() {
       mSCK: F('mSCK', 'Microfone SCK → GPIO 15', M.pos.SCK, [gcol(15), J1R], 'i2s'),
       mWS: F('mWS', 'Microfone WS → GPIO 16', M.pos.WS, [gcol(16), J1R], 'i2s'),
       mSD: F('mSD', 'Microfone SD → GPIO 17', M.pos.SD, [gcol(17), J1R], 'i2s'),
-      mVDD: F('mVDD', 'Microfone VDD → barramento 3V3', M.pos.VDD, [M.cm, B3], 'v33'),
-      mGND: F('mGND', 'Microfone GND → barramento GND', M.pos.GND, [M.cm, BG], 'gnd'),
-      mLR: F('mLR', 'Microfone L/R → barramento GND', M.pos['L/R'], [M.cm + 1, BG], 'gnd'),
+      mVDD: F('mVDD', 'Microfone VDD → barramento 3V3', M.pos.VDD, [2, B3], 'v33'),
+      mGND: F('mGND', 'Microfone GND → barramento GND', M.pos.GND, [2, BG], 'gnd'),
+      mLR: F('mLR', 'Microfone L/R → barramento GND', M.pos['L/R'], [4, BG], 'gnd'),
     };
     const span = row => { const cs = Object.values(FIOS).filter(f => f.ate[1] === row).map(f => f.ate[0]); return [Math.min(...cs), Math.max(...cs)]; };
     SP3 = span(B3); SPG = span(BG);
     SOQ = {
-      J1: { pinos: LEFT.map((p, i) => [E0 + i, J1R, p]), lab: 'baixo' },
-      J3: { pinos: RIGHT.map((p, i) => [E0 + i, J3R, p]), lab: 'cima' },
+      J1: { pinos: LEFT.map((p, i) => [jcol(i), J1R, p]), lab: 'baixo' },
+      J3: { pinos: RIGHT.map((p, i) => [jcol(i), J3R, p]), lab: 'cima' },
       tela: { pinos: TELA.map((p, i) => [T0 + i, TR, p]), lab: 'cima' },
-      micA: { pinos: A.map((p, i) => [MC0, MR0 + i, p]), lab: 'esq' },
+      micA: { pinos: A.map((p, i) => [MC0, MR0 + i, p]), lab: 'dir' },
       micB: { pinos: B.map((p, i) => [cB, MR0 + i, p]), lab: 'dir' },
     };
   }
@@ -371,8 +374,8 @@ void loop() {
     const tem = id => o.tem.has(id) || o.novo.has(id), novo = id => o.novo.has(id);
     let s = `<rect x="${ML - 24}" y="${MT - 24}" width="${(COLS - 1) * PX + 48}" height="${(ROWS - 1) * PX + 48}" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="3"/>`;
     for (let c = 1; c <= COLS; c++) for (let r = 1; r <= ROWS; r++) s += `<circle cx="${x(c)}" cy="${y(r)}" r="7.2" fill="var(--cobre)"/><circle cx="${x(c)}" cy="${y(r)}" r="2.7" fill="var(--furo)"/>`;
-    for (let c = 1; c <= COLS; c++) if (c === 1 || c % 5 === 0) s += `<text x="${x(c)}" y="${MT - 30}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--muted)">${c}</text>`;
-    for (let r = 1; r <= ROWS; r++) if (r === 1 || r % 5 === 0) s += `<text x="${verso ? W - 10 : 10}" y="${y(r) + 4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--muted)">${r}</text>`;
+    for (let c = 1; c <= COLS; c++) s += `<text x="${x(c)}" y="${MT - 30}" font-size="${c === 1 || c % 5 === 0 ? 11 : 8.5}" font-weight="700" text-anchor="middle" fill="var(--muted)">${c}</text>`;
+    for (let r = 1; r <= ROWS; r++) s += `<text x="${verso ? W - 10 : 10}" y="${y(r) + 4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--muted)">${LN(r)}</text>`;
 
     // fios (no verso: desenhados; na frente: raio-X fraco)
     const fio = f => {
@@ -430,9 +433,9 @@ void loop() {
     if (!verso && o.esp) {
       const xa = x(E0) - 44, xb = x(E0 + 21) + 40, ya = y(J1R) - 22, yb = y(J3R) + 22;
       s += `<rect x="${xa}" y="${ya}" width="${xb - xa}" height="${yb - ya}" rx="6" fill="#121a18" stroke="#000" stroke-width="2" opacity=".86"/>`
-        + `<rect x="${xa + 6}" y="${ya + 8}" width="32" height="${yb - ya - 16}" fill="#9aa3ad" opacity=".45"/>` + T(xa + 22, (ya + yb) / 2, 'antena', { size: 10, rot: -90 })
-        + `<rect x="${xb - 28}" y="${(ya + yb) / 2 - 26}" width="24" height="20" fill="#9aa3ad"/><rect x="${xb - 28}" y="${(ya + yb) / 2 + 6}" width="24" height="20" fill="#9aa3ad"/>`
-        + T(xb - 34, (ya + yb) / 2 - 12, 'USB', { size: 9, anchor: 'end' }) + T(xb - 34, (ya + yb) / 2 + 20, 'COM', { size: 9, anchor: 'end' })
+        + `<rect x="${xb - 38}" y="${ya + 8}" width="32" height="${yb - ya - 16}" fill="#9aa3ad" opacity=".45"/>` + T(xb - 22, (ya + yb) / 2, 'antena', { size: 10, rot: -90 })
+        + `<rect x="${xa + 4}" y="${(ya + yb) / 2 - 26}" width="24" height="20" fill="#9aa3ad"/><rect x="${xa + 4}" y="${(ya + yb) / 2 + 6}" width="24" height="20" fill="#9aa3ad"/>`
+        + T(xa + 34, (ya + yb) / 2 - 12, 'USB', { size: 9, anchor: 'start' }) + T(xa + 34, (ya + yb) / 2 + 20, 'COM', { size: 9, anchor: 'start' })
         + T((xa + xb) / 2, (ya + yb) / 2 + 4, 'ESP32-S3 encaixado', { size: 14, w: 700 });
     }
     if (!verso && o.mic) {
@@ -578,7 +581,7 @@ void loop() {
     });
     const pi = x(T0 + 13);
     s += `<text x="${pi + 8}" y="212" font-size="12" font-weight="700" fill="var(--ruim)">← sem jumper</text>`;
-    s += `<text x="${tx1 + 14}" y="${yS + 30}" font-size="12" fill="var(--muted)">soquete da tela (linha ${TR})</text>`;
+    s += `<text x="${tx1 + 14}" y="${yS + 30}" font-size="12" fill="var(--muted)">soquete da tela (linha ${LN(TR)})</text>`;
     return `<svg viewBox="0 0 ${W} ${TOP + H}" role="img" aria-label="Jumpers da tela até o soquete">${s}</svg>`;
   }
 
@@ -586,11 +589,11 @@ void loop() {
   const CODE = id => document.getElementById('code-' + id).textContent;
   const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const bloco = (id, nome) => `<div class="codigo"><div class="cap"><span>${nome}</span><button type="button" data-copiar="${id}">Copiar</button></div><pre><code>${esc(CODE(id))}</code></pre></div>`;
-  const fiosTab = ids => `<div class="tab"><table><thead><tr><th></th><th>Fio</th><th>Sai de</th><th>Chega em</th><th>Corte</th></tr></thead><tbody>${ids.map(id => { const f = FIOS[id]; return `<tr class="fio" data-fio="${id}"><td><input type="checkbox" data-chk="fio.${id}" aria-label="feito: ${f.nome}"></td><td><span class="cor" style="background:${COR[f.cor][0]}"></span>${f.nome}<br><small style="color:var(--muted)">fio ${COR[f.cor][1]}</small></td><td class="num">col ${f.de[0]}, lin ${f.de[1]}</td><td class="num">col ${f.ate[0]}, lin ${f.ate[1]}</td><td class="num">${f.mm} mm</td></tr>`; }).join('')}</tbody></table></div><p class="nota">Toque numa linha para destacar o fio nos desenhos.</p>`;
-  const jumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta fêmea (na tela)</th><th>Ponta macho (na placa)</th></tr></thead><tbody>${TELA.map((p, i) => `<tr class="fio" data-jump="${i}"><td><input type="checkbox" data-chk="jump.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${JCORES[i]};color:${i === 9 || i === 4 ? '#111' : '#fff'}">${i + 1}</span>${JNOMES[i]}</td><td>pino <b>${p}</b></td><td class="num">coluna ${T0 + i}, linha ${TR}</td></tr>`).join('')}
+  const fiosTab = ids => `<div class="tab"><table><thead><tr><th></th><th>Fio</th><th>Sai do furo</th><th>Chega no furo</th><th>Corte</th></tr></thead><tbody>${ids.map(id => { const f = FIOS[id]; return `<tr class="fio" data-fio="${id}"><td><input type="checkbox" data-chk="fio.${id}" aria-label="feito: ${f.nome}"></td><td><span class="cor" style="background:${COR[f.cor][0]}"></span>${f.nome}<br><small style="color:var(--muted)">fio ${COR[f.cor][1]}</small></td><td class="num">${LN(f.de[1])}${f.de[0]}</td><td class="num">${LN(f.ate[1])}${f.ate[0]}</td><td class="num">${f.mm} mm</td></tr>`; }).join('')}</tbody></table></div><p class="nota">Toque numa linha para destacar o fio nos desenhos.</p>`;
+  const jumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta fêmea (na tela)</th><th>Ponta macho (furo da placa)</th></tr></thead><tbody>${TELA.map((p, i) => `<tr class="fio" data-jump="${i}"><td><input type="checkbox" data-chk="jump.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${JCORES[i]};color:${i === 9 || i === 4 ? '#111' : '#fff'}">${i + 1}</span>${JNOMES[i]}</td><td>pino <b>${p}</b></td><td class="num">${LN(TR)}${T0 + i}</td></tr>`).join('')}
       <tr><td></td><td><span class="badge" style="background:var(--muted)">14</span>nenhum</td><td>pino <b>T_IRQ</b></td><td>fica sem jumper</td></tr></tbody></table></div><p class="nota">Toque numa linha para destacar o jumper no desenho.</p>`;
   const comoFio = `<ol><li>Corte o fio no tamanho da tabela e descasque <b>3 mm</b> em cada ponta.</li><li>Estanhe as pontas: encoste o ferro e um pouquinho de estanho na parte descascada.</li><li>Com a placa virada (verso para cima), encoste a ponta na solda do furo de saída. Reaqueça e deixe o fio afundar nela. Faça o mesmo na chegada.</li><li>Deixe o fio rente à placa, sem esticar. Ele pode passar por cima de outros fios e soldas: a capa isola. Só não descasque no meio.</li></ol><p class="nota">Dúvida em como a solda deve ficar? Veja o close no passo “Close: como soldar um fio na placa”.</p>`;
-  const micTxt = () => `um lado (coluna ${M.cA}, linhas ${MR0} a ${MR0 + 2}): <b>${M.A.join(', ')}</b>; lado de lá (coluna ${M.cB}, linhas 4 a 6): <b>${M.B.join(', ')}</b>`;
+  const micTxt = () => `um lado (coluna ${M.cA}, linhas ${LN(MR0)} a ${LN(MR0 + 2)}): <b>${M.A.join(', ')}</b>; outro lado (coluna ${M.cB}, linhas ${LN(MR0)} a ${LN(MR0 + 2)}): <b>${M.B.join(', ')}</b>`;
   const ajusteMic = () => `<div class="ajuste">
       <label for="aj-n">Furos entre as fileiras<select id="aj-n">${[3, 4, 5].map(v => `<option value="${v}"${cfg.n === v ? ' selected' : ''}>${v} furos (${(v * 2.54).toFixed(1).replace('.', ',')} mm)</option>`).join('')}</select></label>
       <label for="aj-a">Ordem de um lado<select id="aj-a">${perms(LADO_A).map((p, i) => `<option value="${i}"${cfg.a === i ? ' selected' : ''}>${p.join(' · ')}</option>`).join('')}</select></label>
@@ -602,7 +605,7 @@ void loop() {
     const passo = o => P.push(o);
     parte('Preparação');
     passo({ t: 'Separe o material', html: () => `<ul>
-        <li>Placa ilhada (furos de 2,54 mm) de pelo menos <b>25 × 20 furos</b> (6 × 8 cm).</li>
+        <li>Placa ilhada (furos de 2,54 mm) de pelo menos <b>27 × 22 furos</b> (colunas 1 a 27, linhas A a V).</li>
         <li><b>2 barras de pino fêmea 1×40</b> (viram os soquetes).</li>
         <li>Fio flexível fino (26 AWG) em <b>5 cores</b>: vermelho, preto, laranja, azul e verde.</li>
         <li>Fio sem capa para os barramentos (sobra de perna de resistor ou um fiozinho de cabo de rede descascado).</li>
@@ -610,25 +613,25 @@ void loop() {
         <li>Ferro, estanho, pasta de fluxo, sugador ou malha, alicate de corte, descascador, multímetro, paquímetro ou régua, caneta permanente, fita crepe.</li></ul>
         <p class="alerta">Nunca solde com o cabo USB ligado. Ferro sempre no suporte.</p>` });
     passo({ t: 'Treine numa sobra de placa', html: () => `<ol><li>Limpe a ponta do ferro e molhe com um pouco de estanho.</li><li>Encoste a ponta na <b>ilha e na perna ao mesmo tempo</b>. Conte 2 segundos.</li><li>Encoste o estanho <b>na ilha e na perna</b> (não no ferro). Ele escorre sozinho.</li><li>Tire o estanho, depois o ferro. Não mexa por 3 segundos.</li></ol><div class="fig">${figSolda()}</div>` });
-    passo({ t: 'Meça o ESP32', html: () => `<div class="fig">${figMedir()}</div><ul><li><b>22,86 mm (9 furos)</b>: siga o manual como está (segunda fileira na linha ${J3R}).</li><li><b>25,4 mm (10 furos)</b>: a segunda fileira vai na linha ${J3R + 1}; o resto não muda.</li></ul>` });
+    passo({ t: 'Meça o ESP32', html: () => `<div class="fig">${figMedir()}</div><ul><li><b>22,86 mm (9 furos)</b>: siga o manual como está (segunda fileira na linha ${LN(J3R)}).</li><li><b>25,4 mm (10 furos)</b>: a segunda fileira vai na linha ${LN(J3R + 1)}; o resto não muda.</li></ul>` });
     passo({ t: 'Meça o microfone e ajuste o manual', id: 'mic', html: () => `<p>O INMP441 redondo tem <b>3 pinos de cada lado</b>. Duas coisas mudam de um fabricante para outro, então confira no seu:</p>
         <ol><li><b>Distância entre as fileiras:</b> encaixe o microfone na protoboard e conte quantos furos tem de uma fileira até a outra (contando a outra fileira, sem contar a primeira).</li><li><b>Ordem dos nomes</b> impressos em cada lado.</li></ol>
         ${ajusteMic()}<div class="fig" data-micfig>${figMic()}</div><p class="dica">Ao mudar aqui, todos os desenhos, furos e tamanhos de fio do manual se ajustam.</p>` });
-    passo({ t: 'Corte e numere a placa', vista: true, novo: [], html: () => `<ol><li>A placa de 6 × 8 cm tem <b>25 colunas × 20 linhas</b> de furos e é usada inteira. Deixe o lado de 25 furos na horizontal.</li><li>Na <b>frente</b>, escreva com caneta permanente as colunas 1, 5, 10, 15, 20 e 25 na borda de cima e as linhas 1, 5, 10, 15 e 20 na borda esquerda.</li><li>No <b>verso</b>, faça o mesmo. Lá a coluna 1 fica à <b>direita</b>, como no desenho.</li></ol>` });
+    passo({ t: 'Conheça a placa', vista: true, novo: [], html: () => `<ol><li>A placa tem <b>27 colunas</b> (números 1 a 27) e <b>22 linhas</b> (letras A a V), e é usada inteira, sem cortar.</li><li>Deixe na sua frente com a <b>letra A em cima</b> e o <b>número 1 à esquerda</b>. Esse é o lado da <b>frente</b> (onde as peças encaixam).</li><li>Neste manual, cada furo tem um nome de <b>letra + número</b>, como no jogo de batalha naval: <b>K3</b> é a linha K, coluna 3.</li><li>Se o <b>verso</b> não tiver letras e números impressos, escreva alguns com caneta permanente (A, E, J, O, T e 1, 5, 10, 15, 20, 25). Lá a coluna 1 fica à <b>direita</b>, como no desenho.</li></ol>` });
     parte('Soquetes');
     passo({ t: 'Corte as barras de pino fêmea', html: () => `<p>Das barras 1×40, corte: <b>2 pedaços de 22</b> (ESP32), <b>1 de 13</b> (tela) e <b>2 de 3</b> (microfone).</p><div class="fig">${figBarra()}</div><p>Corte no meio do furo seguinte ao último que você quer e lixe a ponta.</p>` });
-    passo({ t: 'Posicione os soquetes do ESP32 (ESP32 de gabarito)', vista: true, novo: ['s.J1', 's.J3'], html: () => `<ol><li>Encaixe as duas barras de 22 nos pinos do ESP32.</li><li>Enfie as pernas nos furos: uma fileira na <b>linha ${J1R}</b>, colunas <b>${E0} a ${E0 + 21}</b>; a outra na <b>linha ${J3R}</b>, colunas ${E0} a ${E0 + 21}.</li><li>Antena à <b>esquerda</b>. O pino <b>3V3</b> fica na coluna ${E0} da linha ${J1R} (os nomes estão no desenho). A antena do ESP32 passa um pouco da borda esquerda da placa: tudo bem.</li><li>Prenda com fita crepe antes de virar.</li></ol><p class="dica">Confira se a serigrafia do seu ESP32 tem esta ordem de pinos. Se não tiver, me avise antes de soldar.</p>` });
+    passo({ t: 'Posicione os soquetes do ESP32 (ESP32 de gabarito)', vista: true, novo: ['s.J1', 's.J3'], html: () => `<ol><li>Encaixe as duas barras de 22 nos pinos do ESP32.</li><li>Enfie as pernas nos furos: uma fileira na <b>linha ${LN(J1R)}</b>, colunas <b>${E0} a ${E0 + 21}</b>; a outra na <b>linha ${LN(J3R)}</b>, colunas ${E0} a ${E0 + 21}.</li><li>Antena para a <b>direita</b> e portas USB para a <b>esquerda</b>, com os componentes do ESP32 virados para cima.</li><li>Assim, a fileira de cima (linha ${LN(J1R)}) fica, da esquerda para a direita: <b>GND, 5V, 14, 13, 12, 11, 10, 9, 46, 3, 8, 18, 17, 16, 15, 7, 6, 5, 4, RST, 3V3, 3V3</b>. O <b>3V3</b> fica na ponta direita (colunas ${jcol(1)} e ${jcol(0)}).</li><li>A antena passa um pouco da borda direita da placa: tudo bem.</li><li>Prenda com fita crepe antes de virar.</li></ol><p class="alerta"><b>Confira antes de soldar:</b> leia os nomes impressos no seu ESP32 com o USB para a esquerda. A fileira de cima tem que começar com GND, 5V, 14 e terminar com 3V3, 3V3. Se estiver ao contrário, me avise: aí é só girar o ESP32, mas os fios mudam.</p>` });
     passo({ t: 'Solde os soquetes do ESP32', vista: true, novo: ['j.J1', 'j.J3'], html: () => `<ol><li>Vire a placa com o ESP32 encaixado. Solde só os <b>4 pinos dos cantos</b>.</li><li>Confira se as barras estão retas e encostadas. Ajeite reaquecendo um canto, se precisar.</li><li>Solde os outros 40 pinos com um pouco de fluxo. Espere esfriar e tire o ESP32.</li></ol>` });
-    passo({ t: 'Procure pontes de solda', vista: true, novo: [], sondas: [[gcol(15), J1R, 'A'], [gcol(16), J1R, 'A', '#111'], [gcol(14), J1R, 'B'], [E0 + 20, J1R, 'B', '#111']], html: () => `<p>Multímetro em <b>continuidade</b> (o que apita), no verso:</p><ul><li><b>A:</b> GPIO 15 com GPIO 16 → <b style="color:var(--ok)">não pode apitar</b>.</li><li><b>B:</b> GPIO 14 com 5V → <b style="color:var(--ok)">não pode apitar</b>.</li><li>Passe por todos os vizinhos das duas fileiras.</li></ul><p class="alerta">Se apitar, tem estanho ligando os dois: tire com a malha ou o sugador.</p>` });
-    passo({ t: 'Posicione os soquetes da tela e do microfone', vista: true, novo: ['s.tela', 's.mic'], html: () => `<ul><li><b>Tela:</b> barra de 13 na <b>linha ${TR}</b>, colunas <b>${T0} a ${T0 + 12}</b>.</li><li><b>Microfone:</b> encaixe as duas barras de 3 <b>no próprio microfone</b> (ele vira gabarito, como o ESP32). Enfie na placa: ${micTxt()}.</li><li>Segure com fita e vire.</li></ul><p class="dica">O furinho do som fica do lado de cima do microfone (o lado sem o chip). Deixe esse lado livre, virado para fora.</p>` });
+    passo({ t: 'Procure pontes de solda', vista: true, novo: [], sondas: [[gcol(15), J1R, 'A'], [gcol(16), J1R, 'A', '#111'], [gcol(14), J1R, 'B'], [jcol(20), J1R, 'B', '#111']], html: () => `<p>Multímetro em <b>continuidade</b> (o que apita), no verso:</p><ul><li><b>A:</b> GPIO 15 com GPIO 16 → <b style="color:var(--ok)">não pode apitar</b>.</li><li><b>B:</b> GPIO 14 com 5V → <b style="color:var(--ok)">não pode apitar</b>.</li><li>Passe por todos os vizinhos das duas fileiras.</li></ul><p class="alerta">Se apitar, tem estanho ligando os dois: tire com a malha ou o sugador.</p>` });
+    passo({ t: 'Posicione os soquetes da tela e do microfone', vista: true, novo: ['s.tela', 's.mic'], html: () => `<ul><li><b>Tela:</b> barra de 13 na <b>linha ${LN(TR)}</b>, colunas <b>${T0} a ${T0 + 12}</b>.</li><li><b>Microfone:</b> encaixe as duas barras de 3 <b>no próprio microfone</b> (ele vira gabarito, como o ESP32). Enfie na placa: ${micTxt()}.</li><li>Segure com fita e vire.</li></ul><p class="dica">O furinho do som fica do lado de cima do microfone (o lado sem o chip). Deixe esse lado livre, virado para fora.</p>` });
     passo({ t: 'Solde os soquetes da tela e do microfone', vista: true, novo: ['j.tela', 'j.mic'], html: () => `<p>Pontas primeiro, confira se ficaram retas, depois o resto. Tire o microfone depois de esfriar. Teste dois vizinhos de cada barra (não podem apitar).</p>` });
     parte('Energia');
-    passo({ t: 'Barramento do 3V3', vista: true, novo: ['b3'], html: () => `<ol><li>Corte um fio <b>sem capa</b> de uns <b>${busMm(SP3)} mm</b>.</li><li>No verso, deite reto sobre a <b>linha ${B3}</b>, da coluna <b>${SP3[0]} à ${SP3[1]}</b>, encostado nas ilhas.</li><li>Solde as pontas e onde houver marca no desenho (ferro no fio e na ilha juntos, 2 s, estanho).</li></ol><div class="confere"><b>Confira:</b> as duas pontas do fio apitam entre si.</div>` });
-    passo({ t: 'Barramento do GND', vista: true, novo: ['bg'], html: () => `<ol><li>Fio sem capa de uns <b>${busMm(SPG)} mm</b>.</li><li>Deite sobre a <b>linha ${BG}</b>, da coluna <b>${SPG[0]} à ${SPG[1]}</b>.</li><li>Solde as pontas e um ponto a cada 4 ou 5 furos.</li></ol><p class="alerta">A linha ${B3} (3V3) e a linha ${BG} (GND) nunca podem se encostar.</p>` });
+    passo({ t: 'Barramento do 3V3', vista: true, novo: ['b3'], html: () => `<ol><li>Corte um fio <b>sem capa</b> de uns <b>${busMm(SP3)} mm</b>.</li><li>No verso, deite reto sobre a <b>linha ${LN(B3)}</b>, da coluna <b>${SP3[0]} à ${SP3[1]}</b>, encostado nas ilhas.</li><li>Solde as pontas e onde houver marca no desenho (ferro no fio e na ilha juntos, 2 s, estanho).</li></ol><div class="confere"><b>Confira:</b> as duas pontas do fio apitam entre si.</div>` });
+    passo({ t: 'Barramento do GND', vista: true, novo: ['bg'], html: () => `<ol><li>Fio sem capa de uns <b>${busMm(SPG)} mm</b>.</li><li>Deite sobre a <b>linha ${LN(BG)}</b>, da coluna <b>${SPG[0]} à ${SPG[1]}</b>.</li><li>Solde as pontas e um ponto a cada 4 ou 5 furos.</li></ol><p class="alerta">A linha ${LN(B3)} (3V3) e a linha ${LN(BG)} (GND) nunca podem se encostar.</p>` });
     passo({ t: 'Teste: barramentos separados', vista: true, novo: [], sondas: [[SP3[1], B3, '+'], [SPG[0] + 3, BG, '−', '#111']], html: () => `<div class="confere"><b>Continuidade</b> entre o barramento 3V3 e o GND → <b style="color:var(--ruim)">não pode apitar</b>.</div>` });
     passo({ t: 'Close: como soldar um fio na placa', html: () => `<p>Todos os fios do manual são soldados do mesmo jeito: a ponta do fio entra na <b>mesma solda</b> que já prende o pino do soquete (ou o fio nu do barramento). Não precisa de furo novo.</p>${closeSolda()}<p class="dica">Se a solda ficou opaca ou o fio mexe quando você puxa de leve, reaqueça com um pouquinho de fluxo.</p>` });
-    passo({ t: 'Ligue o ESP32 aos barramentos', vista: true, novo: ['esp3', 'espg'], fios: ['esp3', 'espg'], html: () => comoFio + `<p class="dica">O fio vermelho cruza o barramento GND na linha ${BG}. Pode passar por cima: a capa isola.</p>` });
-    passo({ t: 'Primeiro teste ligado', vista: true, novo: [], esp: true, html: () => `<ol><li>Encaixe o ESP32 (antena à esquerda). Ligue o cabo USB na porta <b>COM</b> (a mesma que você já usa para gravar).</li><li>Multímetro em <b>tensão (V⎓)</b>: vermelha no barramento 3V3, preta no GND → <b>3,3 V</b>.</li><li>Grave o programa e abra o Monitor Serial (115200): PSRAM perto de 8388608.</li></ol>${bloco('etapa1', 'etapa1_psram.ino')}<p class="alerta">Se marcar 5 V no barramento, desligue: um fio foi para o pino errado.</p>` });
+    passo({ t: 'Ligue o ESP32 aos barramentos', vista: true, novo: ['esp3', 'espg'], fios: ['esp3', 'espg'], html: () => comoFio + `<p class="dica">O fio vermelho cruza o barramento GND na linha ${LN(BG)}. Pode passar por cima: a capa isola.</p>` });
+    passo({ t: 'Primeiro teste ligado', vista: true, novo: [], esp: true, html: () => `<ol><li>Encaixe o ESP32 (USB à esquerda, antena à direita). Ligue o cabo USB na porta <b>COM</b> (a mesma que você já usa para gravar).</li><li>Multímetro em <b>tensão (V⎓)</b>: vermelha no barramento 3V3, preta no GND → <b>3,3 V</b>.</li><li>Grave o programa e abra o Monitor Serial (115200): PSRAM perto de 8388608.</li></ol>${bloco('etapa1', 'etapa1_psram.ino')}<p class="alerta">Se marcar 5 V no barramento, desligue: um fio foi para o pino errado.</p>` });
     parte('Tela');
     passo({ t: 'Fios de energia da tela', vista: true, novo: ['tVCC', 'tGND'], fios: ['tVCC', 'tGND'], antes: 'Desligue o USB e tire o ESP32.', html: () => comoFio });
     passo({ t: 'Fios de sinal da tela', vista: true, novo: ['tCS', 'tRESET', 'tDC', 'tSDI', 'tSCK', 'tLED', 'tSDO'], fios: ['tCS', 'tRESET', 'tDC', 'tSDI', 'tSCK', 'tLED', 'tSDO'], html: () => `<p>7 fios <b>laranja</b>, um de cada vez.</p>` + comoFio + `<div class="confere"><b>Confira cada um:</b> o furo da tela e o furo do GPIO apitam entre si. Dois vizinhos do soquete da tela não apitam.</div>` });
