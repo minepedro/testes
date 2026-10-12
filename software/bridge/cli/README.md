@@ -65,3 +65,23 @@ Remover: `cp ~/.claude/settings.json.bak-20261011-192536 ~/.claude/settings.json
    Notification recebeu `permission_prompt` e `idle_prompt`. Explicacao do pedido: ultimo texto do
    assistente lido do transcript_path (pode atrasar, segundo a doc). Titulo nao vem nos hooks
    (vem do `--name`/API).
+
+7. Sessoes da NUVEM a partir da VPS (2026-10-11, CLI 2.1.287). `nuvem_nd.py` = adaptador
+   NAO DOCUMENTADO (API interna `/v1/sessions`, `/v1/code/sessions/<cse_id>/events`, OAuth da CLI;
+   aceitou eventos sem assinatura de dispositivo). Experimental: pode quebrar ou passar a exigir
+   assinatura; termos de uso nao confirmados.
+   - Listar (titulo, repo, estado, `environment_kind` bridge|anthropic_cloud): FUNCIONA (interno).
+   - Ultima resposta e pedidos pendentes (`control_request can_use_tool` sem resposta, ler TODAS
+     as paginas `has_more/after_id`): FUNCIONA (interno).
+   - Mensagem nova: `claude -p "msg" --cloud <id>` (DOCUMENTADO). Nao responde pergunta pendente.
+   - Criar sessao: `claude --cloud "tarefa"` interativo (pty) dentro do clone/branch escolhido.
+   - Responder via `control_response` com o `request_id` exato (interno), todos testados reais:
+     pergunta 1 opcao (Banana), multiSelect ("Azul, Vermelho"), recusar pergunta, permissao Bash
+     aprovar (executou, `user_temporary`) e recusar (nao executou, `user_reject`), aprovar plano
+     (ExitPlanMode; a sessao continuou em modo plan -> ponte deve voltar o modo depois),
+     `set_permission_mode`.
+   - "Sempre permitir": INCONCLUSIVO. Pedido so foi provocado com ask rule de repo (branch temporaria,
+     ja apagada), e ask rule prevalece; a 2a chamada pediu de novo. Nao oferecer na nuvem.
+   - Na nuvem, ferramentas comuns quase nunca pedem permissao (regras do ambiente/classificador
+     auto liberam Write/Bash/WebFetch); o normal e chegar pergunta, plano, ou pedido forcado por regra.
+   - Ask rule para arquivos: usar `Edit(...)`; `Write(...)` nao casa (aviso da propria CLI).
