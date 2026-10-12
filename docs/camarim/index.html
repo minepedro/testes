@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camarim do Mascote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: bancada. A tela do aparelho fica fixa a esquerda; o camarim de pecas e animacoes a direita. */
+:root {
+  --bg: #f1f0ee; --panel: #ffffff; --line: #dcd8d3; --fg: #1d1a17; --dim: #675f57;
+  --accent: #b0502c; --accent-ink: #ffffff;
+  --device: #0d0c0b; --device-edge: #2a2622; --device-ink: #8a8178;
+  --f-display: "Silkscreen", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121110; --panel: #1b1917; --line: #2f2b27; --fg: #ede6dc; --dim: #9b9188;
+    --accent: #e58a69; --accent-ink: #1a120d; --device-edge: #3a342f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121110; --panel: #1b1917; --line: #2f2b27; --fg: #ede6dc; --dim: #9b9188;
+  --accent: #e58a69; --accent-ink: #1a120d; --device-edge: #3a342f; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 4.2vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+.lead { color: var(--dim); max-width: 64ch; margin: 8px 0 0; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 32px; margin-top: 26px; align-items: start; }
+.stage { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 18px; min-width: 0; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } .stage { position: static; } }
+.aparelho { background: var(--device); border: 1px solid var(--device-edge); border-radius: 18px; padding: 14px 14px 10px; }
+canvas { display: block; width: 100%; max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 3px; touch-action: manipulation; cursor: pointer; }
+.etiqueta { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .05em; color: var(--device-ink); }
+.dica { color: var(--dim); font-size: 13.5px; margin: 0; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 17px; letter-spacing: .03em; margin: 0 0 10px; }
+.anims { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.anim { font: inherit; text-align: left; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px 10px; cursor: pointer; display: grid; gap: 1px; }
+.anim b { font-size: 14.5px; }
+.anim span { font-size: 12.5px; color: var(--dim); line-height: 1.35; }
+.anim[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opcoes { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 14px; }
+.opcoes label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.opcoes input { accent-color: var(--accent); width: 16px; height: 16px; }
+.camarim { min-width: 0; }
+.camada { padding-block: 12px; border-top: 1px solid var(--line); }
+.camada:first-of-type { border-top: 0; padding-top: 0; }
+.camada h3 { font-size: 12.5px; margin: 0 0 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 14px; line-height: 1.2; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.chip[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.chip small { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+.bloco { margin-top: 26px; }
+.combos { display: flex; flex-wrap: wrap; gap: 6px; }
+.saida { display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+.codigo { flex: 1; min-width: 0; font-family: var(--f-mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; overflow-x: auto; white-space: nowrap; user-select: all; }
+.botao { font: inherit; font-size: 14px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 8px; padding: 0 16px; cursor: pointer; }
+.botao.sec { background: var(--panel); color: var(--fg); border: 1px solid var(--line); font-weight: 400; }
+.linha { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.linha .botao { padding: 8px 14px; }
+.nota { color: var(--dim); font-size: 13.5px; margin: 10px 0 0; max-width: 62ch; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Camarim do Mascote</h1>
+    <p class="lead">Prévia das animações e dos acessórios na tela de 480×320, desenhados em blocos de pixel como no firmware. Escolha o visual e toque nas animações. Quando gostar, copie a linha no final e me mande.</p>
+  </header>
+
+  <div class="grid">
+    <section class="stage" aria-label="Tela do mascote">
+      <div class="aparelho">
+        <canvas id="tela" width="480" height="320" aria-label="Mascote animado"></canvas>
+        <div class="etiqueta"><span>ILI9488 · 480×320</span><span id="tocando">repouso</span></div>
+      </div>
+      <p class="dica">Toque na barriga para fazer cócegas. Se ele estiver cochilando, um toque acorda. Os olhos seguem o mouse ou o dedo.</p>
+      <div>
+        <h2>Animações</h2>
+        <div class="anims" id="anims"></div>
+        <div class="opcoes">
+          <label><input type="checkbox" id="repetir"> Repetir</label>
+          <label><input type="checkbox" id="seguir" checked> Olhos seguem o dedo</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="camarim" aria-label="Personalizar">
+      <h2>Visual</h2>
+      <div id="camadas"></div>
+
+      <div class="bloco">
+        <h2>Combinações prontas</h2>
+        <div class="combos" id="combos"></div>
+        <div class="linha">
+          <button class="botao sec" id="sortear" type="button">Sortear visual</button>
+          <button class="botao sec" id="limpar" type="button">Tirar tudo</button>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h2>Sua escolha</h2>
+        <div class="saida">
+          <div class="codigo" id="codigo" tabindex="0"></div>
+          <button class="botao" id="copiar" type="button">Copiar</button>
+        </div>
+        <p class="nota">Cada peça é feita só de retângulos, do mesmo jeito que o corpo já é desenhado na placa. No firmware, a escolha fica gravada na memória do ESP32, então continua lá depois de desligar.</p>
+      </div>
+    </section>
+  </div>
+  <div class="sr" aria-live="polite" id="aviso"></div>
+</div>
+
+<script>
+(() => {
+  // ---- geometria igual ao firmware (mascote.ino) ----
+  const W = 480, H = 320, PW = 15, PH = 30, BX = 105, BY = 96;
+  const SPRITE = ["...############...", "...############...", ".################.", "...############...", "....#.#....#.#...."];
+  const solido = (x, y) => y >= 0 && y < 5 && x >= 0 && x < 18 && SPRITE[y][x] === '#';
+  const F = { BG: '#141210', FLOOR: '#1b1613', SHADOW: '#0b0908', FG: '#ede6dc', DIM: '#8a8178', OK: '#6fbf73', BAD: '#e0675a',
+              WARN: '#e6b450', WARN_HI: '#f6d27e', PANEL: '#1a1613', LINE: '#2a2420' };
+  const CORES = {
+    laranja: ['#f0a07c', '#e5896a', '#d97757', '#bf6446', '#8f4731'],
+    azul:    ['#9cc4f0', '#7fb0e8', '#5f97d9', '#467bbf', '#2f5490'],
+    verde:   ['#a8dc8c', '#8fcf72', '#74bd57', '#5aa040', '#3b7029'],
+    roxo:    ['#c9a6f0', '#b48de6', '#9c72d9', '#7f56bf', '#573690'],
+    dourado: ['#f6d27e', '#ecc061', '#e0aa45', '#c18c2c', '#8a6219'],
+    rosa:    ['#f5a9c8', '#ec8db4', '#e0719f', '#c4567f', '#8f3757'],
+    cinza:   ['#c8c4bf', '#b0aba5', '#96918b', '#7a756f', '#524e49'],
+  };
+
+  const CAMADAS = [
+    { id: 'cabeca', nome: 'Cabeça', itens: [['nenhum', 'Nada'], ['cartola', 'Cartola'], ['bone', 'Boné'], ['cowboy', 'Cowboy'], ['coroa', 'Coroa'],
+      ['obra', 'Capacete de obra'], ['fone', 'Fone com microfone'], ['natal', 'Gorro de Natal'], ['festa', 'Chapéu de festa']] },
+    { id: 'olhos', nome: 'Olhos', itens: [['nenhum', 'Nada'], ['oculos', 'Óculos redondos'], ['escuros', 'Óculos escuros'], ['monoculo', 'Monóculo'], ['tapaolho', 'Tapa-olho']] },
+    { id: 'bigode', nome: 'Bigode', itens: [['nenhum', 'Nada'], ['classico', 'Clássico'], ['guidao', 'Guidão']] },
+    { id: 'boca', nome: 'Boca', itens: [['nenhum', 'Nada'], ['cigarro', 'Cigarro', 'seu pedido'], ['charuto', 'Charuto'], ['cachimbo', 'Cachimbo']] },
+    { id: 'peito', nome: 'Peito', itens: [['nenhum', 'Nada'], ['borboleta', 'Gravata-borboleta'], ['gravata', 'Gravata'], ['cachecol', 'Cachecol']] },
+    { id: 'mao', nome: 'Mão', itens: [['nenhum', 'Nada'], ['caneca', 'Caneca de café'], ['chave', 'Chave inglesa'], ['bandeira', 'Bandeira do Brasil']] },
+    { id: 'cor', nome: 'Cor do corpo', itens: [['laranja', 'Laranja'], ['azul', 'Azul'], ['verde', 'Verde'], ['roxo', 'Roxo'], ['dourado', 'Dourado'], ['rosa', 'Rosa'], ['cinza', 'Robô cinza']] },
+    { id: 'fundo', nome: 'Fundo', itens: [['liso', 'Liso'], ['estrelas', 'Estrelas'], ['porsol', 'Pôr do sol'], ['grama', 'Grama'], ['neve', 'Neve']] },
+  ];
+  const PADRAO = { cabeca: 'nenhum', olhos: 'nenhum', bigode: 'nenhum', boca: 'nenhum', peito: 'nenhum', mao: 'nenhum', cor: 'laranja', fundo: 'liso' };
+  const COMBOS = [
+    ['Chefão', { cabeca: 'cartola', olhos: 'monoculo', bigode: 'guidao', boca: 'charuto', peito: 'borboleta', mao: 'nenhum' }, 'arrumar'],
+    ['Malandro', { cabeca: 'bone', olhos: 'escuros', bigode: 'classico', boca: 'cigarro', peito: 'nenhum', mao: 'nenhum' }],
+    ['Programador', { cabeca: 'fone', olhos: 'oculos', bigode: 'nenhum', boca: 'nenhum', peito: 'nenhum', mao: 'caneca' }],
+    ['Peão de obra', { cabeca: 'obra', olhos: 'nenhum', bigode: 'classico', boca: 'nenhum', peito: 'nenhum', mao: 'chave' }],
+    ['Pirata', { cabeca: 'nenhum', olhos: 'tapaolho', bigode: 'guidao', boca: 'cachimbo', peito: 'cachecol', mao: 'nenhum' }],
+    ['Cowboy', { cabeca: 'cowboy', olhos: 'nenhum', bigode: 'guidao', boca: 'cigarro', peito: 'cachecol', mao: 'nenhum', fundo: 'porsol' }],
+    ['Natal', { cabeca: 'natal', olhos: 'nenhum', bigode: 'nenhum', boca: 'nenhum', peito: 'cachecol', mao: 'caneca', fundo: 'neve' }],
+    ['Torcedor', { cabeca: 'bone', olhos: 'nenhum', bigode: 'nenhum', boca: 'nenhum', peito: 'nenhum', mao: 'bandeira', fundo: 'grama' }],
+    ['Festa', { cabeca: 'festa', olhos: 'escuros', bigode: 'nenhum', boca: 'nenhum', peito: 'borboleta', mao: 'nenhum' }, 'comemorar'],
+  ];
+
+  const ANIMS = {
+    comemorar:   { nome: 'Comemorar', quando: 'Uma sessão terminou', dur: 3, txt: "sessao 'Corrigir build' concluida!" },
+    aprovacao:   { nome: 'Pedir aprovação', quando: 'Uma sessão pede permissão', dur: 5, txt: '1 aguardando - toque no topo', cor: 'WARN' },
+    aprovado:    { nome: 'Aprovado', quando: 'Você aprovou', dur: 2.2, txt: 'aprovado: npm run deploy', cor: 'OK' },
+    recusado:    { nome: 'Recusado', quando: 'Você recusou', dur: 2.2, txt: 'recusado: rm -rf node_modules', cor: 'BAD' },
+    tonto:       { nome: 'Tonto', quando: 'Erro ou teste falhou', dur: 3.5, txt: '3 testes falharam em api-pagamentos', cor: 'BAD' },
+    trabalhando: { nome: 'Trabalhando', quando: 'Sessão rodando há muito tempo', dur: 4, txt: 'trabalhando ha 12 min...' },
+    ouvindo:     { nome: 'Ouvindo', quando: 'Você segura e fala', dur: 4, txt: 'ouvindo... solte para enviar' },
+    cochilo:     { nome: 'Cochilo', quando: '10 min sem nada acontecer', dur: 8, txt: 'zzz... toque para acordar' },
+    cocegas:     { nome: 'Cócegas', quando: 'Toque na barriga', dur: 2.2, txt: 'hahaha para!' },
+    dancinha:    { nome: 'Dancinha', quando: 'Todas as sessões concluídas', dur: 5.4, txt: 'tum tss tum tss' },
+    arrumar:     { nome: 'Arrumar o bigode', quando: 'Parado à toa, de vez em quando', dur: 4.4, txt: 'hmm... impecavel' },
+  };
+
+  // ---- estado ----
+  let esc = { ...PADRAO };
+  try { const s = JSON.parse(localStorage.getItem('camarim-mascote') || 'null'); if (s) for (const k in PADRAO) if (s[k]) esc[k] = s[k]; } catch (e) {}
+  const salvar = () => { try { localStorage.setItem('camarim-mascote', JSON.stringify(esc)); } catch (e) {} };
+
+  const cv = document.getElementById('tela'), g = cv.getContext('2d');
+  const repetir = document.getElementById('repetir'), seguir = document.getElementById('seguir');
+  const reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let OX = 0, OY = 0;
+  const r = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x + OX), Math.round(y + OY), Math.round(w), Math.round(h)); };
+  const em = (o, fn) => { const a = OX, b = OY; OX = o.x; OY = o.y; fn(); OX = a; OY = b; };
+  const rnd = Math.random;
+
+  let anim = null, parts = [], ultimo = 0, emit = {};
+  let bigodeCurl = 0;   // depois de arrumar, as pontas ficam enroladas e voltam devagar
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const idle = { blinkAt: 2, blinkT: -1, glanceAt: 5, glanceUntil: 0, glanceDx: 0 };
+  const ponteiro = { x: 240, y: 140, ate: 0 };
+  const barras = new Array(16).fill(0);
+  const ceu = Array.from({ length: 46 }, () => ({ x: (rnd() * 160 | 0) * 3, y: 34 + (rnd() * 68 | 0) * 3, f: rnd() * 6, v: 1 + rnd() * 2 }));
+
+  const cada = (chave, intervalo, t, fn) => { if (t - (emit[chave] ?? -1e9) >= intervalo) { emit[chave] = t; fn(); } };
+  const add = p => { if (parts.length < 420) parts.push({ max: p.vida, seed: rnd() * 6, ...p }); };
+
+  // ---- animacoes: cada uma ajusta o estado do quadro ----
+  const PASSO = {
+    comemorar(s, a, t) {
+      const pulo = Math.abs(Math.sin(a * Math.PI * 2.2));
+      s.dy = a < 2.3 ? -pulo * 28 : 0; s.eye = 'feliz'; s.mouth = 2;
+      s.armR = s.armL = a < 2.3 ? 6 + pulo * 12 : 0;
+      if (!anim.feito) { anim.feito = 1; for (let i = 0; i < 80; i++) add({ tipo: 'confete', x: rnd() * W, y: 28 - rnd() * 90, vx: (rnd() - .5) * 70, vy: 70 + rnd() * 90, w: 5, h: 8, vida: 3.2, c: ['#e0675a', '#6fbf73', '#5f97d9', '#f6d27e', '#c9a6f0', '#ede6dc'][rnd() * 6 | 0] }); }
+    },
+    aprovacao(s, a) {
+      s.eyeH = 1.5; s.eyeDy = -.5; s.mouth = 1; s.alerta = true;
+      if (a < 2.2) s.armR = 16 + Math.sin(a * 13) * 9;
+      else s.legR = Math.sin(a * 14) > 0 ? 7 : 0;
+      s.eyeDx = a < 2.2 ? -.6 : 0;
+    },
+    aprovado(s, a) {
+      s.eye = 'feliz'; s.check = a < 1.9; s.mouth = 1;
+      s.dy = a < .9 ? -Math.abs(Math.sin(a * Math.PI / .3)) * 10 : 0;
+      s.armR = a < 1.6 ? 14 : 0;
+    },
+    recusado(s, a) {
+      const k = Math.max(0, 1 - a / 1.3);
+      s.dx = Math.sin(a * 18) * 9 * k; s.eyeDx = Math.sin(a * 18) * .4 * k; s.xis = a < 1.7;
+    },
+    tonto(s, a) {
+      s.eye = 'x'; s.estrelas = true; s.mouth = 1;
+      const bal = Math.sin(a * 3.2);
+      for (let i = 0; i < 4; i++) s.rowDx[i] = Math.round(bal * (3 - i) * 4);
+    },
+    trabalhando(s, a, t) {
+      s.eyeDx = 1; s.pontos = true; s.bodyDy = ((a * 6 | 0) % 2) * 2;
+      cada('suor', 1.1, t, () => add({ tipo: 'gota', x: 144 + s.dx, y: 108, vx: -6, vy: 10, w: 6, h: 9, c: '#7fb0e8', vida: 1.3 }));
+    },
+    ouvindo(s) {
+      s.eyeH = 1.5; s.eyeDy = -.5; s.barras = true;
+      for (let i = 0; i < 4; i++) s.rowDx[i] = (3 - i) * 3;
+    },
+    cochilo(s, a, t) {
+      if (a < 1.4) { s.eye = 'fechado'; s.mouth = a < 1.1 ? 2 : 1; s.armL = s.armR = a < 1.1 ? 10 : 0; return; }
+      s.eye = 'fechado'; s.bodyDy = Math.round((Math.sin(a * 1.7) + 1) * 2);
+      cada('zzz', 1.3, t, () => add({ tipo: 'texto', txt: 'z', x: 316, y: 108, vx: 16, vy: -20, vida: 2.8 }));
+    },
+    dancinha(s, a, t) {
+      const fase = a * 2.2 * Math.PI * 2, bate = Math.sin(fase) > 0;
+      if (a < 4) {
+        const lado = Math.sin(fase / 2);
+        s.dx = lado * 14; s.dy = -Math.abs(Math.sin(fase)) * 8;
+        for (let i = 0; i < 4; i++) s.rowDx[i] = Math.round(lado * (3 - i) * 3);
+        s.armL = bate ? 18 : 2; s.armR = bate ? 2 : 18;
+        s.legL = bate ? 7 : 0; s.legR = bate ? 0 : 7;
+        s.mouth = bate ? 1 : 0;
+      } else {
+        s.armL = s.armR = 24 * Math.min(1, (a - 4) / .25);
+        s.dy = -Math.abs(Math.sin((a - 4) * Math.PI / 1.4)) * 22; s.mouth = 2;
+      }
+      s.eye = 'feliz'; s.disco = Math.floor(a * 4.4);
+      cada('nota', .4, t, () => add({ tipo: 'nota', x: rnd() < .5 ? 70 + rnd() * 50 : 370 + rnd() * 50, y: 170, vx: (rnd() - .5) * 20, vy: -36, vida: 1.9,
+        c: ['#f6d27e', '#c9a6f0', '#7fb0e8', '#ec8db4'][rnd() * 4 | 0] }));
+    },
+    arrumar(s, a, t) {
+      s.bigode = 'guidao';
+      const ida = Math.min(1, a / .6), volta = a > 2.7 ? Math.min(1, (a - 2.7) / .5) : 0, k = ida * (1 - volta);
+      const gira = a > .6 && a < 2.7, ang = t * 22;
+      const ox = gira ? Math.cos(ang) * 4 : 0, oy = gira ? Math.sin(ang) * 4 : 0;
+      if (k > .05) s.maos = [[lerp(126, 152, k) + ox, lerp(162, 136, k) + oy], [lerp(342, 315, k) - ox, lerp(162, 136, k) + oy]];
+      s.armL = s.armR = 8 * k;
+      s.curl = a < .6 ? bigodeCurl : Math.max(bigodeCurl, Math.min(1, (a - .6) / 2));
+      s.torce = gira ? [Math.round(Math.sin(ang) * 3), Math.round(Math.cos(ang) * 3)] : [0, 0];
+      if (a > 2.7) bigodeCurl = 1;
+      if (a < 3.2) { s.eyeH = .5; s.eyeDy = .5; }       // olhar concentrado, meio fechado
+      else { s.eye = 'pisca'; s.brilho = true; }        // piscadinha e brilho no bigode
+    },
+    cocegas(s, a, t) {
+      s.dx = Math.sin(a * 42) * 3; s.eye = 'riso'; s.mouth = ((a * 8 | 0) % 2) + 1; s.armL = s.armR = 8;
+      cada('ha', .28, t, () => add({ tipo: 'texto', txt: 'ha', x: 330 + rnd() * 40, y: 112 + rnd() * 24, vx: 12, vy: -34, vida: 1.1 }));
+    },
+  };
+
+  function repouso(s, t, dt) {
+    if (idle.blinkT < 0 && t >= idle.blinkAt) idle.blinkT = 0;
+    if (idle.blinkT >= 0) { idle.blinkT += dt; if (idle.blinkT > .16) { idle.blinkT = -1; idle.blinkAt = t + 3 + rnd() * 3; } }
+    s.piscar = idle.blinkT >= 0;
+    if (!reduzir && t >= idle.glanceAt) { idle.glanceDx = rnd() < .5 ? -1 : 1; idle.glanceUntil = t + .9; idle.glanceAt = t + 4 + rnd() * 5; }
+    s.eyeDx = t < idle.glanceUntil ? idle.glanceDx : 0;
+    if (seguir.checked && t < ponteiro.ate) {
+      s.eyeDx = Math.max(-1, Math.min(1, (ponteiro.x - 240) / 150)) * .75;
+      s.eyeDy = Math.max(-1, Math.min(1, (ponteiro.y - 141) / 110)) * .35;
+    }
+  }
+
+  // ---- desenho: fundo, chao, corpo, olhos ----
+  // ceu em faixas, com uma linha de pixels misturados (pontilhado) entre uma faixa e outra
+  function ceuFaixas(cs, y0, y1) {
+    const h = (y1 - y0) / cs.length;
+    cs.forEach((c, i) => r(0, Math.round(y0 + i * h), W, Math.ceil(h) + 1, c));
+    for (let i = 1; i < cs.length; i++) {
+      const y = Math.round(y0 + i * h) - 3;
+      for (let x = 0; x < W; x += 6) { r(x, y, 3, 3, cs[i]); r(x + 3, y + 3, 3, 3, cs[i - 1]); }
+    }
+  }
+  function disco(cx, cy, raio, c, ateY = 999) {   // circulo em degraus de 3 px
+    for (let dy = -raio; dy < raio; dy += 3) {
+      if (cy + dy >= ateY) break;
+      const w = Math.round(Math.sqrt(raio * raio - (dy + 1.5) * (dy + 1.5)) / 3) * 6;
+      r(cx - w / 2, cy + dy, w, 3, c);
+    }
+  }
+  function morros(base, alt, freq, fase, c) {
+    for (let x = 0; x < W; x += 6) {
+      const h = Math.round(alt * (.55 + .45 * Math.sin(x * freq + fase) * Math.sin(x * freq * .37 + fase * 2)) / 3) * 3;
+      r(x, base - h, 6, h, c);
+    }
+  }
+  function pinheiro(x, base, h, c) {
+    r(x - 3, base - 9, 6, 9, c);
+    for (let k = 0; k < 3; k++) {
+      const topo = base - 9 - (k + 1) * h / 3;
+      for (let y = 0; y < h / 3 + 6; y += 3) { const w = Math.round((y + 6) * (1.3 - k * .25) / 3) * 3; r(x - w / 2, topo + y, w, 3, c); }
+    }
+  }
+  function nuvem(x, y) {
+    const C = '#eef3f8', S = '#c6d5e4';
+    r(x, y + 9, 60, 12, C); r(x + 9, y + 3, 24, 9, C); r(x + 27, y, 21, 12, C); r(x + 3, y + 18, 54, 3, S);
+  }
+  const FLORES = Array.from({ length: 18 }, (_, i) => ({ x: (i * 53 + 17) % 474, y: 3 + (i * 7) % 18, c: ['#f6d27e', '#ede6dc', '#ec8db4'][i % 3] }));
+  const PINHEIROS = [[30, 54], [70, 42], [118, 60], [380, 48], [420, 64], [462, 40], [196, 34], [292, 38]];
+
+  function fundo(t) {
+    const fy = BY + 150;
+    r(0, 0, W, H, F.BG);
+    if (esc.fundo === 'estrelas') for (const e of ceu) { const b = Math.sin(t * e.v + e.f); r(e.x, e.y, 3, 3, b > .55 ? F.FG : b > -.2 ? F.DIM : '#3a3531'); }
+    if (esc.fundo === 'porsol') {
+      ceuFaixas(['#1a1426', '#231830', '#30203a', '#45283f', '#5e3143', '#7c3c45'], 28, fy);
+      for (const [x, y] of [[40, 46], [150, 62], [420, 40], [300, 52], [458, 78]]) r(x, y, 3, 3, '#8a7f99');
+      disco(372, fy - 18, 42, '#f2a65a', fy);
+      disco(372, fy - 18, 30, '#f7c27a', fy);
+      for (const [y, h] of [[fy - 42, 2], [fy - 33, 3], [fy - 24, 4]]) r(320, y, 110, h, '#7c3c45');   // listras do sol
+      morros(fy, 30, .021, 1.3, '#3a1f36');
+      morros(fy, 16, .034, 4.1, '#24142a');
+    }
+    if (esc.fundo === 'grama') {
+      ceuFaixas(['#3c6fb0', '#4f82c0', '#6596cd', '#7fabda', '#9cc0e4'], 28, fy);
+      const dx = (t * 7) % (W + 120);
+      nuvem((40 + dx) % (W + 120) - 90, 46); nuvem((300 + dx * .7) % (W + 120) - 90, 74);
+      morros(fy, 34, .016, .4, '#5e9e52');
+      morros(fy, 18, .03, 2.2, '#4b8a40');
+    }
+    if (esc.fundo === 'neve') {
+      ceuFaixas(['#0f1626', '#141d31', '#19253c', '#1f2d47'], 28, fy);
+      for (const e of ceu) if (e.y < 150) r(e.x, e.y, 3, 3, Math.sin(t * e.v + e.f) > .3 ? '#c6d5e4' : '#3a4a66');
+      disco(66, 70, 18, '#e8e4da'); r(58, 62, 6, 6, '#c9c4b8'); r(70, 74, 6, 3, '#c9c4b8');
+      for (const [x, h] of PINHEIROS) pinheiro(x, fy, h, '#18233a');
+      cada('neve', .07, t, () => add({ tipo: 'neve', x: rnd() * W, y: 28, vx: (rnd() - .5) * 10, vy: 22 + rnd() * 22, w: 3, h: 3, c: '#eef3f8', vida: 12 }));
+    }
+  }
+
+  const SOMBRA = { porsol: '#140b16', grama: '#2c6324', neve: '#a3b4c8' };
+  function chao(s) {
+    const cx = 240, fy = BY + 150;
+    if (esc.fundo === 'grama') {
+      r(0, fy, W, 30, '#3f8a34'); r(0, fy, W, 3, '#5aa848');
+      for (let x = 0; x < W; x += 48) r(x, fy + 3, 24, 24, '#3a8030');
+      r(0, fy + 27, W, 3, '#2a4a1f');
+      for (const f of FLORES) { r(f.x, fy + f.y, 3, 3, f.c); }
+      for (let x = 2; x < W; x += 9) { const h = 3 + ((x * 7) % 3) * 3; r(x, fy - h, 3, h, '#5aa848'); }
+    } else if (esc.fundo === 'neve') {
+      r(0, fy, W, 30, '#dfe6ee'); r(0, fy + 18, W, 12, '#c6d1de');
+      for (let x = 0; x < W; x += 60) { r(x + 6, fy - 3, 36, 3, '#dfe6ee'); r(x + 15, fy - 6, 18, 3, '#dfe6ee'); }
+      for (let x = 11; x < W; x += 37) r(x, fy + 6 + (x % 9), 3, 3, '#ffffff');
+    } else if (esc.fundo === 'porsol') {
+      r(0, fy, W, 30, '#1d1020'); r(0, fy, W, 3, '#3a1f36');
+    } else {
+      const fl = [[300, 0], [240, 6], [180, 12]];
+      for (const [w, d] of fl) r(cx - w / 2, fy + 3 + d, w, 6, F.FLOOR);
+    }
+    if (s.disco !== undefined) {   // pista de danca piscando no ritmo
+      const cs = ['#5f3a8f', '#2f5490', '#8f3757', '#3b7029'];
+      [[300, 0], [240, 6], [180, 12]].forEach(([w, d], i) => { for (let k = 0; k < w / 30; k++) r(cx - w / 2 + k * 30, fy + 3 + d, 30, 6, cs[(k + i + s.disco) % 4]); });
+    }
+    const k = Math.max(.45, 1 + s.dy / 55), sh = [210, 150, 90];
+    sh.forEach((w, i) => r(cx - w * k / 2 + s.dx, fy + 3 + i * 6, w * k, 6, SOMBRA[esc.fundo] || F.SHADOW));
+  }
+
+  function neveNoCorpo(cab, s) {   // neve acumulada em cima da cabeca e dos bracos
+    const N = '#eef3f8';
+    em(cab, () => { r(152, 92, 176, 6, N); r(160, 88, 30, 4, N); r(212, 89, 40, 3, N); r(270, 88, 36, 4, N); r(152, 96, 176, 2, '#c6d5e4'); });
+    em({ x: cab.x, y: cab.y - s.armL }, () => r(122, 152, 26, 4, N));
+    em({ x: cab.x, y: cab.y - s.armR }, () => r(332, 152, 26, 4, N));
+  }
+
+  function corpo(s, P) {
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 18; x++) {
+      if (!solido(x, y)) continue;
+      const perna = y === 4;
+      let X = BX + x * PW + s.dx + (perna ? 0 : s.rowDx[y]);
+      let Y = BY + y * PH + s.dy + (perna ? 0 : s.bodyDy);
+      if (y === 2 && x >= 15) Y -= s.armR;
+      if (y === 2 && x <= 2) Y -= s.armL;
+      if (perna && x === 13) Y -= s.legR;
+      if (perna && x === 4) Y -= s.legL;
+      r(X, Y, PW, PH, perna ? P[3] : P[2]);
+      if (!solido(x - 1, y)) r(X, Y, 4, PH, perna ? P[2] : P[1]);
+      if (!solido(x, y - 1) || (y === 2 && (x >= 15 || x <= 2))) r(X, Y, PW, 6, P[0]);
+      if (!solido(x + 1, y)) r(X + PW - 4, Y, 4, PH, perna ? P[4] : P[3]);
+      if (!solido(x, y + 1)) r(X, Y + PH - 8, PW, 8, perna ? P[4] : P[3]);
+    }
+  }
+
+  function olhos(s, P) {
+    if (s.piscar) return;
+    const B = F.BG;
+    for (const ex of [5, 12]) {
+      const x = BX + (ex + s.eyeDx) * PW, y = BY + (1 + s.eyeDy) * PH;
+      if (s.eye === 'pisca' && ex === 5) r(x - 3, y + 20, PW + 6, 5, B);
+      else if (s.eye === 'normal' || s.eye === 'pisca') { r(x, y, PW, s.eyeH * PH, B); r(x, y - 4, PW, 4, P[4]); }
+      else if (s.eye === 'feliz') for (const [a, b] of [[-5, 20], [0, 14], [5, 9], [10, 14], [15, 20]]) r(x + a, y + b, 6, 6, B);
+      else if (s.eye === 'fechado') r(x - 3, y + 20, PW + 6, 5, B);
+      else if (s.eye === 'x') for (const [a, b] of [[-2, 0], [12, 0], [5, 7], [-2, 14], [12, 14]]) r(x + a, y + 5 + b, 6, 6, B);
+      else if (s.eye === 'riso') {
+        const pts = ex === 5 ? [[0, 0], [5, 4], [10, 8], [5, 12], [0, 16]] : [[10, 0], [5, 4], [0, 8], [5, 12], [10, 16]];
+        for (const [a, b] of pts) r(x + a, y + 4 + b, 6, 6, B);
+      }
+    }
+  }
+
+  function boca(s, P) {
+    if (s.mouth <= 0) return;
+    const x = BX + 8 * PW, y = BY + 2.5 * PH, h = s.mouth === 1 ? 12 : 22;
+    r(x, y, 2 * PW, h, F.BG); r(x, y - 4, 2 * PW, 4, P[4]);
+  }
+
+  // ---- acessorios (todos em retangulos, coordenadas da tela com o corpo parado) ----
+  const CABECA = {
+    cartola() { const K = '#1d1a18', L = '#3a3430'; r(160, 86, 160, 10, K); r(160, 86, 160, 2, L); r(186, 36, 108, 50, K); r(186, 36, 108, 3, L); r(186, 72, 108, 10, '#c8463a'); },
+    bone() { const R = '#c8463a', D = '#8f2f26'; r(234, 56, 12, 6, R); r(176, 62, 128, 6, R); r(164, 68, 152, 28, R); r(164, 90, 152, 6, D);
+      r(304, 86, 62, 8, R); r(304, 92, 62, 4, D); r(206, 72, 16, 12, '#ede6dc'); r(210, 76, 8, 4, R); },
+    cowboy() { const B = '#8a5a33', D = '#5e3b20'; r(182, 46, 116, 40, B); r(222, 46, 36, 6, D); r(182, 46, 116, 3, '#a8744a'); r(182, 76, 116, 8, '#2a1a10');
+      r(132, 86, 216, 10, B); r(132, 94, 216, 3, D); r(122, 76, 14, 14, B); r(344, 76, 14, 14, B); },
+    coroa() { const G = '#e0aa45', L = '#f6d27e'; r(176, 74, 128, 22, G); r(176, 74, 128, 3, L);
+      r(176, 54, 18, 20, G); r(231, 46, 18, 28, G); r(286, 54, 18, 20, G); r(180, 48, 10, 6, L); r(235, 40, 10, 6, L); r(290, 48, 10, 6, L);
+      r(204, 80, 10, 10, '#c8463a'); r(235, 80, 10, 10, '#5f97d9'); r(266, 80, 10, 10, '#c8463a'); },
+    obra() { const Y = '#e6b450', L = '#f6d27e', D = '#b88a2e'; r(184, 56, 112, 10, Y); r(184, 56, 112, 3, L); r(166, 64, 148, 28, Y);
+      r(234, 52, 12, 40, D); r(148, 88, 184, 4, Y); r(148, 92, 184, 8, D); },
+    fone() { const D = '#2a2420', C = '#3a3430'; r(162, 70, 156, 8, D); r(148, 78, 16, 10, D); r(316, 78, 16, 10, D); r(140, 88, 10, 30, D); r(330, 88, 10, 30, D);
+      r(128, 114, 24, 42, C); r(328, 114, 24, 42, C); r(134, 122, 6, 6, F.OK); r(146, 154, 5, 16, D); r(146, 168, 44, 5, D); r(188, 164, 12, 12, D); },
+    natal() { const R = '#c8463a', Wt = '#efe9e0'; r(160, 76, 160, 12, R); r(172, 64, 136, 12, R); r(188, 54, 108, 10, R); r(206, 46, 80, 8, R);
+      r(232, 40, 64, 6, R); r(272, 38, 40, 6, R); r(302, 42, 22, 10, R); r(318, 40, 18, 18, Wt); r(150, 86, 180, 14, Wt); },
+    festa() { const cs = ['#5f97d9', '#f6d27e']; const ws = [56, 48, 40, 32, 24, 16, 8];
+      ws.forEach((w, i) => r(240 - w / 2, 88 - i * 8, w, 8, cs[i % 2])); r(234, 28, 12, 12, '#e0675a'); },
+  };
+  const OLHOS = {
+    oculos() { const K = '#1d1a18'; for (const x0 of [170, 275]) { r(x0 + 4, 118, 28, 4, K); r(x0 + 4, 160, 28, 4, K); r(x0, 122, 4, 38, K); r(x0 + 32, 122, 4, 38, K); }
+      r(206, 132, 69, 4, K); r(150, 132, 20, 4, K); r(311, 132, 19, 4, K); },
+    escuros() { const K = '#0e0d0c'; for (const x0 of [166, 270]) { r(x0, 122, 44, 26, K); r(x0 + 4, 148, 36, 6, K); r(x0 + 6, 126, 8, 4, '#ede6dc'); }
+      r(210, 126, 60, 6, K); r(150, 126, 16, 5, K); r(314, 126, 16, 5, K); },
+    monoculo() { const G = '#e0aa45'; r(281, 118, 24, 4, G); r(281, 160, 24, 4, G); r(277, 122, 4, 38, G); r(305, 122, 4, 38, G);
+      for (let i = 0; i < 9; i++) r(306 + i * 2, 166 + i * 4, 3, 3, G); },
+    tapaolho() { const K = '#0e0d0c'; r(172, 118, 32, 42, K); r(176, 160, 24, 4, K); r(150, 128, 22, 4, K);
+      for (let i = 0; i < 11; i++) r(204 + i * 12, 120 - i * 2, 12, 4, K); },
+  };
+  const BIGODE = {
+    classico() { const M = '#3b2a1f'; r(216, 160, 48, 8, M); r(208, 164, 12, 8, M); r(260, 164, 12, 8, M); r(202, 170, 8, 4, M); r(270, 170, 8, 4, M); r(238, 160, 4, 4, '#5a4130'); },
+    guidao(s) {
+      const M = '#3b2a1f', up = Math.round((s.curl || 0) * 6), [wl, wr] = s.torce || [0, 0], yl = wl - up, yr = wr - up;
+      // as pontas saem para os lados, por fora dos olhos, e sobem
+      r(220, 160, 40, 8, M); r(204, 162, 18, 6, M); r(258, 162, 18, 6, M);
+      r(188, 160, 18, 6, M); r(274, 160, 18, 6, M);
+      r(178, 156 + Math.round(yl / 2), 12, 6, M); r(290, 156 + Math.round(yr / 2), 12, 6, M);
+      r(172, 150 + yl, 8, 6, M); r(300, 150 + yr, 8, 6, M);
+      if ((s.curl || 0) > .5) { r(167, 144 + yl, 6, 6, M); r(171, 139 + yl, 6, 5, M); r(307, 144 + yr, 6, 6, M); r(303, 139 + yr, 6, 5, M); }
+    },
+  };
+  const brasa = t => { const forte = (t % 4) < .6; return forte ? '#ffd27a' : ((t * 9 | 0) % 2 ? '#ff6a2a' : '#e0503a'); };
+  const BOCA = {
+    cigarro(t) { r(244, 172, 12, 6, '#c8925a'); r(256, 172, 30, 6, '#efe9e0'); r(286, 172, 4, 6, '#8a817b'); r(290, 172, 5, 6, brasa(t)); },
+    charuto(t) { r(242, 170, 48, 9, '#6b4226'); r(242, 170, 48, 2, '#8a5a33'); r(252, 170, 7, 9, '#c8463a'); r(286, 170, 4, 9, '#8a817b'); r(290, 170, 5, 9, brasa(t)); },
+    cachimbo(t) { r(248, 174, 32, 5, '#4a2e1a'); r(276, 156, 18, 24, '#6b4226'); r(276, 156, 18, 3, '#8a5a33'); r(279, 156, 12, 4, (t % 4) < .6 ? '#ffd27a' : '#e0503a'); },
+  };
+  const FUMACA = { cigarro: [295, 172, .15], charuto: [295, 170, .11], cachimbo: [285, 152, .13] };
+  const PEITO = {
+    borboleta() { const K = '#1d1a18'; r(234, 199, 12, 10, K); r(216, 196, 8, 18, K); r(224, 199, 10, 12, K); r(256, 196, 8, 18, K); r(246, 199, 10, 12, K); r(218, 198, 4, 5, '#3a3430'); },
+    gravata() { const B = '#5f97d9', D = '#2f5490'; r(234, 196, 12, 7, D); r(232, 203, 16, 9, B); r(236, 212, 8, 4, B); r(232, 207, 16, 2, D); },
+    cachecol() { const R = '#c8463a', Wt = '#efe9e0'; r(150, 180, 180, 14, R); for (let x = 162; x < 330; x += 30) r(x, 180, 6, 14, Wt);
+      r(290, 194, 18, 32, R); r(290, 204, 18, 5, Wt); for (let i = 0; i < 4; i++) r(291 + i * 5, 226, 3, 7, R); },
+  };
+  const MAO = {
+    caneca() { const Wt = '#efe9e0'; r(360, 148, 28, 36, Wt); r(360, 148, 28, 5, '#3a2418'); r(360, 164, 28, 6, '#d97757'); r(388, 156, 8, 4, Wt); r(392, 156, 4, 18, Wt); r(388, 170, 8, 4, Wt); r(384, 152, 4, 32, '#cfc8bf'); },
+    chave() { const G = '#a9a49e', D = '#6e6964'; r(364, 124, 10, 56, G); r(372, 124, 2, 56, D); r(354, 100, 30, 24, G); r(354, 100, 30, 3, '#c8c4bf'); r(362, 100, 14, 12, F.BG); r(380, 108, 4, 16, D); },
+    bandeira(t) { r(362, 78, 5, 108, '#8a5a33'); r(361, 74, 7, 6, '#e0aa45');
+      for (let c = 0; c < 7; c++) { const dy = Math.round(Math.sin(t * 5 - c * .8) * 2), x = 367 + c * 8; OY += dy;
+        r(x, 80, 8, 38, '#2f9e44');
+        const lin = [[83, 6, 395], [88, 20, 395], [93, 36, 395], [99, 44, 395], [105, 36, 395], [110, 20, 395], [115, 4, 395]];
+        for (const [yy, w, cx] of lin) { const a = Math.max(x, cx - w), b = Math.min(x + 8, cx + w); if (b > a) r(a, yy, b - a, 5, '#f6d000'); }
+        const a = Math.max(x, 386), b = Math.min(x + 8, 404); if (b > a) { r(a, 91, b - a, 18, '#2b4fa0'); r(a, 98, b - a, 3, '#ede6dc'); }
+        OY -= dy; } },
+  };
+
+  // ---- efeitos ----
+  function efeitos(s, t, cab) {
+    if (s.alerta) em(cab, () => { const c = (t * 3 | 0) % 2 ? F.WARN_HI : F.WARN; r(344, BY, 12, 26, c); r(344, BY + 34, 12, 12, c); });
+    if (s.pontos) { const p = (t * 4 | 0) % 4; for (let i = 0; i < 3; i++) r(340 + i * 20, BY - 4 - i * 6, 12, 12, i < p ? F.FG : F.DIM); }
+    if (s.check) for (const [a, b] of [[0, 14], [7, 21], [14, 14], [21, 7], [28, 0]]) { r(372 + a, 34 + b, 8, 8, F.OK); r(372 + a, 41 + b, 8, 4, F.OK); }
+    if (s.xis) for (const [a, b] of [[0, 0], [28, 0], [7, 7], [21, 7], [14, 14], [7, 21], [21, 21], [0, 28], [28, 28]]) r(372 + a, 34 + b, 8, 8, F.BAD);
+    if (s.estrelas) for (let i = 0; i < 3; i++) {
+      const ang = t * 4 + i * 2.094, x = 240 + Math.cos(ang) * 112 + cab.x, y = 72 + Math.sin(ang) * 14 + cab.y;
+      r(x - 2, y - 7, 4, 14, F.WARN_HI); r(x - 7, y - 2, 14, 4, F.WARN_HI);
+    }
+  }
+
+  function particulas(dt, t) {
+    for (const p of parts) {
+      p.vida -= dt;
+      if (p.tipo === 'gota') p.vy += 160 * dt;
+      p.x += (p.vx + (p.tipo === 'fumaca' || p.tipo === 'vapor' ? Math.sin(t * 3 + p.seed) * 8 : 0)) * dt; p.y += p.vy * dt;
+      if (p.tipo === 'neve' && p.y > BY + 152) p.vida = 0;
+    }
+    parts = parts.filter(p => p.vida > 0);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (const p of parts) {
+      const f = 1 - p.vida / p.max;
+      if (p.tipo === 'fumaca' || p.tipo === 'vapor') {
+        const cs = p.tipo === 'fumaca' ? ['#9a9088', '#6e6760', '#4a443f', '#2e2a27'] : ['#cfc8bf', '#8a8178', '#4a443f'];
+        const sz = 4 + f * (p.tipo === 'fumaca' ? 8 : 4);
+        r(p.x - sz / 2, p.y - sz / 2, sz, sz, cs[Math.min(cs.length - 1, f * cs.length | 0)]);
+      } else if (p.tipo === 'nota') {
+        r(p.x, p.y, 8, 6, p.c); r(p.x + 6, p.y - 14, 2, 16, p.c); r(p.x + 8, p.y - 14, 5, 3, p.c); r(p.x + 11, p.y - 11, 2, 4, p.c);
+      } else if (p.tipo === 'confete') { const v = ((t * 7 + p.seed) | 0) % 2; r(p.x, p.y, v ? p.w : p.h, v ? p.h : p.w, p.c); }
+      else if (p.tipo === 'texto') {
+        g.fillStyle = f < .6 ? F.FG : F.DIM;
+        g.font = `bold ${Math.round(12 + f * 10)}px "JetBrains Mono", monospace`; g.fillText(p.txt, Math.round(p.x), Math.round(p.y));
+      } else r(p.x, p.y, p.w, p.h, p.c);
+    }
+  }
+
+  function cabecalho() {
+    r(0, 0, W, 26, F.PANEL); r(0, 26, W, 2, F.LINE);
+    g.font = '12px "JetBrains Mono", monospace'; g.textBaseline = 'middle';
+    g.fillStyle = F.FG; g.textAlign = 'left'; g.fillText('14:05', 12, 14);
+    g.textAlign = 'right'; g.fillStyle = F.DIM; g.fillText('3 sessoes  ponte ok', 452, 14); r(458, 10, 8, 8, F.OK);
+  }
+
+  function rodape(s, txt, cor) {
+    if (s.barras) for (let i = 0; i < 16; i++) barras[i] += ((.15 + rnd() * .85) - barras[i]) * .35;
+    else for (let i = 0; i < 16; i++) barras[i] *= .8;
+    const bx = (W - (16 * 6 + 15 * 4)) / 2, base = 288;
+    for (let i = 0; i < 16; i++) { const h = Math.max(2, Math.round(barras[i] * 14) * 2); r(bx + i * 10, base - h, 6, h, barras[i] > .05 ? CORES[esc.cor][2] : F.DIM); }
+    g.font = '13px "JetBrains Mono", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = cor; g.fillText(txt, W / 2, 306);
+  }
+
+  // ---- laco principal ----
+  function quadro(ms) {
+    const t = ms / 1000, dt = Math.min(.05, t - (ultimo || t)); ultimo = t;
+    const s = { dx: 0, dy: 0, bodyDy: 0, rowDx: [0, 0, 0, 0], eye: 'normal', eyeDx: 0, eyeDy: 0, eyeH: 1, mouth: 0, armR: 0, armL: 0, legR: 0, legL: 0 };
+    if (anim && t - anim.t0 > ANIMS[anim.id].dur) {
+      if (repetir.checked) { anim.t0 = t; anim.feito = 0; } else parar();
+    }
+    let txt = 'segure e fale para criar uma sessao', cor = F.DIM;
+    if (anim) { const A = ANIMS[anim.id]; PASSO[anim.id](s, t - anim.t0, t); txt = A.txt; cor = F[A.cor || 'FG']; }
+    else repouso(s, t, dt);
+    if (!anim || anim.id !== 'arrumar') bigodeCurl = Math.max(0, bigodeCurl - dt / 25);
+    if (s.curl === undefined) s.curl = bigodeCurl;
+
+    const P = CORES[esc.cor];
+    const cab = { x: s.dx + s.rowDx[0], y: s.dy + s.bodyDy }, rosto = { x: s.dx + s.rowDx[1], y: s.dy + s.bodyDy };
+    const peito = { x: s.dx + s.rowDx[2], y: s.dy + s.bodyDy }, mao = { x: s.dx + s.rowDx[2], y: s.dy + s.bodyDy - s.armR };
+
+    if (FUMACA[esc.boca]) { const [fx, fy, ev] = FUMACA[esc.boca]; cada('fumaca', (t % 4) < .6 ? ev / 2 : ev, t, () => add({ tipo: 'fumaca', x: fx + rosto.x, y: fy + rosto.y, vx: 6 + rnd() * 8, vy: -22 - rnd() * 12, vida: 2.2 })); }
+    if (esc.mao === 'caneca') cada('vapor', .3, t, () => add({ tipo: 'vapor', x: 366 + rnd() * 16 + mao.x, y: 144 + mao.y, vx: (rnd() - .5) * 6, vy: -16, vida: 1.4 }));
+
+    fundo(t); cabecalho(); chao(s); corpo(s, P);
+    em(rosto, () => olhos(s, P)); em(peito, () => boca(s, P));
+    if (esc.fundo === 'neve') neveNoCorpo(cab, s);
+    if (PEITO[esc.peito]) em(peito, PEITO[esc.peito]);
+    const bigode = s.bigode || esc.bigode;
+    if (BIGODE[bigode]) em(rosto, () => BIGODE[bigode](s));
+    // luvinhas brancas, para as maos aparecerem na frente do corpo
+    if (s.maos) em(rosto, () => { for (const [x, y] of s.maos) { r(x, y, 14, 14, '#efe9e0'); r(x + 10, y, 4, 14, '#bdb5ab'); r(x, y + 11, 14, 3, '#bdb5ab'); r(x + 3, y - 3, 4, 3, '#efe9e0'); } });
+    if (s.brilho && (ms / 120 | 0) % 2) em(rosto, () => { for (const x of [162, 318]) { r(x - 1, 124, 3, 11, F.WARN_HI); r(x - 5, 128, 11, 3, F.WARN_HI); } });
+    if (OLHOS[esc.olhos]) em(rosto, OLHOS[esc.olhos]);
+    if (BOCA[esc.boca]) em(rosto, () => BOCA[esc.boca](t));
+    if (CABECA[esc.cabeca]) em(cab, CABECA[esc.cabeca]);
+    if (MAO[esc.mao]) em(mao, () => MAO[esc.mao](t));
+    efeitos(s, t, cab);
+    particulas(dt, t);
+    rodape(s, txt, cor);
+    requestAnimationFrame(quadro);
+  }
+
+  // ---- interface ----
+  const tocando = document.getElementById('tocando'), aviso = document.getElementById('aviso');
+  const botoesAnim = {};
+  function tocar(id) {
+    anim = { id, t0: performance.now() / 1000, feito: 0 }; emit = {};
+    for (const k in botoesAnim) botoesAnim[k].setAttribute('aria-pressed', String(k === id));
+    tocando.textContent = ANIMS[id].nome.toLowerCase(); aviso.textContent = 'Tocando: ' + ANIMS[id].nome;
+  }
+  function parar() {
+    anim = null; tocando.textContent = 'repouso';
+    for (const k in botoesAnim) botoesAnim[k].setAttribute('aria-pressed', 'false');
+  }
+  const caixaAnims = document.getElementById('anims');
+  for (const [id, A] of Object.entries(ANIMS)) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'anim'; b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = `<b>${A.nome}</b><span>quando: ${A.quando}</span>`;
+    b.addEventListener('click', () => anim && anim.id === id ? parar() : tocar(id));
+    botoesAnim[id] = b; caixaAnims.appendChild(b);
+  }
+
+  const caixaCamadas = document.getElementById('camadas'), chips = {};
+  for (const c of CAMADAS) {
+    const sec = document.createElement('div'); sec.className = 'camada';
+    sec.innerHTML = `<h3 id="h-${c.id}">${c.nome}</h3>`;
+    const linha = document.createElement('div'); linha.className = 'chips'; linha.setAttribute('role', 'radiogroup'); linha.setAttribute('aria-labelledby', 'h-' + c.id);
+    chips[c.id] = {};
+    for (const [v, rot, tag] of c.itens) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.setAttribute('role', 'radio'); b.id = `op-${c.id}-${v}`;
+      if (c.id === 'cor') b.innerHTML = `<i style="background:${CORES[v][2]}"></i>${rot}`;
+      else b.innerHTML = rot + (tag ? ` <small>${tag}</small>` : '');
+      b.addEventListener('click', () => { esc[c.id] = v; atualizar(); });
+      chips[c.id][v] = b; linha.appendChild(b);
+    }
+    sec.appendChild(linha); caixaCamadas.appendChild(sec);
+  }
+
+  const caixaCombos = document.getElementById('combos');
+  for (const [nome, vals, an] of COMBOS) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = nome;
+    b.addEventListener('click', () => { Object.assign(esc, { fundo: 'liso' }, vals); atualizar(); if (an) tocar(an); });
+    caixaCombos.appendChild(b);
+  }
+  document.getElementById('sortear').addEventListener('click', () => {
+    for (const c of CAMADAS) { if (c.id === 'fundo' && rnd() < .5) { esc.fundo = 'liso'; continue; } esc[c.id] = c.itens[rnd() * c.itens.length | 0][0]; }
+    atualizar();
+  });
+  document.getElementById('limpar').addEventListener('click', () => { esc = { ...PADRAO, cor: esc.cor }; atualizar(); });
+
+  const codigo = document.getElementById('codigo');
+  function atualizar() {
+    for (const c of CAMADAS) for (const v in chips[c.id]) chips[c.id][v].setAttribute('aria-checked', String(esc[c.id] === v));
+    codigo.textContent = CAMADAS.map(c => `${c.id}=${esc[c.id]}`).join(' ');
+    if (esc.fundo !== 'neve') parts = parts.filter(p => p.tipo !== 'neve');
+    salvar();
+  }
+  const copiar = document.getElementById('copiar');
+  copiar.addEventListener('click', () => {
+    const ok = () => { copiar.textContent = 'Copiado'; setTimeout(() => copiar.textContent = 'Copiar', 1600); };
+    const manual = () => { const sel = getSelection(), rg = document.createRange(); rg.selectNodeContents(codigo); sel.removeAllRanges(); sel.addRange(rg); copiar.textContent = 'Selecionado: Ctrl+C'; setTimeout(() => copiar.textContent = 'Copiar', 2400); };
+    try { navigator.clipboard.writeText(codigo.textContent).then(ok, manual); } catch (e) { manual(); }
+  });
+
+  const pos = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) * W / b.width, y: (e.clientY - b.top) * H / b.height }; };
+  cv.addEventListener('pointermove', e => { const p = pos(e); ponteiro.x = p.x; ponteiro.y = p.y; ponteiro.ate = performance.now() / 1000 + 2; });
+  cv.addEventListener('pointerdown', e => {
+    const p = pos(e); ponteiro.x = p.x; ponteiro.y = p.y; ponteiro.ate = performance.now() / 1000 + 2;
+    if (anim && anim.id === 'cochilo') { parar(); return; }
+    if (p.x > 140 && p.x < 340 && p.y > 90 && p.y < 250) tocar('cocegas');
+  });
+
+  atualizar();
+  requestAnimationFrame(quadro);
+})();
+</script>
+</body>
+</html>

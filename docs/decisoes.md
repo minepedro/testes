@@ -102,3 +102,9 @@ Revisado em 2026-10-11: antes, a nuvem era só para ver.
 O texto aparece na tela antes de ir para o Claude (Enviar ou Descartar), por causa de erros de transcricao (risco da decisao 8).
 - Dentro de uma sessao: o texto vira mensagem para ela.
 - Na tela inicial: o texto vira a tarefa de uma sessao nova; depois escolhe repositorio e branch.
+
+## 27. Camarim: acessórios e animações
+**O mascote ganha acessórios em camadas e animações ligadas aos eventos das sessões, escolhidos numa tela "Camarim" no próprio aparelho.**
+- Camadas (uma peça de cada): cabeça, olhos, bigode, boca, peito, mão, cor do corpo e fundo. A escolha fica gravada na NVS do ESP32.
+- Animações: comemorar (sessão concluída), dancinha (todas concluídas), pedir aprovação, aprovado, recusado, tonto (erro), trabalhando, ouvindo, cochilo (10 min parado), cócegas (toque curto no corpo) e arrumar o bigode (sozinho, de vez em quando). No Camarim, qualquer uma pode ser tocada à mão.
+- Tudo é desenhado só com retângulos, como o corpo. A prévia em `docs/camarim/index.html` é a especificação (formas, cores e tempos), e `docs/camarim/PROMPT-firmware.md` é o pedido para levar isso ao firmware.
