@@ -25,6 +25,7 @@ from comum import (ascii_tela, classificar, detalhe_ferramenta, ha_quanto, pergu
                    respostas_para_answers, resumo_curto, resumo_ferramenta, tipo_pedido)
 
 MAX_CORPO = 64 * 1024
+MAX_VOZ = 1024 * 1024          # PCM 16 kHz 16 bits: ~32 s (o nginx aceita 1 MB por padrao)
 ESTADO_COMPAT = {'esperando': 'waiting', 'trabalhando': 'working', 'parada': 'idle',
                  'encerrada': 'done', 'desconectada': 'done'}
 ESTADO_NUVEM = {'running': 'trabalhando', 'requires_action': 'esperando', 'idle': 'parada'}
@@ -47,8 +48,8 @@ def asciificar(o):
 
 
 class Ponte:
-    def __init__(self, vps, nuvem=None, repos=None, cfg=None):
-        self.vps, self.nuvem, self.repos = vps, nuvem, repos
+    def __init__(self, vps, nuvem=None, repos=None, cfg=None, stt=None):
+        self.vps, self.nuvem, self.repos, self.stt = vps, nuvem, repos, stt
         self.cfg = cfg or dict(comum.CONFIG_PADRAO)
         self.trava = threading.RLock()
         self.pedidos = {}          # id -> pedido
@@ -353,6 +354,23 @@ class Ponte:
         code, obj = self.responder(pid, {'decisao': acao})
         return code, {'ok': code == 200, 'msg': obj.get('erro') or obj.get('msg') or 'ok', 'pedido': pid}
 
+    # ------------------------------------------------------------------ voz
+    def voz(self, pcm):
+        """PCM s16le mono 16 kHz -> texto (decisao 26). O aparelho mostra o texto antes de enviar."""
+        if self.stt is None:
+            return 503, {'erro': 'transcricao desligada'}
+        import stt as stt_mod
+        t0 = time.time()
+        try:
+            texto = self.stt.transcrever(pcm)
+        except stt_mod.SemTranscritor as e:
+            return 503, {'erro': 'transcricao indisponivel', 'msg': str(e)}
+        except Exception as e:  # noqa: BLE001
+            log('voz falhou', type(e).__name__, str(e)[:200])
+            return 500, {'erro': 'falha ao transcrever'}
+        log('voz: %.1f s de audio em %.1f s -> %d caracteres' % (len(pcm) / 32000, time.time() - t0, len(texto)))
+        return 200, {'texto': texto, 'segundos': round(len(pcm) / 32000, 1)}
+
     # ------------------------------------------------------------------ criar / mensagem
     def criar_sessao(self, c):
         origem = c.get('origem')
@@ -513,6 +531,11 @@ def criar_handler(ponte, token_aparelho, token_hook):
                         return self._json(400, {'erro': 'nome invalido'})
                     return self._json(200, ponte.repos.branches(p[1] + '/' + p[2]))
                 return self._json(404, {'erro': 'nao existe'})
+            if p == ['voz']:
+                n = int(self.headers.get('Content-Length') or 0)
+                if n > MAX_VOZ:
+                    return self._json(413, {'erro': 'audio longo'})
+                return self._json(*ponte.voz(self.rfile.read(n)))
             d = self._corpo()
             if d is None:
                 return
@@ -562,7 +585,9 @@ def main():
     from fonte_vps import FonteVPS
     from repos import Repos
     repos = Repos()
-    ponte = Ponte(FonteVPS(repos=repos), Nuvem(dias=cfg.get('nuvem_dias', 7)), repos, cfg)
+    from stt import Transcritor
+    ponte = Ponte(FonteVPS(repos=repos), Nuvem(dias=cfg.get('nuvem_dias', 7)), repos, cfg,
+                  Transcritor(cfg) if cfg.get('stt_ativo', True) else None)
     if cfg.get('nuvem_ativa', True):
         threading.Thread(target=ponte.laco_nuvem, daemon=True).start()
     srv = ThreadingHTTPServer(('127.0.0.1', a.porta), criar_handler(ponte, token, th))

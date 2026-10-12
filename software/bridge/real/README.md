@@ -64,6 +64,19 @@ So age com cwd sob `~/repos/` ou `~/mascote-cli-lab/`; ponte fora do ar em 2 s -
   `POST /api/acao {id: <sessao>, acao}`: vale so para o pedido servido no ultimo `/api/estado` daquela sessao e ainda
   pendente (senao 409). so_no_app -> `ask.text` "APROVE PELO APP: ..." e acao 403. Pergunta -> acao 409.
 
+## Voz (decisao 26)
+- `POST /api/voz` corpo cru PCM s16le mono 16 kHz (`Content-Type: application/octet-stream`, max 1 MB ~ 32 s)
+  -> `{texto, segundos}` | 503 (transcricao desligada ou faster-whisper ausente) | 413. So transcreve: o aparelho
+  mostra o texto e so depois envia (`/api/sessoes/{id}/mensagem` ou `POST /api/sessoes`).
+- `stt.py`: faster-whisper local (modelo `small`, `pt`, int8 na CPU; carrega na 1a fala). Config `stt_ativo`,
+  `stt_modelo`, `stt_idioma`, `stt_threads`. Instalar num venv e apontar o ExecStart da unit para ele:
+  ```
+  python3 -m venv ~/.local/share/mascote/venv
+  ~/.local/share/mascote/venv/bin/pip install faster-whisper
+  # unit: ExecStart=%h/.local/share/mascote/venv/bin/python3 .../ponte_real.py --porta ${PORTA}
+  ```
+  O modelo `small` usa ~1 GB de RAM; com pouca RAM use `base`. O nginx precisa aceitar 1 MB (`client_max_body_size 1m`, o padrao).
+
 ## Regras
 - Perigosos (comum.PERIGOS) e falhas da nuvem: `so_no_app`. `sempre` so na VPS (addRules comando exato, session).
 - Plano na VPS: hook trata ExitPlanMode no **PreToolUse** (padrao `MASCOTE_PLANO_VIA=pre`): aprovado -> sessao sai do

@@ -96,3 +96,9 @@ Revisado em 2026-10-11: antes, a nuvem era só para ver.
 - Decisão 20: as sessões da VPS usam o **login completo do claude.ai** na CLI (`claude` → `/login`), não `claude setup-token` (esse token só serve para chamadas ao modelo; o Remote Control exige o login).
 - Decisão 22: "todos os repositórios" inclui os das organizações do Pedro (ex.: `byesolutions`), listados à parte com `gh repo list <org>`.
 - Mensagens novas para sessões da VPS usam `tmux send-keys` (não documentado), só com a sessão parada e confirmando a chegada pelo hook `UserPromptSubmit`.
+
+## 26. Voz
+**Segurar a tela, falar e soltar. O ESP32 grava PCM 16 kHz e manda para a ponte, que transcreve com Whisper local na VPS (faster-whisper, modelo small, portugues).** Gratis e privado: o audio nao sai do servidor.
+O texto aparece na tela antes de ir para o Claude (Enviar ou Descartar), por causa de erros de transcricao (risco da decisao 8).
+- Dentro de uma sessao: o texto vira mensagem para ela.
+- Na tela inicial: o texto vira a tarefa de uma sessao nova; depois escolhe repositorio e branch.

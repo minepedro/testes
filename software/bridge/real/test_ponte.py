@@ -292,6 +292,37 @@ class TestHTTP(unittest.TestCase):
         self.assertEqual(self.chamar('POST', '/interno/eventos', {}, {'X-Token': TOKEN})[0], 401)
         self.assertEqual(self.chamar('GET', '/api/sessoes', cab={'X-Hook-Token': HOOKTOK})[0], 401)
 
+    def test_voz(self):
+        class Fake:
+            def transcrever(self, pcm):
+                return 'rode os testes' if pcm else ''
+        h = {'X-Token': TOKEN, 'Content-Type': 'application/octet-stream'}
+        antigo = self.p.stt
+        try:
+            self.p.stt = None
+            self.assertEqual(self.chamar('POST', '/api/voz', cab=h, cru=b'\0' * 100)[0], 503)
+            self.p.stt = Fake()
+            st, r, _ = self.chamar('POST', '/api/voz', cab=h, cru=b'\0' * 32000)
+            self.assertEqual((st, r['texto'], r['segundos']), (200, 'rode os testes', 1.0))
+            self.assertEqual(self.chamar('POST', '/api/voz', cab={'Content-Type': 'application/octet-stream'},
+                                         cru=b'\0' * 10)[0], 401)
+            try:   # a ponte responde 413 sem ler o corpo; o cliente pode ver a conexao fechada antes
+                self.assertEqual(self.chamar('POST', '/api/voz', cab=h, cru=b'\0' * (ponte_real.MAX_VOZ + 2))[0], 413)
+            except (ConnectionError, urllib.error.URLError):
+                pass
+        finally:
+            self.p.stt = antigo
+
+    def test_stt_sem_biblioteca(self):
+        import stt
+        t = stt.Transcritor()
+        self.assertEqual(t.transcrever(b'\0' * 100), '')          # curto demais: nem carrega o modelo
+        try:
+            import faster_whisper  # noqa: F401
+        except ImportError:
+            with self.assertRaises(stt.SemTranscritor):
+                t.transcrever(b'\0' * 32000)
+
     def test_corpo_grande(self):
         c = self.chamar('POST', '/api/acao', cab={'X-Token': TOKEN}, cru=b'{"a":"' + b'x' * 70000 + b'"}')
         self.assertEqual(c[0], 413)
