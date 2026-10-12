@@ -277,7 +277,7 @@ void tarefaRede(void *) {
       bool mudou = novo != redeLink || lidas.size() != redeSessoes.size() || h != redeHora;
       for (size_t i = 0; !mudou && i < lidas.size(); i++) {
         const Sessao &a = lidas[i], &b = redeSessoes[i];
-        mudou = a.id != b.id || a.status != b.status || a.ago != b.ago || a.last != b.last || a.askText != b.askText || a.title != b.title;
+        mudou = a.id != b.id || a.status != b.status || a.ago != b.ago || a.last != b.last || a.askText != b.askText || a.title != b.title || a.reply != b.reply || a.repo != b.repo;
       }
       if (novo == PONTE_OK) { redeSessoes = lidas; redeHora = h; }
       redeLink = novo;
@@ -405,6 +405,20 @@ int menuRolagem = 0;
 String filtro;                      // "" = todas; "-" = sem repositorio; senao o repositorio
 String novaTexto, novaRepo;         // sessao nova em montagem
 Tela telaAntesDoMenu = T_MASCOTE;
+bool vinculando = false;            // menus de repo/branch servem para vincular repo a sessao atual
+String vincularId;
+// resposta do Claude: ultimo reply mostrado por sessao (hash) e espera depois de enviar mensagem
+std::vector<std::pair<String, uint32_t>> replyMostrado;
+String esperandoRespId;
+uint32_t hashTxt(const String &t) { uint32_t h = 2166136261u; for (size_t i = 0; i < t.length(); i++) h = (h ^ (uint8_t)t[i]) * 16777619u; return h; }
+uint32_t &replyVisto(const String &id) {
+  for (auto &p : replyMostrado) if (p.first == id) return p.second;
+  if (replyMostrado.size() > 40) replyMostrado.erase(replyMostrado.begin());
+  replyMostrado.push_back({id, 0});
+  return replyMostrado.back().second;
+}
+bool semRepoVps(Sessao *s) { return s && !s->repo.length() && !s->id.startsWith("session_"); }
+constexpr int VINC_X = 300, VINC_W = 96;   // botao 'vincular repo' no cabecalho da sessao
 
 void entrar(Estado e) {
   m.estado = e; m.t = 0;
@@ -592,6 +606,7 @@ void desenharRodape() {
   else if (voz.fase == V_ENVIANDO) txt = "enviando...";
   else if (m.estado == PENSANDO) txt = "";
   else if (m.estado == RESPONDENDO) { txt = m.texto.substring(0, m.typed); cor = C_FG; }
+  else if (s && esperandoRespId == s->id) { txt = "aguardando resposta..."; cor = C_DIM; }
   else if (s) { txt = s->last; cor = C_FG; }
   else if (m.estado == ALERTA) { txt = String(aguardando()) + " aguardando - toque no topo"; cor = C_WARN; }
   else if (respostaCasa.length()) { txt = respostaCasa; cor = C_FG; }
@@ -637,9 +652,18 @@ void desenharCabecalhoSessao() {
   tft.setFont(&fonts::Font2);
   tft.setTextDatum(middle_left);
   tft.setTextColor(C_FG, C_PANEL);
-  tft.drawString(cortar(tft, s->title, W - 44 - 90).c_str(), 44, 15);
+  bool vinc = semRepoVps(s);
+  int larg = vinc ? VINC_X - 44 - 8 : W - 44 - 90;
+  tft.drawString(cortar(tft, s->title, larg).c_str(), 44, 15);
   tft.setTextColor(C_DIM, C_PANEL);
-  tft.drawString(cortar(tft, s->repo.length() ? s->repo + " - " + s->branch : "avulsa", W - 44 - 90).c_str(), 44, 33);
+  tft.drawString(cortar(tft, s->repo.length() ? s->repo + " - " + s->branch : "avulsa", larg).c_str(), 44, 33);
+  if (vinc) {
+    tft.drawRect(VINC_X, 8, VINC_W, HDR_S - 16, C_BODY); tft.drawRect(VINC_X + 1, 9, VINC_W - 2, HDR_S - 18, C_BODY);
+    tft.setTextDatum(middle_center);
+    tft.setTextColor(C_FG, C_PANEL);
+    tft.drawString("vincular repo", VINC_X + VINC_W / 2, HDR_S / 2 + 1);
+    tft.setTextDatum(middle_left);
+  }
   glifo(tft, s->status, W - 30, 15);
   int outras = aguardando() - (s->status == "waiting");
   if (outras > 0) {
@@ -785,6 +809,7 @@ void redesenharTudo() {
 void irPara(Tela t, const String &id = "") {
   tela = t;
   if (id.length()) atualId = id;
+  if (t == T_SESSAO) { Sessao *s = sessaoAtual(); if (s) replyVisto(s->id) = hashTxt(s->reply); }  // nao repete resposta velha
   if (t == T_LISTA) { recalcVisiveis(); rolagem = min(rolagem, rolagemMax()); }
   if (t == T_MASCOTE || t == T_SESSAO) entrar(estadoDeRepouso());
   tft.fillScreen(C_BG);  // troca de tela: limpa tudo uma vez
@@ -798,6 +823,17 @@ void dadosNovos() {
   xSemaphoreGive(trava);
   if (tela == T_SESSAO && !sessaoAtual() && conexao == PONTE_OK) { irPara(T_LISTA); return; }
   bool conversando = m.estado == OUVINDO || m.estado == PENSANDO || m.estado == RESPONDENDO || voz.fase != V_NADA;
+  Sessao *sa = tela == T_SESSAO ? sessaoAtual() : nullptr;
+  if (sa && esperandoRespId == sa->id && sa->status == "waiting") esperandoRespId = "";
+  if (sa && !conversando && sa->status != "waiting" && sa->reply.length()) {
+    uint32_t &visto = replyVisto(sa->id), h = hashTxt(sa->reply);
+    if (h != visto && sa->status != "working") {   // resposta nova e completa: digita inteira
+      visto = h; esperandoRespId = "";
+      entrar(RESPONDENDO);
+      redesenharTudo();
+      return;
+    }
+  }
   if ((tela == T_MASCOTE || tela == T_SESSAO) && !conversando) {
     Estado e = estadoDeRepouso();
     if (e != m.estado) entrar(e);
@@ -836,12 +872,33 @@ void abrirFiltro() {
 }
 
 void comecarNovaSessao(const String &texto) {
-  novaTexto = texto;
+  novaTexto = texto; vinculando = false;
   if (!pedirRede(PR_REPOS, false, "/api/repos")) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
   abrirMenu(M_REPOS, "Nova sessao: repositorio", "carregando repositorios...");
 }
 
+void abrirVincular() {
+  Sessao *s = sessaoAtual();
+  if (!semRepoVps(s)) return;
+  if (!pedirRede(PR_REPOS, false, "/api/repos")) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  vinculando = true; vincularId = s->id;
+  abrirMenu(M_REPOS, "Vincular repositorio", "carregando repositorios...");
+}
+
+void criarSessao(const String &repo, const String &branch) {
+  JsonDocument d;
+  d["origem"] = "vps";
+  if (repo.length()) d["repo"] = repo; else d["repo"] = nullptr;
+  if (branch.length()) d["branch"] = branch; else d["branch"] = nullptr;
+  d["titulo"] = novaTexto.length() ? novaTexto.substring(0, 50) : "Sessao do mascote";
+  if (novaTexto.length()) d["prompt"] = novaTexto; else d["prompt"] = nullptr;
+  if (!pedirRede(PR_CRIAR, true, "/api/sessoes", jsonCorpo(d))) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  menuCarregando = "criando a sessao...";
+  desenharMenu();
+}
+
 void escolheuRepo(const ItemMenu &it) {
+  if (it.valor == "-") { criarSessao("", ""); return; }   // sessao sem repositorio
   novaRepo = it.valor;
   if (!pedirRede(PR_BRANCHES, false, "/api/repos/" + it.valor + "/branches")) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
   // guarda a branch padrao no titulo do menu seguinte
@@ -851,13 +908,11 @@ void escolheuRepo(const ItemMenu &it) {
 }
 
 void escolheuBranch(const ItemMenu &it) {
+  if (!vinculando) { criarSessao(novaRepo, it.valor); return; }
   JsonDocument d;
-  d["origem"] = "vps"; d["repo"] = novaRepo; d["branch"] = it.valor;
-  String titulo = novaTexto.length() ? novaTexto.substring(0, 50) : "Sessao do mascote";
-  d["titulo"] = titulo;
-  if (novaTexto.length()) d["prompt"] = novaTexto; else d["prompt"] = nullptr;
-  if (!pedirRede(PR_CRIAR, true, "/api/sessoes", jsonCorpo(d))) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
-  menuCarregando = "criando a sessao...";
+  d["repo"] = novaRepo; d["branch"] = it.valor;
+  if (!pedirRede(PR_VINCULAR, true, "/api/sessoes/" + vincularId + "/vincular", jsonCorpo(d))) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  menuCarregando = "vinculando o repositorio...";
   desenharMenu();
 }
 
@@ -919,7 +974,7 @@ void resultadoRede() {
     }
     case PR_MSG:
       voz.fase = V_NADA;
-      if (cod == 202) avisar("enviado", C_OK);
+      if (cod == 202) { avisar("enviado", C_OK); if (Sessao *s = sessaoAtual()) esperandoRespId = s->id; }
       else if (cod == 409) avisar("sessao ocupada: espere ela parar", C_WARN);
       else if (cod == 403) avisar("so leitura: responda pelo app", C_WARN);
       else if (cod == 504) avisar("sem confirmacao: confira no app", C_WARN);
@@ -935,6 +990,7 @@ void resultadoRede() {
         menuItens.push_back({nome.substring(nome.indexOf('/') + 1), String((const char *)(o["branch_padrao"] | "")), nome});
       }
       std::sort(menuItens.begin(), menuItens.end(), [](const ItemMenu &a, const ItemMenu &b) { return a.rotulo.compareTo(b.rotulo) < 0; });
+      if (!vinculando) menuItens.insert(menuItens.begin(), {"sem repositorio", "", "-"});
       menuCarregando = menuItens.empty() ? "nenhum repositorio" : "";
       if (tela == T_MENU && menuTipo == M_REPOS) desenharMenu();
       break;
@@ -957,6 +1013,13 @@ void resultadoRede() {
     case PR_CRIAR:
       if (cod == 202) { avisar("sessao criada: aparece na lista em instantes", C_OK); filtro = ""; irPara(T_LISTA); }
       else { menuCarregando = ""; avisar("nao criou (" + String(cod) + ") " + erro, C_BAD); desenharMenu(); }
+      break;
+    case PR_VINCULAR:
+      vinculando = false; menuCarregando = "";
+      if (cod == 202) avisar("repo vinculado", C_OK);
+      else if (cod == 409) avisar("espere a sessao parar", C_WARN);
+      else avisar("nao vinculou (" + String(cod) + ") " + erro, C_BAD);
+      irPara(T_SESSAO, vincularId);
       break;
     default: break;
   }
@@ -1026,7 +1089,8 @@ void tocou(int x, int y) {
   if (tela == T_MENU) {
     if (y < HDR) {
       if (x >= 120) return;
-      if (menuTipo == M_BRANCHES) { comecarNovaSessao(novaTexto); return; }
+      if (menuTipo == M_BRANCHES) { if (vinculando) abrirVincular(); else comecarNovaSessao(novaTexto); return; }
+      if (vinculando) { vinculando = false; irPara(T_SESSAO, vincularId); return; }
       irPara(menuTipo == M_FILTRO ? T_LISTA : telaAntesDoMenu);
       return;
     }
@@ -1040,7 +1104,11 @@ void tocou(int x, int y) {
     return;
   }
   if (tela == T_SESSAO) {
-    if (y < HDR_S) { if (x < 120) irPara(T_LISTA); return; }
+    if (y < HDR_S) {
+      if (x < 120) irPara(T_LISTA);
+      else if (x >= VINC_X && x < VINC_X + VINC_W && voz.fase == V_NADA && semRepoVps(sessaoAtual())) abrirVincular();
+      return;
+    }
     int b = botaoEm(x, y);
     if (b == 1) agir("recusar");
     if (b == 2) agir("aprovar");
