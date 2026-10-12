@@ -709,6 +709,60 @@ void loop() {
       <figure><div class="fig">${figPonte('falha')}</div><figcaption>Se ficaram duas bolinhas separadas, reaqueça as duas juntas com um pouco de fluxo até virarem uma.</figcaption></figure>
       <figure><div class="fig">${figPonte('vizinho')}</div><figcaption>Se escorreu para o 3º furo, tire o excesso com a malha ou o sugador.</figcaption></figure>
     </div><div class="confere"><b>Confira cada ponte:</b> em continuidade, a perna do capacitor e o pino vizinho <b>apitam</b>; o pino e o furo do outro lado <b>não apitam</b>.</div>`;
+  // ---- tutorial do barramento com medidas: pedaços de no máximo 7 espaços (cabem no fio de 25 mm) ----
+  const pedacosBus = sp => { const len = sp[1] - sp[0], k = Math.max(1, Math.ceil(len / 8)), passo = Math.ceil(len / k), pts = [sp[0]];
+    while (pts[pts.length - 1] < sp[1]) pts.push(Math.min(sp[1], pts[pts.length - 1] + passo)); return pts.slice(1).map((c, i) => [pts[i], c]); };
+  const mmPedaco = (a, b) => ((b - a) * 2.54 + 3).toFixed(1).replace('.', ',');
+  function pontosBus(sp, r) {
+    const pts = new Map();
+    pedacosBus(sp).forEach(([a, b], i, arr) => { pts.set(a, i === 0 ? 'ponta' : 'emenda'); pts.set(b, i === arr.length - 1 ? 'ponta' : 'emenda'); });
+    Object.values(FIOS).forEach(f => { if (f.ate[1] !== r) return; const quem = f.nome.split(' →')[0], c = f.ate[0]; pts.set(c, pts.has(c) ? pts.get(c) + '|' + quem : 'fio|' + quem); });
+    for (let c = sp[0] + 3; c < sp[1] - 1; c += 4) if (![...pts.keys()].some(q => Math.abs(q - c) < 2)) pts.set(c, 'firmar');
+    return [...pts.entries()].sort((a, b) => a[0] - b[0]);
+  }
+  // faixa da placa vista pelo VERSO (coluna 1 à direita), só a linha do barramento e as vizinhas
+  function figBusFaixa(sp, r, nome) {
+    const P = 30, c0 = sp[0] - 1, c1 = Math.min(COLS, sp[1] + 1), n = c1 - c0 + 1, W2 = n * P + 60;
+    const X = c => 40 + (c1 - c) * P, Y = 60;
+    let s = `<rect x="10" y="20" width="${W2 - 20}" height="96" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    for (let c = c0; c <= c1; c++) { [Y - P, Y, Y + P].forEach(yy => s += `<circle cx="${X(c)}" cy="${yy}" r="9" fill="var(--cobre)"/><circle cx="${X(c)}" cy="${yy}" r="3.2" fill="var(--furo)"/>`);
+      s += `<text x="${X(c)}" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">${c}</text>`; }
+    s += `<text x="${X(c1) - 22}" y="${Y + 4}" text-anchor="end" font-size="12" font-weight="700" fill="#eef4f0">${LN(r)}</text>`;
+    const cores = ['#d8dde3', '#b9d3ea', '#e8d2b0'];
+    pedacosBus(sp).forEach(([a, b], i) => { const dy = (i % 2 ? 3 : -3); s += `<line x1="${X(a) + 7}" y1="${Y + dy}" x2="${X(b) - 7}" y2="${Y + dy}" stroke="${cores[i % 3]}" stroke-width="5" stroke-linecap="round"/><text x="${(X(a) + X(b)) / 2}" y="${Y + 30}" text-anchor="middle" font-size="11" font-weight="700" fill="#eef4f0" style="paint-order:stroke;stroke:var(--pcb-borda);stroke-width:3px">${pedacosBus(sp).length > 1 ? `pedaço ${i + 1}: ` : 'fio: '}${mmPedaco(a, b)} mm</text>`; });
+    pontosBus(sp, r).forEach(([c, tipo], i) => { s += `<ellipse cx="${X(c)}" cy="${Y}" rx="11" ry="10" fill="var(--solda)" stroke="var(--solda-borda)"/><circle cx="${X(c)}" cy="${Y - 24}" r="9" fill="${tipo.startsWith('emenda') ? 'var(--accent)' : tipo.startsWith('ponta') ? '#2f8a4f' : tipo === 'firmar' ? '#6f7881' : '#4a8fe0'}"/><text x="${X(c)}" y="${Y - 20}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${i + 1}</text>`; });
+    s += `<text x="20" y="134" font-size="11" fill="var(--muted)">VERSO (placa virada): a coluna ${sp[0]} fica à direita. Bolinhas numeradas = pontos de solda.</text>`;
+    return `<svg viewBox="0 0 ${W2} 142" role="img" aria-label="Barramento ${nome} visto pelo verso" style="min-width:${Math.min(W2, 640)}px">${s}</svg>`;
+  }
+  function figMedida() {
+    const P = 34, x0 = 30, y = 70;
+    let s = '';
+    for (let i = 0; i <= 7; i++) s += `<circle cx="${x0 + 12 + i * P}" cy="${y}" r="10" fill="var(--cobre)"/><circle cx="${x0 + 12 + i * P}" cy="${y}" r="3.5" fill="var(--furo)"/>`;
+    s += `<line x1="${x0 + 12 - 6}" y1="${y}" x2="${x0 + 12 + 7 * P + 6}" y2="${y}" stroke="#cfd4d9" stroke-width="5" stroke-linecap="round"/>`
+      + `<line x1="${x0 + 12}" y1="${y + 26}" x2="${x0 + 12 + 7 * P}" y2="${y + 26}" stroke="var(--accent)" stroke-width="2"/>` + [0, 7].map(i => `<line x1="${x0 + 12 + i * P}" y1="${y + 20}" x2="${x0 + 12 + i * P}" y2="${y + 32}" stroke="var(--accent)" stroke-width="2"/>`).join('')
+      + `<text x="${x0 + 12 + 3.5 * P}" y="${y + 46}" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--fg)">7 espaços × 2,54 mm = 17,8 mm (de centro a centro)</text>`
+      + `<text x="${x0 + 12 + 3.5 * P}" y="${y + 64}" text-anchor="middle" font-size="12" fill="var(--muted)">+ 1,5 mm sobrando em cada ponta = corte com uns 21 mm</text>`
+      + `<text x="${x0 + 12 + 3.5 * P}" y="30" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--fg)">conte os espaços entre furos, não os furos</text>`;
+    return `<svg viewBox="0 10 320 140" role="img" aria-label="Como medir o fio">${s}</svg>`;
+  }
+  function figEmendaLado() {
+    let s = `<rect x="10" y="90" width="300" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/><text x="14" y="124" font-size="10.5" fill="var(--muted)">verso ↑ (vista de lado)</text>`;
+    [70, 160, 250].forEach(px => s += `<rect x="${px - 15}" y="86" width="30" height="4" fill="var(--cobre)"/>`);
+    s += `<line x1="20" y1="82" x2="166" y2="82" stroke="#cfd4d9" stroke-width="5" stroke-linecap="round"/><line x1="154" y1="77" x2="300" y2="77" stroke="#b9d3ea" stroke-width="5" stroke-linecap="round"/>`
+      + `<path d="M140 86 Q146 68 160 68 Q174 68 180 86 Z" fill="var(--solda)" stroke="var(--solda-borda)"/><path d="M60 86 Q64 76 70 76 Q76 76 80 86 Z" fill="var(--solda)" stroke="var(--solda-borda)"/><path d="M240 86 Q244 72 250 72 Q256 72 260 86 Z" fill="var(--solda)" stroke="var(--solda-borda)"/>`
+      + `<path d="M160 64 L160 40" stroke="var(--accent)" stroke-width="1.5"/><text x="160" y="34" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--accent)">emenda: as duas pontas no mesmo furo, uma solda só</text>`
+      + `<text x="306" y="124" text-anchor="end" font-size="11" fill="var(--muted)">um pedaço termina, o outro começa</text>`;
+    return `<svg viewBox="0 20 320 120" role="img" aria-label="Emenda do barramento">${s}</svg>`;
+  }
+  const tutorialBus = (sp, r, nome) => {
+    const ped = pedacosBus(sp), pts = pontosBus(sp, r);
+    const tipoTxt = t => { const [k, ...fios] = t.split('|'), base = k === 'ponta' ? 'ponta do barramento' : k === 'emenda' ? '<b>emenda</b> (as duas pontas juntas)' : k === 'firmar' ? 'só para firmar o fio' : ''; const ch = fios.length ? `aqui chega o fio: ${fios.join(', ')}` : ''; return [base, ch].filter(Boolean).join(' · '); };
+    return `<div class="tab"><table><thead><tr><th>Pedaço</th><th>Do furo</th><th>Ao furo</th><th>Corte com</th></tr></thead><tbody>${ped.map(([a, b], i) => `<tr><td>${i + 1}</td><td class="num">${LN(r)}${a}</td><td class="num">${LN(r)}${b}</td><td class="num"><b>${mmPedaco(a, b)} mm</b> (${b - a} espaços)</td></tr>`).join('')}</tbody></table></div>
+      <div class="fig">${figBusFaixa(sp, r, nome)}</div>
+      <div class="tab"><table><thead><tr><th>#</th><th>Solde no furo</th><th>Por quê</th></tr></thead><tbody>${pts.map(([c, t], i) => `<tr><td>${i + 1}</td><td class="num"><b>${LN(r)}${c}</b></td><td>${tipoTxt(t)}</td></tr>`).join('')}</tbody></table></div>
+      <div class="closes"><figure><div class="fig">${figMedida()}</div><figcaption>Como medir: conte os <b>espaços</b> entre os furos das pontas (cada um tem 2,54 mm) e some 1,5 mm de cada lado.</figcaption></figure>${ped.length > 1 ? `<figure><div class="fig">${figEmendaLado()}</div><figcaption>A emenda, de lado: as pontas dos dois pedaços dividem o mesmo furo e uma solda pega as duas.</figcaption></figure>` : ''}</div>
+      <ol><li><b>Estique</b> o fio puxando as duas pontas com o alicate: fio reto fica rente às ilhas.</li><li><b>Meça na própria placa:</b> deite o fio sobre a linha ${LN(r)}, marque com caneta 1,5 mm depois do último furo e corte.</li><li><b>Prenda</b> com fita crepe no meio, encostado nas ilhas.</li><li><b>Solde primeiro as pontas</b> (verde no desenho), depois as <b>emendas</b> (laranja), depois os pontos azuis e cinzas. Ferro no fio e na ilha juntos, 2 s, estanho.</li><li>Tire a fita e confira com o multímetro: <b>${LN(r)}${sp[0]} com ${LN(r)}${sp[1]} apita</b>.</li></ol>`;
+  };
   const figBarra = () => `<svg viewBox="0 0 560 120" role="img" aria-label="Cortando a barra fêmea">
     <rect x="20" y="40" width="520" height="24" rx="2" fill="#1d2125" stroke="#000"/>
     ${rng(0, 25).map(i => `<rect x="${30 + i * 20}" y="48" width="8" height="8" fill="#050607"/>`).join('')}
@@ -791,8 +845,8 @@ void loop() {
     passo({ t: 'Posicione os soquetes da tela e do microfone', vista: true, novo: ['s.tela', 's.mic'], html: () => `<ul><li><b>Tela:</b> barra de 13 na <b>linha ${LN(TR)}</b>, colunas <b>${T0} a ${T0 + 12}</b>.</li><li><b>Microfone:</b> encaixe as duas barras de 3 <b>no próprio microfone</b> (ele vira gabarito, como o ESP32). Enfie na placa: ${micTxt()}.</li><li>Segure com fita e vire.</li></ul><p class="dica">O furinho do som fica do lado de cima do microfone (o lado sem o chip). Deixe esse lado livre, virado para fora.</p>` });
     passo({ t: 'Solde os soquetes da tela e do microfone', vista: true, novo: ['j.tela', 'j.mic'], html: () => `<p>Pontas primeiro, confira se ficaram retas, depois o resto. Tire o microfone depois de esfriar. Teste dois vizinhos de cada barra (não podem apitar).</p>` });
     parte('Energia');
-    passo({ t: 'Barramento do 3V3', vista: true, novo: ['b3'], html: () => `${emendas(SP3, B3)}<ol><li>Corte um fio <b>sem capa</b> de uns <b>${busMm(SP3)} mm</b>.</li><li>No verso, deite reto sobre a <b>linha ${LN(B3)}</b>, da coluna <b>${SP3[0]} à ${SP3[1]}</b>, encostado nas ilhas.</li><li>Solde as pontas e onde houver marca no desenho (ferro no fio e na ilha juntos, 2 s, estanho).</li></ol><div class="confere"><b>Confira:</b> as duas pontas do fio apitam entre si.</div>` });
-    passo({ t: 'Barramento do GND', vista: true, novo: ['bg'], html: () => `${emendas(SPG, BG)}<ol><li>Fio sem capa de uns <b>${busMm(SPG)} mm</b>.</li><li>Deite sobre a <b>linha ${LN(BG)}</b>, da coluna <b>${SPG[0]} à ${SPG[1]}</b>.</li><li>Solde as pontas e um ponto a cada 4 ou 5 furos.</li></ol><p class="alerta">A linha ${LN(B3)} (3V3) e a linha ${LN(BG)} (GND) nunca podem se encostar.</p>` });
+    passo({ t: 'Barramento do 3V3', vista: true, novo: ['b3'], html: () => `<p>Fio <b>sem capa</b> na linha <b>${LN(B3)}</b>, do furo <b>${LN(B3)}${SP3[0]}</b> ao <b>${LN(B3)}${SP3[1]}</b>, deitado no verso sobre as ilhas.</p>${tutorialBus(SP3, B3, '3V3')}` });
+    passo({ t: 'Barramento do GND', vista: true, novo: ['bg'], html: () => `<p>Fio <b>sem capa</b> na linha <b>${LN(BG)}</b>, do furo <b>${LN(BG)}${SPG[0]}</b> ao <b>${LN(BG)}${SPG[1]}</b>.</p>${tutorialBus(SPG, BG, 'GND')}<p class="alerta">A linha ${LN(B3)} (3V3) e a linha ${LN(BG)} (GND) nunca podem se encostar.</p>` });
     passo({ t: 'Teste: barramentos separados', vista: true, novo: [], sondas: [[SP3[1], B3, '+'], [SPG[0] + 3, BG, '−', '#111']], html: () => `<div class="confere"><b>Continuidade</b> entre o barramento 3V3 e o GND → <b style="color:var(--ruim)">não pode apitar</b>.</div>` });
     passo({ t: 'Close: como soldar um fio na placa', html: () => `<p>Todos os fios do manual são soldados do mesmo jeito: a ponta do fio entra na <b>mesma solda</b> que já prende o pino do soquete (ou o fio nu do barramento). Não precisa de furo novo.</p>${closeSolda()}<p class="dica">Se a solda ficou opaca ou o fio mexe quando você puxa de leve, reaqueça com um pouquinho de fluxo.</p>` });
     passo({ t: 'Ligue o ESP32 aos barramentos', vista: true, novo: ['esp3', 'espg'], fios: ['esp3', 'espg'], html: () => comoFio + `<p class="dica">O fio vermelho cruza o barramento GND na linha ${LN(BG)}. Pode passar por cima: a capa isola.</p>` });
