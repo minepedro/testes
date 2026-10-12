@@ -29,6 +29,12 @@ Substitui a ponte demo (`../ponte.py`). So stdlib (Python 3.12), escuta **so 127
   `nuvem_intervalo` (10 s), `nuvem_dias` (7), `bridge_desconhecida` (`listar`|`omitir`).
 - `~/.local/state/mascote/sessoes_vps.json` sessoes criadas pela ponte (titulo, cwd, tmux). Pedidos so em memoria.
 
+## Estado em producao (2026-10-12)
+Troca feita por `sudo bash trocar_producao.sh` (conferiu 401 sem token, 200 com o token do aparelho e
+HTTPS publico). `mascote-ponte.service` (demo) desabilitado; `mascote-ponte-real` (--user) em 127.0.0.1:8787;
+`~/.config/mascote/unit.env` = `PORTA=8787`. Pedro confirmou no aparelho: sessoes reais da VPS e da nuvem
+aparecem. Rollback (volta a demo): `sudo bash trocar_producao.sh rollback`.
+
 ## Operar
 ```
 bash instalar_usuario.sh 8791              # instala/reinicia unit --user na 8791 (teste)
