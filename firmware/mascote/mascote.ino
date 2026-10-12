@@ -27,6 +27,7 @@
 #include <ArduinoJson.h>
 #include <ESP_I2S.h>
 #include <vector>
+#include <Preferences.h>
 #include "config.h"
 #include "tipos.h"
 #include "transporte.h"
@@ -114,6 +115,8 @@ LGFX tft;
 LGFX_Sprite area(&tft);    // regiao do mascote
 LGFX_Sprite rodape(&tft);  // barras, texto de baixo e botoes de aprovacao
 LGFX_Sprite lista(&tft);   // linhas da lista de sessoes
+LGFX_Sprite coluna(&tft);  // coluna da direita do Camarim (abas e lista)
+Preferences prefs;         // escolha do Camarim (NVS, namespace "mascote")
 
 // ---- geometria (igual ao prototipo web) ------------------------------------------------
 constexpr int W = 480, H = 320, PW = 15, PH = 30;
@@ -124,7 +127,7 @@ constexpr int BODY_Y = 68;
 constexpr int TOP_BAR = 28, TOP_HIT = 40, FOOT_Y = H - 44;
 constexpr int HDR = 36, HDR_S = 46, RH = 58;
 constexpr int BTN_Y = 272, BTN_H = 40, BTN_W = (W - 32 - 12) / 2;
-constexpr int AREA_X = 88, AREA_Y = 48, AREA_W = 316, AREA_H = 194;  // abaixo do cabecalho da sessao
+constexpr int AREA_X = 0, AREA_Y = TOP_BAR, AREA_W = W, AREA_H = 242 - TOP_BAR;  // cena inteira: do cabecalho ao rodape (chapeus e bandeira cabem)
 constexpr int FOOT_TOP = AREA_Y + AREA_H, FOOT_H = H - FOOT_TOP;
 
 const char *SPRITE[BODY_H] = {
@@ -146,6 +149,7 @@ String redeHora;
 Link redeLink = CONECTANDO;
 uint32_t redeVersao = 0;
 String acaoId, acaoTipo;          // acao pendente (aprovar/recusar), enviada pela tarefa de rede
+int acaoCod = 0;                  // resposta de /api/acao (0 = nada novo); 1 no bit 16 = aprovar
 Trabalho trabPedido;              // pedido avulso da tela (voz, mensagem, repos, criar); id 0 = nada
 uint32_t trabFeitoId = 0;         // resultado do ultimo pedido avulso
 int trabCod = 0;
@@ -210,12 +214,18 @@ void tarefaRede(void *) {
     if (id.length()) {
       HTTPClient http;
       http.setTimeout(5000);
-      if (!abrirPonte(http, cliente, "/api/acao")) { Serial.println("acao descartada: ponte indisponivel"); }
+      if (!abrirPonte(http, cliente, "/api/acao")) {
+        Serial.println("acao descartada: ponte indisponivel");
+        xSemaphoreTake(trava, portMAX_DELAY); acaoCod = -1; xSemaphoreGive(trava);
+      }
       else {
       http.addHeader("X-Token", PONTE_TOKEN);
       http.addHeader("Content-Type", "application/json");
       int cod = http.POST("{\"id\":\"" + id + "\",\"acao\":\"" + tipo + "\"}");
       Serial.printf("acao %s em %s: HTTP %d\n", tipo.c_str(), id.c_str(), cod);
+      xSemaphoreTake(trava, portMAX_DELAY);
+      acaoCod = (cod == 0 ? -2 : cod) | (tipo == "aprovar" ? 0x10000 : 0);
+      xSemaphoreGive(trava);
       http.end();
       }
       proximaBusca = 0;
@@ -504,49 +514,667 @@ void glifo(LovyanGFX &g, const String &st, int x, int y) {
 }
 
 // ---- desenho: mascote ---------------------------------------------------------------------
-bool solido(int x, int y) { return y >= 0 && y < BODY_H && x >= 0 && x < BODY_W && SPRITE[y][x] == '#'; }
 void px(int x, int y, int w, int h, uint16_t c) { area.fillRect(x - AREA_X, y - AREA_Y, w, h, c); }
+void textoCena(int x, int y, const char *t, uint16_t c) {   // "z" e "ha" das particulas
+  area.setFont(&fonts::Font4);
+  area.setTextDatum(middle_center);
+  area.setTextColor(c);
+  area.drawString(t, x - AREA_X, y - AREA_Y);
+}
+
+// ---- Camarim: acessorios, fundos, animacoes e particulas ----------------------------------------
+// Porte 1 para 1 de docs/camarim/index.html. As coordenadas abaixo sao as da previa (corpo em
+// BX=105, BY=96); r() converte para a tela (y - 96 + BODY_Y) e soma o deslocamento da cena
+// (cenaDy abaixa o corpo quando ha chapeu; cenaDx empurra a cena para a esquerda no Camarim).
+// rt() desenha em coordenadas da tela (ceu, estrelas, nuvens, lua, check e X), como a previa
+// faz logo abaixo do cabecalho. O bloco entre os marcadores HOST e compilado tambem pelo teste
+// de host (testes_host/render_camarim.cpp), que gera as imagens de conferencia.
+// >>> HOST
+constexpr uint16_t K(uint32_t h) { return (uint16_t)(((h >> 8) & 0xF800) | ((h >> 5) & 0x07E0) | ((h >> 3) & 0x001F)); }
+constexpr int PBX = 105, PBY = 96;                  // corpo na previa
+constexpr uint16_t FB_BG = K(0x141210), FB_FLOOR = K(0x1b1613), FB_SHADOW = K(0x0b0908), FB_FG = K(0xede6dc), FB_DIM = K(0x8a8178),
+                   FB_OK = K(0x6fbf73), FB_BAD = K(0xe0675a), FB_WARN = K(0xe6b450), FB_WARN_HI = K(0xf6d27e);
+const uint16_t PALETAS[7][5] = {
+  {K(0xf0a07c), K(0xe5896a), K(0xd97757), K(0xbf6446), K(0x8f4731)},   // laranja
+  {K(0x9cc4f0), K(0x7fb0e8), K(0x5f97d9), K(0x467bbf), K(0x2f5490)},   // azul
+  {K(0xa8dc8c), K(0x8fcf72), K(0x74bd57), K(0x5aa040), K(0x3b7029)},   // verde
+  {K(0xc9a6f0), K(0xb48de6), K(0x9c72d9), K(0x7f56bf), K(0x573690)},   // roxo
+  {K(0xf6d27e), K(0xecc061), K(0xe0aa45), K(0xc18c2c), K(0x8a6219)},   // dourado
+  {K(0xf5a9c8), K(0xec8db4), K(0xe0719f), K(0xc4567f), K(0x8f3757)},   // rosa
+  {K(0xc8c4bf), K(0xb0aba5), K(0x96918b), K(0x7a756f), K(0x524e49)},   // cinza
+};
+const char *const NOME_CAMADA[N_CAMADAS] = {"Cabeca", "Olhos", "Bigode", "Boca", "Peito", "Mao", "Cor", "Fundo"};
+const char *const CHAVE_CAMADA[N_CAMADAS] = {"cabeca", "olhos", "bigode", "boca", "peito", "mao", "cor", "fundo"};   // chaves da NVS
+const char *const IT_CAB[] = {"Nada", "Cartola", "Bone", "Cowboy", "Coroa", "Capacete", "Fone", "Gorro", "Festa"};
+const char *const IT_OLH[] = {"Nada", "Oculos", "Escuros", "Monoculo", "Tapa-olho"};
+const char *const IT_BIG[] = {"Nada", "Classico", "Guidao"};
+const char *const IT_BOC[] = {"Nada", "Cigarro", "Charuto", "Cachimbo"};
+const char *const IT_PEI[] = {"Nada", "Borboleta", "Gravata", "Cachecol"};
+const char *const IT_MAO[] = {"Nada", "Caneca", "Chave", "Bandeira"};
+const char *const IT_COR[] = {"Laranja", "Azul", "Verde", "Roxo", "Dourado", "Rosa", "Cinza"};
+const char *const IT_FUN[] = {"Liso", "Estrelas", "Por do sol", "Grama", "Neve"};
+const char *const *const ITENS[N_CAMADAS] = {IT_CAB, IT_OLH, IT_BIG, IT_BOC, IT_PEI, IT_MAO, IT_COR, IT_FUN};
+const uint8_t N_ITENS[N_CAMADAS] = {9, 5, 3, 4, 4, 4, 7, 5};
+const AnimInfo ANIMS[N_ANIMS] = {
+  {"", 0}, {"Comemorar", 3}, {"Pedir aprovacao", 5}, {"Aprovado", 2.2f}, {"Recusado", 2.2f}, {"Tonto", 3.5f},
+  {"Trabalhando", 4}, {"Ouvindo", 4}, {"Cochilo", 8}, {"Cocegas", 2.2f}, {"Dancinha", 5.4f}, {"Arrumar bigode", 4.4f},
+};
+
+uint8_t esc[N_CAMADAS] = {0, 0, 0, 0, 0, 0, COR_LARANJA, FUN_LISO};   // escolha atual (indices)
+Anim animId = A_NENHUMA;
+float animT0 = 0;            // relogio (s) em que a animacao comecou
+bool animFeito = false;      // confete ja lancado
+float bigodeCurl = 0;        // depois de arrumar, as pontas ficam enroladas e voltam devagar
+float emitT[E_N];            // ultima emissao de cada tipo de particula
+constexpr int MAX_PART = 64;
+Particula parts[MAX_PART];   // vetor fixo: nada de new/String no laco de desenho
+int nParts = 0;
+float OX = 0, OY = 0;        // deslocamento da peca (em(...) da previa)
+int cenaDx = 0, cenaDy = 0;
+struct Estrela { int16_t x, y; float f, v; };
+Estrela ceu[46];
+int camarimAba = 0, camarimRolagem = 0;   // 0 = Animar, 1 = Visual
+bool cochiloAuto = false;  // cochilo por inatividade: so termina com um toque
+
+inline float jsr(float v) { return floorf(v + 0.5f); }   // Math.round
+inline float lerpf(float a, float b, float k) { return a + (b - a) * k; }
+inline float limf(float v, float a, float b) { return v < a ? a : v > b ? b : v; }
+bool solido(int x, int y) { return y >= 0 && y < BODY_H && x >= 0 && x < BODY_W && SPRITE[y][x] == '#'; }
+
+// retangulo em coordenadas da previa (relativas ao corpo)
+void r(float x, float y, float w, float h, uint16_t c) {
+  int W2 = (int)jsr(w), H2 = (int)jsr(h);
+  if (W2 <= 0 || H2 <= 0) return;
+  px((int)jsr(x + OX) + cenaDx, (int)jsr(y + OY) - PBY + BODY_Y + cenaDy, W2, H2, c);
+}
+// retangulo em coordenadas da tela (ceu)
+void rt(float x, float y, float w, float h, uint16_t c) {
+  int W2 = (int)jsr(w), H2 = (int)jsr(h);
+  if (W2 <= 0 || H2 <= 0) return;
+  px((int)jsr(x) + cenaDx, (int)jsr(y), W2, H2, c);
+}
+
+void iniciarCeu() {
+  for (auto &e : ceu) { e.x = (int)(rnd() * 160) * 3; e.y = 34 + (int)(rnd() * 68) * 3; e.f = rnd() * 6; e.v = 1 + rnd() * 2; }
+}
+bool cada(int chave, float intervalo, float t) {
+  if (t - emitT[chave] >= intervalo) { emitT[chave] = t; return true; }
+  return false;
+}
+void addPart(TipoParticula tipo, float x, float y, float vx, float vy, float vida, uint16_t c = 0, uint8_t w = 0, uint8_t h = 0, const char *txt = nullptr) {
+  for (auto &p : parts) {
+    if (p.tipo != P_LIVRE) continue;
+    p.tipo = tipo; p.x = x; p.y = y; p.vx = vx; p.vy = vy; p.vida = p.max = vida; p.seed = rnd() * 6; p.c = c; p.w = w; p.h = h; p.txt = txt;
+    nParts++;
+    return;
+  }
+}
+void limparParticulas(TipoParticula so = P_LIVRE) {   // P_LIVRE = todas
+  for (auto &p : parts) if (p.tipo != P_LIVRE && (so == P_LIVRE || p.tipo == so)) { p.tipo = P_LIVRE; nParts--; }
+}
+void tocarAnim(Anim a, float agora) {
+  animId = a; animT0 = agora; animFeito = false;
+  for (auto &e : emitT) e = -1e9f;
+}
+void pararAnim() { animId = A_NENHUMA; }
+
+// ---- animacoes: cada uma ajusta o quadro (PASSO da previa) ----
+void passo(Anim id, Quadro &s, float a, float t) {
+  switch (id) {
+    case A_COMEMORAR: {
+      float pulo = fabsf(sinf(a * PI * 2.2f));
+      s.dy = a < 2.3f ? -pulo * 28 : 0; s.eye = O_FELIZ; s.mouth = 2;
+      s.armR = s.armL = a < 2.3f ? 6 + pulo * 12 : 0;
+      if (!animFeito) {
+        animFeito = true;
+        const uint16_t cs[6] = {K(0xe0675a), K(0x6fbf73), K(0x5f97d9), K(0xf6d27e), K(0xc9a6f0), K(0xede6dc)};
+        for (int i = 0; i < 40; i++) addPart(P_CONFETE, rnd() * W, 28 - rnd() * 90, (rnd() - .5f) * 70, 70 + rnd() * 90, 3.2f, cs[(int)(rnd() * 6) % 6], 5, 8);
+      }
+      break;
+    }
+    case A_APROVACAO:
+      s.eyeH = 1.5f; s.eyeDy = -.5f; s.mouth = 1; s.alerta = true;
+      if (a < 2.2f) s.armR = 16 + sinf(a * 13) * 9;
+      else s.legR = sinf(a * 14) > 0 ? 7 : 0;
+      s.eyeDx = a < 2.2f ? -.6f : 0;
+      break;
+    case A_APROVADO:
+      s.eye = O_FELIZ; s.check = a < 1.9f; s.mouth = 1;
+      s.dy = a < .9f ? -fabsf(sinf(a * PI / .3f)) * 10 : 0;
+      s.armR = a < 1.6f ? 14 : 0;
+      break;
+    case A_RECUSADO: {
+      float k = fmaxf(0, 1 - a / 1.3f);
+      s.dx = sinf(a * 18) * 9 * k; s.eyeDx = sinf(a * 18) * .4f * k; s.xis = a < 1.7f;
+      break;
+    }
+    case A_TONTO: {
+      s.eye = O_X; s.estrelas = true; s.mouth = 1;
+      float bal = sinf(a * 3.2f);
+      for (int i = 0; i < 4; i++) s.rowDx[i] = (int)jsr(bal * (3 - i) * 4);
+      break;
+    }
+    case A_TRABALHANDO:
+      s.eyeDx = 1; s.pontos = true; s.bodyDy = ((int)(a * 6) % 2) * 2;
+      if (cada(E_SUOR, 1.1f, t)) addPart(P_GOTA, 144 + s.dx, 108, -6, 10, 1.3f, K(0x7fb0e8), 6, 9);
+      break;
+    case A_OUVINDO:
+      s.eyeH = 1.5f; s.eyeDy = -.5f; s.barras = true;
+      for (int i = 0; i < 4; i++) s.rowDx[i] = (3 - i) * 3;
+      break;
+    case A_COCHILO:
+      s.eye = O_FECHADO;
+      if (a < 1.4f) { s.mouth = a < 1.1f ? 2 : 1; s.armL = s.armR = a < 1.1f ? 10 : 0; break; }
+      s.bodyDy = (int)jsr((sinf(a * 1.7f) + 1) * 2);
+      if (cada(E_ZZZ, 1.3f, t)) addPart(P_TEXTO, 316, 108, 16, -20, 2.8f, 0, 0, 0, "z");
+      break;
+    case A_DANCINHA: {
+      float fase = a * 2.2f * PI * 2; bool bate = sinf(fase) > 0;
+      if (a < 4) {
+        float lado = sinf(fase / 2);
+        s.dx = lado * 14; s.dy = -fabsf(sinf(fase)) * 8;
+        for (int i = 0; i < 4; i++) s.rowDx[i] = (int)jsr(lado * (3 - i) * 3);
+        s.armL = bate ? 18 : 2; s.armR = bate ? 2 : 18;
+        s.legL = bate ? 7 : 0; s.legR = bate ? 0 : 7;
+        s.mouth = bate ? 1 : 0;
+      } else {
+        s.armL = s.armR = 24 * fminf(1, (a - 4) / .25f);
+        s.dy = -fabsf(sinf((a - 4) * PI / 1.4f)) * 22; s.mouth = 2;
+      }
+      s.eye = O_FELIZ; s.disco = (int)floorf(a * 4.4f);
+      if (cada(E_NOTA, .4f, t)) {
+        const uint16_t cs[4] = {K(0xf6d27e), K(0xc9a6f0), K(0x7fb0e8), K(0xec8db4)};
+        float x = rnd() < .5f ? 70 + rnd() * 50 : 370 + rnd() * 50;
+        addPart(P_NOTA, x, 170, (rnd() - .5f) * 20, -36, 1.9f, cs[(int)(rnd() * 4) % 4]);
+      }
+      break;
+    }
+    case A_ARRUMAR: {
+      s.bigode = BIG_GUIDAO;
+      float ida = fminf(1, a / .6f), volta = a > 2.7f ? fminf(1, (a - 2.7f) / .5f) : 0, k = ida * (1 - volta);
+      bool gira = a > .6f && a < 2.7f; float ang = t * 22;
+      float ox = gira ? cosf(ang) * 4 : 0, oy = gira ? sinf(ang) * 4 : 0;
+      if (k > .05f) {
+        s.temMaos = true;
+        s.maos[0][0] = lerpf(126, 152, k) + ox; s.maos[0][1] = lerpf(162, 136, k) + oy;
+        s.maos[1][0] = lerpf(342, 315, k) - ox; s.maos[1][1] = lerpf(162, 136, k) + oy;
+      }
+      s.armL = s.armR = 8 * k;
+      s.curl = a < .6f ? bigodeCurl : fmaxf(bigodeCurl, fminf(1, (a - .6f) / 2));
+      s.torce[0] = gira ? (int)jsr(sinf(ang) * 3) : 0; s.torce[1] = gira ? (int)jsr(cosf(ang) * 3) : 0;
+      if (a > 2.7f) bigodeCurl = 1;
+      if (a < 3.2f) { s.eyeH = .5f; s.eyeDy = .5f; }   // olhar concentrado, meio fechado
+      else { s.eye = O_PISCA; s.brilho = true; }      // piscadinha e brilho no bigode
+      break;
+    }
+    case A_COCEGAS:
+      s.dx = sinf(a * 42) * 3; s.eye = O_RISO; s.mouth = ((int)(a * 8) % 2) + 1; s.armL = s.armR = 8;
+      if (cada(E_HA, .28f, t)) addPart(P_TEXTO, 330 + rnd() * 40, 112 + rnd() * 24, 12, -34, 1.1f, 0, 0, 0, "ha");
+      break;
+    default: break;
+  }
+}
+
+// ---- fundo e chao ----
+void ceuFaixas(const uint16_t *cs, int n, float y0, float y1) {   // em coordenadas da tela
+  float h = (y1 - y0) / n;
+  for (int i = 0; i < n; i++) rt(0, jsr(y0 + i * h), W, ceilf(h) + 1, cs[i]);
+  for (int i = 1; i < n; i++) {
+    float y = jsr(y0 + i * h) - 3;
+    for (int x = 0; x < W; x += 6) { rt(x, y, 3, 3, cs[i]); rt(x + 3, y + 3, 3, 3, cs[i - 1]); }
+  }
+}
+void disco(float cx, float cy, float raio, uint16_t c, float ateY = 999, bool tela = false) {   // circulo em degraus de 3 px
+  for (float dy = -raio; dy < raio; dy += 3) {
+    if (cy + dy >= ateY) break;
+    float w = jsr(sqrtf(raio * raio - (dy + 1.5f) * (dy + 1.5f)) / 3) * 6;
+    if (tela) rt(cx - w / 2, cy + dy, w, 3, c); else r(cx - w / 2, cy + dy, w, 3, c);
+  }
+}
+void morros(float base, float alt, float freq, float fase, uint16_t c) {
+  for (int x = 0; x < W; x += 6) {
+    float h = jsr(alt * (.55f + .45f * sinf(x * freq + fase) * sinf(x * freq * .37f + fase * 2)) / 3) * 3;
+    r(x, base - h, 6, h, c);
+  }
+}
+void pinheiro(float x, float base, float h, uint16_t c) {
+  r(x - 3, base - 9, 6, 9, c);
+  for (int k = 0; k < 3; k++) {
+    float topo = base - 9 - (k + 1) * h / 3;
+    for (float y = 0; y < h / 3 + 6; y += 3) { float w = jsr((y + 6) * (1.3f - k * .25f) / 3) * 3; r(x - w / 2, topo + y, w, 3, c); }
+  }
+}
+void nuvem(float x, float y) {
+  const uint16_t C = K(0xeef3f8), S = K(0xc6d5e4);
+  rt(x, y + 9, 60, 12, C); rt(x + 9, y + 3, 24, 9, C); rt(x + 27, y, 21, 12, C); rt(x + 3, y + 18, 54, 3, S);
+}
+
+void fundo(float t) {
+  const float fy = PBY + 150;                     // chao, coordenadas da previa
+  const float fyT = BODY_Y + 150 + cenaDy;        // chao, coordenadas da tela
+  px(0, AREA_Y, W, AREA_H, FB_BG);
+  switch (esc[CM_FUNDO]) {
+    case FUN_ESTRELAS:
+      for (auto &e : ceu) { float b = sinf(t * e.v + e.f); rt(e.x, e.y, 3, 3, b > .55f ? FB_FG : b > -.2f ? FB_DIM : K(0x3a3531)); }
+      break;
+    case FUN_PORSOL: {
+      const uint16_t cs[6] = {K(0x1a1426), K(0x231830), K(0x30203a), K(0x45283f), K(0x5e3143), K(0x7c3c45)};
+      ceuFaixas(cs, 6, 28, fyT);
+      const int pts[5][2] = {{40, 46}, {150, 62}, {420, 40}, {300, 52}, {458, 78}};
+      for (auto &p : pts) rt(p[0], p[1], 3, 3, K(0x8a7f99));
+      disco(372, fy - 18, 42, K(0xf2a65a), fy);
+      disco(372, fy - 18, 30, K(0xf7c27a), fy);
+      const int lis[3][2] = {{42, 2}, {33, 3}, {24, 4}};
+      for (auto &l : lis) r(320, fy - l[0], 110, l[1], K(0x7c3c45));   // listras do sol
+      morros(fy, 30, .021f, 1.3f, K(0x3a1f36));
+      morros(fy, 16, .034f, 4.1f, K(0x24142a));
+      break;
+    }
+    case FUN_GRAMA: {
+      const uint16_t cs[5] = {K(0x3c6fb0), K(0x4f82c0), K(0x6596cd), K(0x7fabda), K(0x9cc0e4)};
+      ceuFaixas(cs, 5, 28, fyT);
+      float dx = fmodf(t * 7, W + 120);
+      nuvem(fmodf(40 + dx, W + 120) - 90, 46); nuvem(fmodf(300 + dx * .7f, W + 120) - 90, 74);
+      morros(fy, 34, .016f, .4f, K(0x5e9e52));
+      morros(fy, 18, .03f, 2.2f, K(0x4b8a40));
+      break;
+    }
+    case FUN_NEVE: {
+      const uint16_t cs[4] = {K(0x0f1626), K(0x141d31), K(0x19253c), K(0x1f2d47)};
+      ceuFaixas(cs, 4, 28, fyT);
+      for (auto &e : ceu) if (e.y < 150) rt(e.x, e.y, 3, 3, sinf(t * e.v + e.f) > .3f ? K(0xc6d5e4) : K(0x3a4a66));
+      disco(66, 70, 18, K(0xe8e4da), 999, true); rt(58, 62, 6, 6, K(0xc9c4b8)); rt(70, 74, 6, 3, K(0xc9c4b8));
+      const int pin[8][2] = {{30, 54}, {70, 42}, {118, 60}, {380, 48}, {420, 64}, {462, 40}, {196, 34}, {292, 38}};
+      for (auto &p : pin) pinheiro(p[0], fy, p[1], K(0x18233a));
+      // a previa nasce a neve em y=28 da previa (atras do cabecalho daqui); aqui nasce no topo da area
+      if (cada(E_NEVE, .15f, t)) addPart(P_NEVE, rnd() * W, PBY - BODY_Y + AREA_Y - cenaDy, (rnd() - .5f) * 10, 22 + rnd() * 22, 12, K(0xeef3f8), 3, 3);
+      break;
+    }
+    default: break;
+  }
+}
+
+void chao(const Quadro &s) {
+  const float cx = 240, fy = PBY + 150;
+  const int fl[3][2] = {{300, 0}, {240, 6}, {180, 12}};
+  uint8_t f = esc[CM_FUNDO];
+  if (f == FUN_GRAMA) {
+    r(0, fy, W, 30, K(0x3f8a34)); r(0, fy, W, 3, K(0x5aa848));
+    for (int x = 0; x < W; x += 48) r(x, fy + 3, 24, 24, K(0x3a8030));
+    r(0, fy + 27, W, 3, K(0x2a4a1f));
+    const uint16_t fc[3] = {K(0xf6d27e), K(0xede6dc), K(0xec8db4)};
+    for (int i = 0; i < 18; i++) r((i * 53 + 17) % 474, fy + 3 + (i * 7) % 18, 3, 3, fc[i % 3]);
+    for (int x = 2; x < W; x += 9) { int h = 3 + ((x * 7) % 3) * 3; r(x, fy - h, 3, h, K(0x5aa848)); }
+  } else if (f == FUN_NEVE) {
+    r(0, fy, W, 30, K(0xdfe6ee)); r(0, fy + 18, W, 12, K(0xc6d1de));
+    for (int x = 0; x < W; x += 60) { r(x + 6, fy - 3, 36, 3, K(0xdfe6ee)); r(x + 15, fy - 6, 18, 3, K(0xdfe6ee)); }
+    for (int x = 11; x < W; x += 37) r(x, fy + 6 + (x % 9), 3, 3, K(0xffffff));
+  } else if (f == FUN_PORSOL) {
+    r(0, fy, W, 30, K(0x1d1020)); r(0, fy, W, 3, K(0x3a1f36));
+  } else {
+    for (auto &l : fl) r(cx - l[0] / 2, fy + 3 + l[1], l[0], 6, FB_FLOOR);
+  }
+  if (s.disco >= 0) {   // pista de danca piscando no ritmo
+    const uint16_t cs[4] = {K(0x5f3a8f), K(0x2f5490), K(0x8f3757), K(0x3b7029)};
+    for (int i = 0; i < 3; i++) for (int k = 0; k < fl[i][0] / 30; k++) r(cx - fl[i][0] / 2 + k * 30, fy + 3 + fl[i][1], 30, 6, cs[(k + i + s.disco) % 4]);
+  }
+  float k = fmaxf(.45f, 1 + s.dy / 55);
+  const int sh[3] = {210, 150, 90};
+  uint16_t cs = f == FUN_PORSOL ? K(0x140b16) : f == FUN_GRAMA ? K(0x2c6324) : f == FUN_NEVE ? K(0xa3b4c8) : FB_SHADOW;
+  for (int i = 0; i < 3; i++) r(cx - sh[i] * k / 2 + s.dx, fy + 3 + i * 6, sh[i] * k, 6, cs);
+}
+
+void neveNoCorpo(float cx, float cy, const Quadro &s) {   // neve acumulada na cabeca e nos bracos
+  const uint16_t N = K(0xeef3f8);
+  OX = cx; OY = cy; r(152, 92, 176, 6, N); r(160, 88, 30, 4, N); r(212, 89, 40, 3, N); r(270, 88, 36, 4, N); r(152, 96, 176, 2, K(0xc6d5e4));
+  OY = cy - s.armL; r(122, 152, 26, 4, N);
+  OY = cy - s.armR; r(332, 152, 26, 4, N);
+  OX = OY = 0;
+}
+
+// ---- corpo, olhos e boca ----
+void corpo(const Quadro &s, const uint16_t *P) {
+  for (int y = 0; y < BODY_H; y++) for (int x = 0; x < BODY_W; x++) {
+    if (!solido(x, y)) continue;
+    bool perna = y == 4;
+    float X = PBX + x * PW + s.dx + (perna ? 0 : s.rowDx[y]);
+    float Y = PBY + y * PH + s.dy + (perna ? 0 : s.bodyDy);
+    if (y == 2 && x >= 15) Y -= s.armR;
+    if (y == 2 && x <= 2) Y -= s.armL;
+    if (perna && x == 13) Y -= s.legR;
+    if (perna && x == 4) Y -= s.legL;
+    r(X, Y, PW, PH, perna ? P[3] : P[2]);
+    if (!solido(x - 1, y)) r(X, Y, 4, PH, perna ? P[2] : P[1]);
+    if (!solido(x, y - 1) || (y == 2 && (x >= 15 || x <= 2))) r(X, Y, PW, 6, P[0]);
+    if (!solido(x + 1, y)) r(X + PW - 4, Y, 4, PH, perna ? P[4] : P[3]);
+    if (!solido(x, y + 1)) r(X, Y + PH - 8, PW, 8, perna ? P[4] : P[3]);
+  }
+}
+
+void olhos(const Quadro &s, const uint16_t *P) {
+  if (s.piscar) return;
+  const uint16_t B = FB_BG;
+  const int EX[2] = {5, 12};
+  for (int ex : EX) {
+    float x = PBX + (ex + s.eyeDx) * PW, y = PBY + (1 + s.eyeDy) * PH;
+    if (s.eye == O_PISCA && ex == 5) r(x - 3, y + 20, PW + 6, 5, B);
+    else if (s.eye == O_NORMAL || s.eye == O_PISCA) { r(x, y, PW, s.eyeH * PH, B); r(x, y - 4, PW, 4, P[4]); }
+    else if (s.eye == O_FELIZ) { const int p[5][2] = {{-5, 20}, {0, 14}, {5, 9}, {10, 14}, {15, 20}}; for (auto &q : p) r(x + q[0], y + q[1], 6, 6, B); }
+    else if (s.eye == O_FECHADO) r(x - 3, y + 20, PW + 6, 5, B);
+    else if (s.eye == O_X) { const int p[5][2] = {{-2, 0}, {12, 0}, {5, 7}, {-2, 14}, {12, 14}}; for (auto &q : p) r(x + q[0], y + 5 + q[1], 6, 6, B); }
+    else if (s.eye == O_RISO) {
+      const int pe[5][2] = {{0, 0}, {5, 4}, {10, 8}, {5, 12}, {0, 16}}, pd[5][2] = {{10, 0}, {5, 4}, {0, 8}, {5, 12}, {10, 16}};
+      for (int i = 0; i < 5; i++) { const int *q = ex == 5 ? pe[i] : pd[i]; r(x + q[0], y + 4 + q[1], 6, 6, B); }
+    }
+  }
+}
+
+void boca(const Quadro &s, const uint16_t *P) {
+  if (s.mouth <= 0) return;
+  float x = PBX + 8 * PW, y = PBY + 2.5f * PH, h = s.mouth == 1 ? 12 : 22;
+  r(x, y, 2 * PW, h, FB_BG); r(x, y - 4, 2 * PW, 4, P[4]);
+}
+
+// ---- acessorios (retangulos, coordenadas da previa com o corpo parado) ----
+void pecaCabeca(uint8_t i) {
+  switch (i) {
+    case CAB_CARTOLA: { const uint16_t Kc = K(0x1d1a18), L = K(0x3a3430); r(160, 86, 160, 10, Kc); r(160, 86, 160, 2, L); r(186, 36, 108, 50, Kc); r(186, 36, 108, 3, L); r(186, 72, 108, 10, K(0xc8463a)); break; }
+    case CAB_BONE: { const uint16_t R = K(0xc8463a), D = K(0x8f2f26); r(234, 56, 12, 6, R); r(176, 62, 128, 6, R); r(164, 68, 152, 28, R); r(164, 90, 152, 6, D);
+      r(304, 86, 62, 8, R); r(304, 92, 62, 4, D); r(206, 72, 16, 12, K(0xede6dc)); r(210, 76, 8, 4, R); break; }
+    case CAB_COWBOY: { const uint16_t B = K(0x8a5a33), D = K(0x5e3b20); r(182, 46, 116, 40, B); r(222, 46, 36, 6, D); r(182, 46, 116, 3, K(0xa8744a)); r(182, 76, 116, 8, K(0x2a1a10));
+      r(132, 86, 216, 10, B); r(132, 94, 216, 3, D); r(122, 76, 14, 14, B); r(344, 76, 14, 14, B); break; }
+    case CAB_COROA: { const uint16_t G = K(0xe0aa45), L = K(0xf6d27e); r(176, 74, 128, 22, G); r(176, 74, 128, 3, L);
+      r(176, 54, 18, 20, G); r(231, 46, 18, 28, G); r(286, 54, 18, 20, G); r(180, 48, 10, 6, L); r(235, 40, 10, 6, L); r(290, 48, 10, 6, L);
+      r(204, 80, 10, 10, K(0xc8463a)); r(235, 80, 10, 10, K(0x5f97d9)); r(266, 80, 10, 10, K(0xc8463a)); break; }
+    case CAB_OBRA: { const uint16_t Y = K(0xe6b450), L = K(0xf6d27e), D = K(0xb88a2e); r(184, 56, 112, 10, Y); r(184, 56, 112, 3, L); r(166, 64, 148, 28, Y);
+      r(234, 52, 12, 40, D); r(148, 88, 184, 4, Y); r(148, 92, 184, 8, D); break; }
+    case CAB_FONE: { const uint16_t D = K(0x2a2420), C = K(0x3a3430); r(162, 70, 156, 8, D); r(148, 78, 16, 10, D); r(316, 78, 16, 10, D); r(140, 88, 10, 30, D); r(330, 88, 10, 30, D);
+      r(128, 114, 24, 42, C); r(328, 114, 24, 42, C); r(134, 122, 6, 6, FB_OK); r(146, 154, 5, 16, D); r(146, 168, 44, 5, D); r(188, 164, 12, 12, D); break; }
+    case CAB_NATAL: { const uint16_t R = K(0xc8463a), Wt = K(0xefe9e0); r(160, 76, 160, 12, R); r(172, 64, 136, 12, R); r(188, 54, 108, 10, R); r(206, 46, 80, 8, R);
+      r(232, 40, 64, 6, R); r(272, 38, 40, 6, R); r(302, 42, 22, 10, R); r(318, 40, 18, 18, Wt); r(150, 86, 180, 14, Wt); break; }
+    case CAB_FESTA: { const uint16_t cs[2] = {K(0x5f97d9), K(0xf6d27e)}; const int ws[7] = {56, 48, 40, 32, 24, 16, 8};
+      for (int k = 0; k < 7; k++) r(240 - ws[k] / 2, 88 - k * 8, ws[k], 8, cs[k % 2]);
+      r(234, 28, 12, 12, K(0xe0675a));
+      break; }
+    default: break;
+  }
+}
+void pecaOlhos(uint8_t i) {
+  switch (i) {
+    case OLH_OCULOS: { const uint16_t Kc = K(0x1d1a18); const int xs[2] = {170, 275};
+      for (int x0 : xs) { r(x0 + 4, 118, 28, 4, Kc); r(x0 + 4, 160, 28, 4, Kc); r(x0, 122, 4, 38, Kc); r(x0 + 32, 122, 4, 38, Kc); }
+      r(206, 132, 69, 4, Kc); r(150, 132, 20, 4, Kc); r(311, 132, 19, 4, Kc); break; }
+    case OLH_ESCUROS: { const uint16_t Kc = K(0x0e0d0c); const int xs[2] = {166, 270};
+      for (int x0 : xs) { r(x0, 122, 44, 26, Kc); r(x0 + 4, 148, 36, 6, Kc); r(x0 + 6, 126, 8, 4, K(0xede6dc)); }
+      r(210, 126, 60, 6, Kc); r(150, 126, 16, 5, Kc); r(314, 126, 16, 5, Kc); break; }
+    case OLH_MONOCULO: { const uint16_t G = K(0xe0aa45); r(281, 118, 24, 4, G); r(281, 160, 24, 4, G); r(277, 122, 4, 38, G); r(305, 122, 4, 38, G);
+      for (int k = 0; k < 9; k++) r(306 + k * 2, 166 + k * 4, 3, 3, G);
+      break; }
+    case OLH_TAPAOLHO: { const uint16_t Kc = K(0x0e0d0c); r(172, 118, 32, 42, Kc); r(176, 160, 24, 4, Kc); r(150, 128, 22, 4, Kc);
+      for (int k = 0; k < 11; k++) r(204 + k * 12, 120 - k * 2, 12, 4, Kc);
+      break; }
+    default: break;
+  }
+}
+void pecaBigode(uint8_t i, const Quadro &s) {
+  const uint16_t M = K(0x3b2a1f);
+  if (i == BIG_CLASSICO) { r(216, 160, 48, 8, M); r(208, 164, 12, 8, M); r(260, 164, 12, 8, M); r(202, 170, 8, 4, M); r(270, 170, 8, 4, M); r(238, 160, 4, 4, K(0x5a4130)); }
+  if (i == BIG_GUIDAO) {
+    float curl = s.curl < 0 ? 0 : s.curl;
+    int up = (int)jsr(curl * 6), yl = s.torce[0] - up, yr = s.torce[1] - up;
+    // as pontas saem para os lados, por fora dos olhos, e sobem
+    r(220, 160, 40, 8, M); r(204, 162, 18, 6, M); r(258, 162, 18, 6, M);
+    r(188, 160, 18, 6, M); r(274, 160, 18, 6, M);
+    r(178, 156 + jsr(yl / 2.0f), 12, 6, M); r(290, 156 + jsr(yr / 2.0f), 12, 6, M);
+    r(172, 150 + yl, 8, 6, M); r(300, 150 + yr, 8, 6, M);
+    if (curl > .5f) { r(167, 144 + yl, 6, 6, M); r(171, 139 + yl, 6, 5, M); r(307, 144 + yr, 6, 6, M); r(303, 139 + yr, 6, 5, M); }
+  }
+}
+uint16_t brasa(float t) { bool forte = fmodf(t, 4) < .6f; return forte ? K(0xffd27a) : ((int)(t * 9) % 2 ? K(0xff6a2a) : K(0xe0503a)); }
+void pecaBoca(uint8_t i, float t) {
+  switch (i) {
+    case BOC_CIGARRO: r(244, 172, 12, 6, K(0xc8925a)); r(256, 172, 30, 6, K(0xefe9e0)); r(286, 172, 4, 6, K(0x8a817b)); r(290, 172, 5, 6, brasa(t)); break;
+    case BOC_CHARUTO: r(242, 170, 48, 9, K(0x6b4226)); r(242, 170, 48, 2, K(0x8a5a33)); r(252, 170, 7, 9, K(0xc8463a)); r(286, 170, 4, 9, K(0x8a817b)); r(290, 170, 5, 9, brasa(t)); break;
+    case BOC_CACHIMBO: r(248, 174, 32, 5, K(0x4a2e1a)); r(276, 156, 18, 24, K(0x6b4226)); r(276, 156, 18, 3, K(0x8a5a33)); r(279, 156, 12, 4, fmodf(t, 4) < .6f ? K(0xffd27a) : K(0xe0503a)); break;
+    default: break;
+  }
+}
+void pecaPeito(uint8_t i) {
+  switch (i) {
+    case PEI_BORBOLETA: { const uint16_t Kc = K(0x1d1a18); r(234, 199, 12, 10, Kc); r(216, 196, 8, 18, Kc); r(224, 199, 10, 12, Kc); r(256, 196, 8, 18, Kc); r(246, 199, 10, 12, Kc); r(218, 198, 4, 5, K(0x3a3430)); break; }
+    case PEI_GRAVATA: { const uint16_t B = K(0x5f97d9), D = K(0x2f5490); r(234, 196, 12, 7, D); r(232, 203, 16, 9, B); r(236, 212, 8, 4, B); r(232, 207, 16, 2, D); break; }
+    case PEI_CACHECOL: { const uint16_t R = K(0xc8463a), Wt = K(0xefe9e0); r(150, 180, 180, 14, R); for (int x = 162; x < 330; x += 30) r(x, 180, 6, 14, Wt);
+      r(290, 194, 18, 32, R); r(290, 204, 18, 5, Wt); for (int k = 0; k < 4; k++) r(291 + k * 5, 226, 3, 7, R); break; }
+    default: break;
+  }
+}
+void pecaMao(uint8_t i, float t) {
+  switch (i) {
+    case MAO_CANECA: { const uint16_t Wt = K(0xefe9e0); r(360, 148, 28, 36, Wt); r(360, 148, 28, 5, K(0x3a2418)); r(360, 164, 28, 6, K(0xd97757)); r(388, 156, 8, 4, Wt);
+      r(392, 156, 4, 18, Wt); r(388, 170, 8, 4, Wt); r(384, 152, 4, 32, K(0xcfc8bf)); break; }
+    case MAO_CHAVE: { const uint16_t G = K(0xa9a49e), D = K(0x6e6964); r(364, 124, 10, 56, G); r(372, 124, 2, 56, D); r(354, 100, 30, 24, G); r(354, 100, 30, 3, K(0xc8c4bf));
+      r(362, 100, 14, 12, FB_BG); r(380, 108, 4, 16, D); break; }
+    case MAO_BANDEIRA: {
+      r(362, 78, 5, 108, K(0x8a5a33)); r(361, 74, 7, 6, K(0xe0aa45));
+      const int lin[7][2] = {{83, 6}, {88, 20}, {93, 36}, {99, 44}, {105, 36}, {110, 20}, {115, 4}};
+      for (int c = 0; c < 7; c++) {
+        float dy = jsr(sinf(t * 5 - c * .8f) * 2), x = 367 + c * 8; OY += dy;
+        r(x, 80, 8, 38, K(0x2f9e44));
+        for (auto &l : lin) { float a = fmaxf(x, 395 - l[1]), b = fminf(x + 8, 395 + l[1]); if (b > a) r(a, l[0], b - a, 5, K(0xf6d000)); }
+        float a = fmaxf(x, 386), b = fminf(x + 8, 404); if (b > a) { r(a, 91, b - a, 18, K(0x2b4fa0)); r(a, 98, b - a, 3, K(0xede6dc)); }
+        OY -= dy;
+      }
+      break;
+    }
+    default: break;
+  }
+}
+
+// ---- efeitos e particulas ----
+void efeitos(const Quadro &s, float t, float cx, float cy) {
+  if (s.alerta) { uint16_t c = ((int)(t * 3) % 2) ? FB_WARN_HI : FB_WARN; OX = cx; OY = cy; r(344, PBY, 12, 26, c); r(344, PBY + 34, 12, 12, c); OX = OY = 0; }
+  if (s.pontos) { int p = (int)(t * 4) % 4; for (int i = 0; i < 3; i++) r(340 + i * 20, PBY - 4 - i * 6, 12, 12, i < p ? FB_FG : FB_DIM); }
+  if (s.check) { const int p[5][2] = {{0, 14}, {7, 21}, {14, 14}, {21, 7}, {28, 0}}; for (auto &q : p) { rt(372 + q[0], 34 + q[1], 8, 8, FB_OK); rt(372 + q[0], 41 + q[1], 8, 4, FB_OK); } }
+  if (s.xis) { const int p[9][2] = {{0, 0}, {28, 0}, {7, 7}, {21, 7}, {14, 14}, {7, 21}, {21, 21}, {0, 28}, {28, 28}}; for (auto &q : p) rt(372 + q[0], 34 + q[1], 8, 8, FB_BAD); }
+  if (s.estrelas) for (int i = 0; i < 3; i++) {
+    float ang = t * 4 + i * 2.094f, x = 240 + cosf(ang) * 112 + cx, y = 72 + sinf(ang) * 14 + cy;
+    r(x - 2, y - 7, 4, 14, FB_WARN_HI); r(x - 7, y - 2, 14, 4, FB_WARN_HI);
+  }
+}
+
+void particulas(float dt, float t) {
+  for (auto &p : parts) {
+    if (p.tipo == P_LIVRE) continue;
+    p.vida -= dt;
+    if (p.tipo == P_GOTA) p.vy += 160 * dt;
+    p.x += (p.vx + (p.tipo == P_FUMACA || p.tipo == P_VAPOR ? sinf(t * 3 + p.seed) * 8 : 0)) * dt; p.y += p.vy * dt;
+    if (p.tipo == P_NEVE && p.y > PBY + 152) p.vida = 0;
+    if (p.vida <= 0) { p.tipo = P_LIVRE; nParts--; }
+  }
+  for (auto &p : parts) {
+    if (p.tipo == P_LIVRE) continue;
+    float f = 1 - p.vida / p.max;
+    if (p.tipo == P_FUMACA) {
+      const uint16_t cs[4] = {K(0x9a9088), K(0x6e6760), K(0x4a443f), K(0x2e2a27)};
+      float sz = 4 + f * 8; r(p.x - sz / 2, p.y - sz / 2, sz, sz, cs[(int)fminf(3, f * 4)]);
+    } else if (p.tipo == P_VAPOR) {
+      const uint16_t cs[3] = {K(0xcfc8bf), K(0x8a8178), K(0x4a443f)};
+      float sz = 4 + f * 4; r(p.x - sz / 2, p.y - sz / 2, sz, sz, cs[(int)fminf(2, f * 3)]);
+    } else if (p.tipo == P_NOTA) {
+      r(p.x, p.y, 8, 6, p.c); r(p.x + 6, p.y - 14, 2, 16, p.c); r(p.x + 8, p.y - 14, 5, 3, p.c); r(p.x + 11, p.y - 11, 2, 4, p.c);
+    } else if (p.tipo == P_CONFETE) { int v = (int)(t * 7 + p.seed) % 2; r(p.x, p.y, v ? p.w : p.h, v ? p.h : p.w, p.c); }
+    else if (p.tipo == P_TEXTO) textoCena((int)jsr(p.x) + cenaDx, (int)jsr(p.y) - PBY + BODY_Y + cenaDy, p.txt, f < .6f ? FB_FG : FB_DIM);
+    else r(p.x, p.y, p.w, p.h, p.c);
+  }
+}
+
+bool cenaAnimada() {   // precisa redesenhar sozinha (ate ~25 quadros/s)?
+  uint8_t f = esc[CM_FUNDO];
+  return animId != A_NENHUMA || nParts > 0 || f == FUN_ESTRELAS || f == FUN_GRAMA || f == FUN_NEVE || esc[CM_BOCA] != BOC_NADA
+         || esc[CM_MAO] == MAO_BANDEIRA || esc[CM_MAO] == MAO_CANECA || bigodeCurl > 0;
+}
+
+// Desenha a cena inteira no sprite (quadro() da previa, sem cabecalho e rodape).
+void cena(Quadro &s, float t, float dt) {
+  if (animId != A_ARRUMAR) bigodeCurl = fmaxf(0, bigodeCurl - dt / 25);
+  if (s.curl < 0) s.curl = bigodeCurl;
+  const uint16_t *P = PALETAS[esc[CM_COR]];
+  float cabX = s.dx + s.rowDx[0], cabY = s.dy + s.bodyDy, rosX = s.dx + s.rowDx[1], rosY = s.dy + s.bodyDy;
+  float peiX = s.dx + s.rowDx[2], peiY = s.dy + s.bodyDy, maoX = peiX, maoY = s.dy + s.bodyDy - s.armR;
+  uint8_t bc = esc[CM_BOCA];
+  if (bc != BOC_NADA) {
+    const float FU[4][3] = {{0, 0, 0}, {295, 172, .15f}, {295, 170, .11f}, {285, 152, .13f}};
+    if (cada(E_FUMACA, fmodf(t, 4) < .6f ? FU[bc][2] / 2 : FU[bc][2], t)) addPart(P_FUMACA, FU[bc][0] + rosX, FU[bc][1] + rosY, 6 + rnd() * 8, -22 - rnd() * 12, 2.2f);
+  }
+  if (esc[CM_MAO] == MAO_CANECA && cada(E_VAPOR, .3f, t)) addPart(P_VAPOR, 366 + rnd() * 16 + maoX, 144 + maoY, (rnd() - .5f) * 6, -16, 1.4f);
+  if (esc[CM_FUNDO] != FUN_NEVE) limparParticulas(P_NEVE);
+
+  fundo(t); chao(s); corpo(s, P);
+  OX = rosX; OY = rosY; olhos(s, P);
+  OX = peiX; OY = peiY; boca(s, P);
+  OX = OY = 0;
+  if (esc[CM_FUNDO] == FUN_NEVE) neveNoCorpo(cabX, cabY, s);
+  OX = peiX; OY = peiY; pecaPeito(esc[CM_PEITO]);
+  OX = rosX; OY = rosY;
+  pecaBigode(s.bigode >= 0 ? s.bigode : esc[CM_BIGODE], s);
+  if (s.temMaos) for (auto &m2 : s.maos) {   // luvinhas brancas na frente do corpo
+    float x = m2[0], y = m2[1];
+    r(x, y, 14, 14, K(0xefe9e0)); r(x + 10, y, 4, 14, K(0xbdb5ab)); r(x, y + 11, 14, 3, K(0xbdb5ab)); r(x + 3, y - 3, 4, 3, K(0xefe9e0));
+  }
+  if (s.brilho && (int)(t * 1000 / 120) % 2) { const int xs[2] = {162, 318}; for (int x : xs) { r(x - 1, 124, 3, 11, FB_WARN_HI); r(x - 5, 128, 11, 3, FB_WARN_HI); } }
+  pecaOlhos(esc[CM_OLHOS]);
+  pecaBoca(bc, t);
+  OX = cabX; OY = cabY; pecaCabeca(esc[CM_CABECA]);
+  OX = maoX; OY = maoY; pecaMao(esc[CM_MAO], t);
+  OX = OY = 0;
+  efeitos(s, t, cabX, cabY);
+  particulas(dt, t);
+}
+
+// ---- tela Camarim: coluna da direita (abas e lista) ----
+constexpr int CAM_X = 320, CAM_W = W - CAM_X, CAM_ABA = 44, CAM_LH = 48, CAM_DX = -100;
+constexpr int CAM_VOLTAR_X = 12, CAM_VOLTAR_Y = 262, CAM_VOLTAR_W = 120, CAM_VOLTAR_H = 44;
+int camarimLinhas() { return camarimAba == 0 ? N_ANIMS - 1 : N_CAMADAS + 1; }
+int camarimRolagemMax() { int v = camarimLinhas() * CAM_LH - (H - CAM_ABA); return v > 0 ? v : 0; }
+
+void desenharColuna(LovyanGFX &g) {   // g: sprite de CAM_W x H
+  g.fillScreen(C_PANEL);
+  g.setFont(&fonts::Font2);
+  const char *abas[2] = {"Animar", "Visual"};
+  for (int i = 0; i < 2; i++) {
+    bool on = camarimAba == i;
+    g.fillRect(i * 80, 0, 80, CAM_ABA, on ? C_BG : C_PANEL);
+    if (on) g.fillRect(i * 80 + 8, CAM_ABA - 5, 64, 3, C_BODY);
+    g.setTextDatum(middle_center);
+    g.setTextColor(on ? C_FG : C_DIM);
+    g.drawString(abas[i], i * 80 + 40, CAM_ABA / 2);
+  }
+  g.fillRect(0, CAM_ABA - 1, CAM_W, 1, C_LINE);
+  g.setClipRect(0, CAM_ABA, CAM_W, H - CAM_ABA);
+  for (int k = 0; k < camarimLinhas(); k++) {
+    int y = CAM_ABA + k * CAM_LH - camarimRolagem;
+    if (y > H || y + CAM_LH < CAM_ABA) continue;
+    g.fillRect(0, y + CAM_LH - 1, CAM_W, 1, C_LINE);
+    if (camarimAba == 0) {
+      Anim a = (Anim)(k + 1);
+      bool on = animId == a;
+      if (on) { g.fillRect(0, y, CAM_W, CAM_LH - 1, C_BG); g.fillRect(0, y, 4, CAM_LH - 1, C_BODY); }
+      g.setTextDatum(middle_left);
+      g.setTextColor(on ? C_FG : C_FG);
+      g.drawString(ANIMS[a].nome, 14, y + CAM_LH / 2);
+      if (on) g.fillRect(CAM_W - 24, y + CAM_LH / 2 - 5, 10, 10, C_BODY);   // tocando: toque de novo para parar
+      else seta(g, CAM_W - 22, y + CAM_LH / 2 - 1, C_DIM, 'r');
+    } else if (k < N_CAMADAS) {
+      seta(g, 18, y + CAM_LH / 2 - 1, C_FG, 'l');
+      seta(g, CAM_W - 24, y + CAM_LH / 2 - 1, C_FG, 'r');
+      g.setTextDatum(middle_center);
+      g.setTextColor(C_DIM);
+      g.drawString(NOME_CAMADA[k], CAM_W / 2, y + 14);
+      g.setTextColor(C_FG);
+      g.drawString(ITENS[k][esc[k]], CAM_W / 2, y + 32);
+      if (k == CM_COR) g.fillRect(CAM_W / 2 - 3, y + 42, 6, 3, PALETAS[esc[CM_COR]][2]);
+    } else {
+      g.drawRect(14, y + 7, CAM_W - 28, CAM_LH - 14, C_BODY); g.drawRect(15, y + 8, CAM_W - 30, CAM_LH - 16, C_BODY);
+      g.setTextDatum(middle_center);
+      g.setTextColor(C_FG);
+      g.drawString("Sortear", CAM_W / 2, y + CAM_LH / 2);
+    }
+  }
+  g.clearClipRect();
+  int mx = camarimRolagemMax();
+  if (mx > 0) {
+    int trilho = H - CAM_ABA - 8, total = camarimLinhas() * CAM_LH, polegar = trilho * (H - CAM_ABA) / total;
+    if (polegar < 24) polegar = 24;
+    g.fillRect(CAM_W - 4, CAM_ABA + 4, 2, trilho, C_LINE);
+    g.fillRect(CAM_W - 4, CAM_ABA + 4 + (trilho - polegar) * camarimRolagem / mx, 2, polegar, C_DIM);
+  }
+}
+
+// titulo e rodape da esquerda (botao Voltar e o que esta tocando)
+void desenharCamarimBase(LovyanGFX &g) {
+  g.fillRect(0, 0, CAM_X, AREA_Y, C_BG);
+  g.fillRect(0, FOOT_TOP, CAM_X, H - FOOT_TOP, C_BG);
+  g.setFont(&fonts::Font2);
+  g.setTextDatum(middle_left);
+  g.setTextColor(C_FG, C_BG);
+  g.drawString("Camarim", 12, AREA_Y / 2 + 1);
+  g.drawRect(CAM_VOLTAR_X, CAM_VOLTAR_Y, CAM_VOLTAR_W, CAM_VOLTAR_H, C_LINE);
+  g.drawRect(CAM_VOLTAR_X + 1, CAM_VOLTAR_Y + 1, CAM_VOLTAR_W - 2, CAM_VOLTAR_H - 2, C_LINE);
+  seta(g, CAM_VOLTAR_X + 14, CAM_VOLTAR_Y + CAM_VOLTAR_H / 2 - 1, C_FG, 'l');
+  g.drawString("Voltar", CAM_VOLTAR_X + 34, CAM_VOLTAR_Y + CAM_VOLTAR_H / 2 + 1);
+  g.setTextColor(C_DIM, C_BG);
+  g.drawString(animId ? ANIMS[animId].nome : "toque no corpo: cocegas", CAM_VOLTAR_X + CAM_VOLTAR_W + 14, CAM_VOLTAR_Y + CAM_VOLTAR_H / 2 + 1);
+}
+
+// cabide (abre o Camarim), no canto superior direito da tela inicial
+void desenharCabide(LovyanGFX &g, int x, int y, uint16_t c) {
+  g.fillRect(x + 9, y, 4, 3, c); g.fillRect(x + 12, y + 2, 3, 3, c); g.fillRect(x + 9, y + 5, 4, 3, c);
+  for (int i = 0; i < 4; i++) { g.fillRect(x + 8 - i * 3, y + 8 + i * 2, 3, 3, c); g.fillRect(x + 11 + i * 3, y + 8 + i * 2, 3, 3, c); }
+  g.fillRect(x - 2, y + 16, 26, 3, c);
+}
+// Altura extra quando ha chapeu: abaixa a cena para o chapeu caber abaixo do cabecalho.
+int alturaChapeu() {
+  const int topo[9] = {999, 36, 56, 46, 40, 52, 70, 38, 28};   // topo de cada chapeu na previa (nada, cartola, bone...)
+  // ate 14 px: mais que isso o chao e a sombra somem atras do rodape (que fica igual)
+  int falta = AREA_Y + 2 - (topo[esc[CM_CABECA]] - PBY + BODY_Y);
+  return falta < 0 ? 0 : falta > 14 ? 14 : falta;
+}
+
+// <<< HOST
+
+float relogio() { return millis() / 1000.0f; }
+
+// Monta o quadro a partir do Estado (m) e da animacao que estiver tocando.
+float ultimoCena = 0;
+void montarQuadro(Quadro &s, float agora) {
+  s.piscar = m.blinkT >= 0;
+  s.eyeDx = m.eyeDx; s.eyeDy = m.eyeDy; s.eyeH = m.eyeH; s.mouth = m.mouth;
+  if (m.estado == PENSANDO) s.pontos = true;
+  if (animId != A_NENHUMA) {
+    float a = agora - animT0;
+    if (a > ANIMS[animId].dur) {
+      if (animId == A_COCHILO && cochiloAuto) { animT0 = agora - 1.4f; a = 1.4f; }   // continua dormindo ate um toque
+      else { pararAnim(); if (tela == T_CAMARIM) redesenharColuna(); }
+    }
+    if (animId != A_NENHUMA) { s = Quadro(); passo(animId, s, a, agora); return; }
+  }
+  if (m.estado == ALERTA) { s = Quadro(); passo(A_APROVACAO, s, m.t, agora); }        // aceno e, depois de 2 s, o pe batendo
+  else if (m.estado == TRABALHANDO) { s = Quadro(); passo(A_TRABALHANDO, s, m.t, agora); s.piscar = m.blinkT >= 0; }   // com gota de suor
+  else if (m.estado == OUVINDO) { s = Quadro(); passo(A_OUVINDO, s, m.t, agora); }    // cabeca inclinada
+}
 
 void desenharMascote() {
-  area.fillScreen(C_BG);
-  int cx = BODY_X + BODY_W * PW / 2, fy = BODY_Y + BODY_H * PH;
-  const int fl[3][2] = {{300, 0}, {240, 6}, {180, 12}};
-  for (auto &f : fl) px(cx - f[0] / 2, fy + 3 + f[1], f[0], 6, C_FLOOR);
-  const int sh[3] = {210, 150, 90};
-  for (int i = 0; i < 3; i++) px(cx - sh[i] / 2, fy + 3 + i * 6, sh[i], 6, C_SHADOW);
-  for (int y = 0; y < BODY_H; y++)
-    for (int x = 0; x < BODY_W; x++) {
-      if (!solido(x, y)) continue;
-      int X = BODY_X + x * PW, Y = BODY_Y + y * PH;
-      bool perna = y == BODY_H - 1;
-      px(X, Y, PW, PH, perna ? C_LO : C_BODY);
-      if (!solido(x - 1, y)) px(X, Y, 4, PH, perna ? C_BODY : C_MID);
-      if (!solido(x, y - 1)) px(X, Y, PW, 6, C_HI);
-      if (!solido(x + 1, y)) px(X + PW - 4, Y, 4, PH, perna ? C_DEEP : C_LO);
-      if (!solido(x, y + 1)) px(X, Y + PH - 8, PW, 8, perna ? C_DEEP : C_LO);
-    }
-  if (m.blinkT < 0) {
-    for (int ex : {EYE_L, EYE_R}) {
-      int x = BODY_X + (ex + m.eyeDx) * PW, y = BODY_Y + (int)((EYE_ROW + m.eyeDy) * PH);
-      px(x, y, PW, (int)(m.eyeH * PH), C_BG);
-      px(x, y - 4, PW, 4, C_DEEP);
-    }
-  }
-  if (m.mouth > 0) {
-    int x = BODY_X + 8 * PW, y = BODY_Y + (int)(2.5f * PH), h = m.mouth * PH / 2;
-    px(x, y, 2 * PW, h, C_BG);
-    px(x, y - 4, 2 * PW, 4, C_DEEP);
-  }
-  if (m.estado == PENSANDO || m.estado == TRABALHANDO) {
-    int passo = (int)(m.t * 4) % 4, d = 12, x0 = BODY_X + 15 * PW + 10, y0 = BODY_Y - 4;
-    for (int i = 0; i < 3; i++) px(x0 + i * (d + 8), y0 - i * 6, d, d, i < passo ? C_FG : C_DIM);
-  }
-  if (m.estado == ALERTA) {
-    uint16_t c = ((int)(m.t * 3) % 2) ? C_WARN_HI : C_WARN;
-    int x = BODY_X + 15 * PW + 14;
-    px(x, BODY_Y, 12, 26, c); px(x, BODY_Y + 34, 12, 12, c);
-  }
+  float agora = relogio(), dt = ultimoCena > 0 ? fminf(.05f, agora - ultimoCena) : 0;
+  ultimoCena = agora;
+  Quadro s;
+  montarQuadro(s, agora);
+  cenaDy = alturaChapeu();
+  cenaDx = tela == T_CAMARIM ? CAM_DX : 0;
+  cena(s, agora, dt);
+  if (tela == T_SESSAO) tft.setClipRect(0, HDR_S, W, FOOT_TOP - HDR_S);   // nao pisa no cabecalho da sessao
+  if (tela == T_CAMARIM) tft.setClipRect(0, AREA_Y, CAM_X, AREA_H);       // nem na coluna do Camarim
   area.pushSprite(AREA_X, AREA_Y);
+  tft.clearClipRect();
 }
 
 // ---- desenho: rodape (texto ou aprovacao) ----------------------------------------------------
@@ -597,7 +1225,7 @@ void desenharRodape() {
   int bw = 6, gap = 4, total = 16 * bw + 15 * gap, bx = (W - total) / 2, base = FOOT_Y - 6;
   for (int i = 0; i < 16; i++) {
     int h = max(2, (int)roundf(m.bars[i] * 14) * 2);
-    rodape.fillRect(bx + i * (bw + gap), base - h - y0, bw, h, m.bars[i] > .05f ? C_BODY : C_DIM);
+    rodape.fillRect(bx + i * (bw + gap), base - h - y0, bw, h, m.bars[i] > .05f ? PALETAS[esc[CM_COR]][2] : C_DIM);
   }
   String txt; uint16_t cor = C_DIM; bool repouso = m.estado == REPOUSO || m.estado == TRABALHANDO || m.estado == ALERTA;
   if (millis() < voz.avisoAte) { txt = voz.aviso; cor = voz.avisoCor; repouso = true; }
@@ -639,14 +1267,14 @@ void desenharTopo() {  // tela do mascote
   seta(tft, 26 + tft.textWidth(rot.c_str()) + 10, TOP_BAR / 2 - 1, conexao == PONTE_OK && !n ? C_DIM : cor, 'r');
   tft.setTextDatum(middle_right);
   tft.setTextColor(C_DIM, C_BG);
-  tft.drawString(hora.c_str(), W - 12, TOP_BAR / 2 + 1);
+  tft.drawString(hora.c_str(), W - 48, TOP_BAR / 2 + 1);
+  desenharCabide(tft, W - 30, 4, C_DIM);   // abre o Camarim
 }
 
 void desenharCabecalhoSessao() {
   Sessao *s = sessaoAtual();
   tft.fillRect(0, 0, W, HDR_S, C_PANEL);
   tft.fillRect(0, HDR_S - 1, W, 1, C_LINE);
-  tft.fillRect(0, HDR_S, W, AREA_Y - HDR_S, C_BG);
   seta(tft, 15, HDR_S / 2 - 1, C_FG, 'l');
   if (!s) return;
   tft.setFont(&fonts::Font2);
@@ -803,6 +1431,7 @@ void redesenharTudo() {
   assinaturaMascote = assinaturaRodape = 0xFFFFFFFF;  // forca o redesenho no proximo quadro
   if (tela == T_LISTA) { recalcVisiveis(); desenharCabecalhoLista(); desenharLista(); return; }
   if (tela == T_MENU) { desenharCabecalhoMenu(); desenharMenu(); return; }
+  if (tela == T_CAMARIM) { desenharCamarimBase(tft); desenharColuna(coluna); coluna.pushSprite(CAM_X, 0); return; }
   if (tela == T_SESSAO) desenharCabecalhoSessao(); else desenharTopo();
 }
 
@@ -811,16 +1440,39 @@ void irPara(Tela t, const String &id = "") {
   if (id.length()) atualId = id;
   if (t == T_SESSAO) { Sessao *s = sessaoAtual(); if (s) replyVisto(s->id) = hashTxt(s->reply); }  // nao repete resposta velha
   if (t == T_LISTA) { recalcVisiveis(); rolagem = min(rolagem, rolagemMax()); }
-  if (t == T_MASCOTE || t == T_SESSAO) entrar(estadoDeRepouso());
+  if (t == T_MASCOTE || t == T_SESSAO || t == T_CAMARIM) entrar(estadoDeRepouso());
+  if (t == T_CAMARIM) camarimRolagem = min(camarimRolagem, camarimRolagemMax());
   tft.fillScreen(C_BG);  // troca de tela: limpa tudo uma vez
   redesenharTudo();
-  Serial.printf("tela: %s %s\n", t == T_MASCOTE ? "mascote" : t == T_LISTA ? "lista" : t == T_MENU ? "menu" : "sessao", t == T_SESSAO ? atualId.c_str() : "");
+  Serial.printf("tela: %s %s\n", t == T_MASCOTE ? "mascote" : t == T_LISTA ? "lista" : t == T_MENU ? "menu" : t == T_CAMARIM ? "camarim" : "sessao", t == T_SESSAO ? atualId.c_str() : "");
+}
+
+uint32_t ultimaAtividade = 0;      // ultimo toque ou mudanca nas sessoes (para o cochilo)
+uint32_t assinaturaSessoes = 0;
+// Gatilhos de comemorar/dancinha: compara o status de cada sessao antes e depois da leitura.
+void gatilhosSessoes(const std::vector<Sessao> &antes) {
+  bool algumaTerminou = false, aindaAtivas = false, haviaAtivas = false;
+  for (auto &a : antes) haviaAtivas |= a.status == "working" || a.status == "waiting";
+  for (auto &n : sessoes) {
+    if (n.status == "working" || n.status == "waiting") aindaAtivas = true;
+    if (n.status != "done") continue;
+    for (auto &a : antes) if (a.id == n.id && (a.status == "working" || a.status == "waiting")) algumaTerminou = true;
+  }
+  uint32_t h = 2166136261u;
+  for (auto &n : sessoes) h = (h ^ hashTxt(n.id)) * 16777619u ^ hashTxt(n.status);
+  if (h != assinaturaSessoes) { assinaturaSessoes = h; ultimaAtividade = millis(); }
+  if (!algumaTerminou || m.estado == OUVINDO || voz.fase == V_GRAVANDO) return;
+  cochiloAuto = false;
+  tocarAnim(haviaAtivas && !aindaAtivas ? A_DANCINHA : A_COMEMORAR, relogio());   // todas concluidas: dancinha
+  Serial.printf("animacao: %s\n", ANIMS[animId].nome);
 }
 
 void dadosNovos() {
+  std::vector<Sessao> antes = sessoes;
   xSemaphoreTake(trava, portMAX_DELAY);
   sessoes = redeSessoes; hora = redeHora; conexao = redeLink; versaoVista = redeVersao;
   xSemaphoreGive(trava);
+  if (conexao == PONTE_OK) gatilhosSessoes(antes);
   if (tela == T_SESSAO && !sessaoAtual() && conexao == PONTE_OK) { irPara(T_LISTA); return; }
   bool conversando = m.estado == OUVINDO || m.estado == PENSANDO || m.estado == RESPONDENDO || voz.fase != V_NADA;
   Sessao *sa = tela == T_SESSAO ? sessaoAtual() : nullptr;
@@ -834,11 +1486,11 @@ void dadosNovos() {
       return;
     }
   }
-  if ((tela == T_MASCOTE || tela == T_SESSAO) && !conversando) {
+  if ((tela == T_MASCOTE || tela == T_SESSAO || tela == T_CAMARIM) && !conversando) {
     Estado e = estadoDeRepouso();
     if (e != m.estado) entrar(e);
   }
-  if (tela == T_MENU) return;                    // o menu nao depende das sessoes
+  if (tela == T_MENU || tela == T_CAMARIM) return;   // o menu e o Camarim nao dependem das sessoes
   if (tela == T_LISTA) { recalcVisiveis(); rolagem = min(rolagem, rolagemMax()); }
   redesenharTudo();
 }
@@ -959,6 +1611,9 @@ void resultadoRede() {
   Proposito p = trabProposito;
   trabProposito = PR_NADA;
   String erro = cod > 0 ? erroDe(resp) : (cod == -1 ? "sem ponte" : "rede");
+  bool falhou = (p == PR_VOZ && cod != 200) || (p == PR_MSG && cod != 202) || ((p == PR_REPOS || p == PR_BRANCHES) && cod != 200)
+                || ((p == PR_CRIAR || p == PR_VINCULAR) && cod != 202);
+  if (falhou) { cochiloAuto = false; tocarAnim(A_TONTO, relogio()); }   // a ponte respondeu erro (ou nao respondeu)
   switch (p) {
     case PR_VOZ: {
       JsonDocument d;
@@ -1041,6 +1696,57 @@ void agir(const char *tipo) {
   redesenharTudo();
 }
 
+// ---- Camarim: escolha na NVS e toques ----------------------------------------------------------
+void carregarVisual() {
+  prefs.begin("mascote", true);
+  for (int c = 0; c < N_CAMADAS; c++) {
+    uint8_t v = prefs.getUChar(CHAVE_CAMADA[c], esc[c]);
+    esc[c] = v < N_ITENS[c] ? v : esc[c];
+  }
+  prefs.end();
+}
+void salvarCamada(int c) {
+  prefs.begin("mascote", false);
+  prefs.putUChar(CHAVE_CAMADA[c], esc[c]);
+  prefs.end();
+}
+void trocarItem(int c, int passo) {
+  esc[c] = (esc[c] + N_ITENS[c] + passo) % N_ITENS[c];
+  salvarCamada(c);
+  Serial.printf("camarim: %s = %s\n", NOME_CAMADA[c], ITENS[c][esc[c]]);
+}
+void sortearVisual() {
+  for (int c = 0; c < N_CAMADAS; c++) {
+    esc[c] = (c == CM_FUNDO && rnd() < .5f) ? FUN_LISO : (uint8_t)(esp_random() % N_ITENS[c]);
+    salvarCamada(c);
+  }
+}
+void redesenharColuna() { desenharColuna(coluna); coluna.pushSprite(CAM_X, 0); desenharCamarimBase(tft); }
+
+// corpo na tela (para as cocegas), igual ao alvo da previa (x 140..340, y 90..250 com BY=96)
+bool noCorpo(int x, int y) {
+  int dx = tela == T_CAMARIM ? CAM_DX : 0, top = 90 - PBY + BODY_Y + alturaChapeu();
+  return x >= 140 + dx && x < 340 + dx && y >= top && y < top + 160 && y < FOOT_TOP;
+}
+
+void tocouCamarim(int x, int y) {
+  if (x < CAM_X) {
+    if (x >= CAM_VOLTAR_X && x < CAM_VOLTAR_X + CAM_VOLTAR_W && y >= CAM_VOLTAR_Y - 6) { pararAnim(); irPara(T_MASCOTE); return; }
+    if (noCorpo(x, y)) { tocarAnim(A_COCEGAS, relogio()); redesenharColuna(); }
+    return;
+  }
+  if (y < CAM_ABA) { int aba = x < CAM_X + 80 ? 0 : 1; if (aba != camarimAba) { camarimAba = aba; camarimRolagem = 0; redesenharColuna(); } return; }
+  int k = (y - CAM_ABA + camarimRolagem) / CAM_LH;
+  if (k < 0 || k >= camarimLinhas()) return;
+  if (camarimAba == 0) {
+    Anim a = (Anim)(k + 1);
+    cochiloAuto = false;
+    if (animId == a) pararAnim(); else tocarAnim(a, relogio());
+  } else if (k < N_CAMADAS) trocarItem(k, x < CAM_X + CAM_W / 2 ? -1 : 1);   // metade esquerda '<', direita '>'
+  else sortearVisual();
+  redesenharColuna();
+}
+
 // ---- toque ----------------------------------------------------------------------------------
 struct {
   bool ativo = false, arrastando = false, falando = false;
@@ -1074,7 +1780,11 @@ void tocou(int x, int y) {
   int b0 = botaoEm(x, y);
   if (b0 == 3) { voz.fase = V_NADA; avisar("descartado", C_DIM); entrar(estadoDeRepouso()); return; }
   if (b0 == 4) { confirmarFala(); return; }
-  if (tela == T_MASCOTE) { if (y < TOP_HIT && voz.fase == V_NADA) irPara(T_LISTA); return; }
+  if (tela == T_MASCOTE) {
+    if (y < TOP_HIT && voz.fase == V_NADA) { if (x >= W - 60) irPara(T_CAMARIM); else irPara(T_LISTA); }
+    return;
+  }
+  if (tela == T_CAMARIM) { tocouCamarim(x, y); return; }
   if (tela == T_LISTA) {
     if (y < HDR) {
       if (x < 120) irPara(T_MASCOTE);
@@ -1121,14 +1831,26 @@ void lerToque(uint32_t agora) {
   if (leu) { toque.ultimo = agora; toque.x = tx; toque.y = ty; }
   bool apertado = leu || (toque.ativo && agora - toque.ultimo < 150);  // o resistivo falha por instantes
   if (apertado && !toque.ativo) {
+    ultimaAtividade = agora;
+    if (animId == A_COCHILO) {   // qualquer toque acorda, e esse toque nao abre nada
+      pararAnim(); cochiloAuto = false;
+      if (tela == T_CAMARIM) redesenharColuna();
+      toque = {}; toque.ativo = true; toque.arrastando = toque.falando = true; toque.desde = toque.ultimo = agora;   // nao grava nem abre
+      return;
+    }
     toque = {};
     toque.ativo = true; toque.x0 = toque.x = tx; toque.y0 = toque.y = ty; toque.desde = toque.ultimo = agora; toque.rolagem0 = rolagem;
     int b = botaoEm(tx, ty);
     if (b) { botaoApertado = b; assinaturaRodape = 0xFFFFFFFF; }
     if (tela == T_MENU) toque.rolagem0 = menuRolagem;
+    if (tela == T_CAMARIM) toque.rolagem0 = camarimRolagem;
   } else if (apertado) {
     int dy = toque.y - toque.y0;
-    if (tela == T_LISTA || tela == T_MENU) {
+    if (tela == T_CAMARIM) {
+      if (abs(dy) > 8 && toque.x0 >= CAM_X) toque.arrastando = true;
+      int nova = constrain(toque.rolagem0 - dy, 0, camarimRolagemMax());
+      if (toque.arrastando && abs(nova - camarimRolagem) >= 3) { camarimRolagem = nova; desenharColuna(coluna); coluna.pushSprite(CAM_X, 0); }
+    } else if (tela == T_LISTA || tela == T_MENU) {
       if (abs(dy) > 8) toque.arrastando = true;
       if (toque.arrastando && tela == T_LISTA) {
         int nova = constrain(toque.rolagem0 - dy, 0, rolagemMax());
@@ -1147,12 +1869,41 @@ void lerToque(uint32_t agora) {
     toque.ativo = false;
     if (botaoApertado) { botaoApertado = 0; assinaturaRodape = 0xFFFFFFFF; }
     if (toque.falando) { if (voz.fase == V_GRAVANDO) terminarFala(); }
+    else if (!toque.arrastando && agora - toque.desde < 250 && tela == T_MASCOTE && toque.y0 >= TOP_HIT && voz.fase == V_NADA && noCorpo(toque.x0, toque.y0)) {
+      cochiloAuto = false; tocarAnim(A_COCEGAS, relogio());   // toque curto no corpo: cocegas (segurar continua sendo voz)
+    }
     else if (!toque.arrastando && agora - toque.desde < 800) tocou(toque.x0, toque.y0);
   }
 }
 
 // ---- programa principal ---------------------------------------------------------------------
 uint32_t ultimoQuadro = 0;
+
+// Gatilhos que dependem do tempo: resposta de /api/acao, ponte fora, cochilo e arrumar o bigode.
+void gatilhosLoop(uint32_t agora) {
+  int cod;
+  xSemaphoreTake(trava, portMAX_DELAY);
+  cod = acaoCod; acaoCod = 0;
+  xSemaphoreGive(trava);
+  if (cod) {
+    bool aprovar = cod > 0 && (cod & 0x10000);
+    int http = cod > 0 ? (cod & 0xFFFF) : cod;
+    cochiloAuto = false;
+    tocarAnim(http == 200 ? (aprovar ? A_APROVADO : A_RECUSADO) : A_TONTO, relogio());
+  }
+  static uint32_t foraDesde = 0; static bool avisouFora = false;
+  if (conexao == PONTE_OK) { foraDesde = 0; avisouFora = false; }
+  else if (!foraDesde) foraDesde = agora;
+  else if (!avisouFora && agora - foraDesde > 60000) { avisouFora = true; cochiloAuto = false; tocarAnim(A_TONTO, relogio()); }
+  bool parado = animId == A_NENHUMA && m.estado == REPOUSO && voz.fase == V_NADA && trabProposito == PR_NADA && !toque.ativo;
+  if (tela == T_MASCOTE && parado && agora - ultimaAtividade > 10UL * 60 * 1000) { cochiloAuto = true; tocarAnim(A_COCHILO, relogio()); }
+  static uint32_t proximoBigode = 0;
+  if (!proximoBigode || !parado) proximoBigode = agora + 180000 + esp_random() % 180000;   // 3 a 6 min de repouso
+  if (parado && (tela == T_MASCOTE || tela == T_SESSAO) && esc[CM_BIGODE] == BIG_GUIDAO && agora >= proximoBigode) {
+    tocarAnim(A_ARRUMAR, relogio());
+    proximoBigode = 0;
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -1168,13 +1919,16 @@ void setup() {
   C_PANEL = tft.color565(0x1a, 0x16, 0x13); C_LINE = tft.color565(0x2a, 0x24, 0x20);
   tft.fillScreen(C_BG);
 
-  for (LGFX_Sprite *s : {&area, &rodape, &lista}) { s->setPsram(true); s->setColorDepth(16); }
-  if (!area.createSprite(AREA_W, AREA_H) || !rodape.createSprite(W, FOOT_H) || !lista.createSprite(W, H - HDR)) {
+  for (LGFX_Sprite *s : {&area, &rodape, &lista, &coluna}) { s->setPsram(true); s->setColorDepth(16); }
+  if (!area.createSprite(AREA_W, AREA_H) || !rodape.createSprite(W, FOOT_H) || !lista.createSprite(W, H - HDR) || !coluna.createSprite(CAM_W, H)) {
     tft.setTextColor(TFT_RED); tft.drawString("Sem memoria: confira PSRAM = OPI PSRAM", 10, 150);
     Serial.println("Falha ao criar os desenhos: PSRAM esta em OPI PSRAM nas Ferramentas?");
     while (true) delay(1000);
   }
   rodape.setFont(&fonts::Font2);
+  carregarVisual();
+  iniciarCeu();
+  for (auto &e : emitT) e = -1e9f;
 
   trava = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(tarefaRede, "rede", 12288, nullptr, 1, nullptr, 0);
@@ -1187,7 +1941,8 @@ void setup() {
 
   entrar(REPOUSO);
   redesenharTudo();
-  ultimoQuadro = millis();
+  ultimoQuadro = ultimaAtividade = millis();
+  Serial.printf("memoria livre: interna %u B, PSRAM %u B\n", (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL), (unsigned)ESP.getFreePsram());
 }
 
 void loop() {
@@ -1203,7 +1958,8 @@ void loop() {
   bool av = millis() < voz.avisoAte;
   if (av != avisoAtivo) { avisoAtivo = av; if (tela == T_LISTA) desenharLista(); if (tela == T_MENU) desenharMenu(); }
 
-  if (tela == T_MASCOTE || tela == T_SESSAO) {
+  gatilhosLoop(agora);
+  if (tela == T_MASCOTE || tela == T_SESSAO || tela == T_CAMARIM) {
     atualizar(dt);
     uint32_t a = m.estado;
     a = a * 31u + (m.blinkT >= 0);
@@ -1213,11 +1969,16 @@ void loop() {
     a = a * 31u + (uint32_t)m.mouth;
     if (m.estado == PENSANDO || m.estado == TRABALHANDO) a = a * 31u + (uint32_t)(m.t * 4) % 4;
     if (m.estado == ALERTA) a = a * 31u + (uint32_t)(m.t * 3) % 2;
-    if (a != assinaturaMascote) { desenharMascote(); assinaturaMascote = a; }
+    a = a * 31u + animId + esc[CM_CABECA] * 7u + esc[CM_OLHOS] * 11u + esc[CM_BIGODE] * 13u + esc[CM_BOCA] * 17u + esc[CM_PEITO] * 19u
+        + esc[CM_MAO] * 23u + esc[CM_COR] * 29u + esc[CM_FUNDO] * 37u + tela * 41u;
+    // em repouso so redesenha quando muda; com animacao, particulas ou fundo animado, ate ~25 quadros/s
+    bool movendo = cenaAnimada() || m.estado == ALERTA || m.estado == TRABALHANDO || m.estado == OUVINDO;
+    static uint32_t ultimoDesenho = 0;
+    if ((movendo && agora - ultimoDesenho >= 40) || a != assinaturaMascote) { desenharMascote(); assinaturaMascote = a; ultimoDesenho = agora; }
     uint32_t b = m.estado * 7u + m.typed * 131u + botaoApertado * 17u + versaoVista * 1009u + voz.fase * 7919u + av * 104729u
                + voz.texto.length() * 31u + (uint32_t)voz.avisoAte;
     for (int i = 0; i < 16; i++) b = b * 31u + (uint32_t)(m.bars[i] * 14);
-    if (b != assinaturaRodape) { desenharRodape(); assinaturaRodape = b; }
+    if (b != assinaturaRodape && tela != T_CAMARIM) { desenharRodape(); assinaturaRodape = b; }
   }
   delay(16);
 }
