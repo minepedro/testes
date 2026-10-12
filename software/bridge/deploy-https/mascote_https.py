@@ -93,12 +93,22 @@ server {{
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:mascote:1m;
     server_tokens off;
-    client_max_body_size 8k;
+    client_max_body_size 64k;
     add_header Strict-Transport-Security "max-age=86400" always;
 
-    location = /saude      {{ proxy_pass http://127.0.0.1:{upstream_port}; include {proxy_inc}; }}
-    location = /api/estado {{ proxy_pass http://127.0.0.1:{upstream_port}; include {proxy_inc}; }}
-    location = /api/acao   {{ proxy_pass http://127.0.0.1:{upstream_port}; include {proxy_inc}; }}
+    location = /saude   {{ proxy_pass http://127.0.0.1:{upstream_port}; include {proxy_inc}; }}
+    location /api/      {{ proxy_pass http://127.0.0.1:{upstream_port}; include {proxy_inc}; }}
+    # voz: PCM cru ate 1 MB (~32 s) e transcricao local que pode levar dezenas de segundos
+    location = /api/voz {{
+        client_max_body_size 1m;
+        proxy_pass http://127.0.0.1:{upstream_port};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 90s;
+    }}
     location / {{ return 404; }}
 }}
 """

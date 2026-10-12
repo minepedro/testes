@@ -39,6 +39,17 @@ class Render(unittest.TestCase):
         self.assertIn('/etc/letsencrypt/live/179.198.122.200/fullchain.pem', c)
         self.assertIn('proxy_pass http://127.0.0.1:8787', c)
 
+    def test_nginx_rotas_api_e_voz(self):
+        c = m.render_nginx()
+        self.assertIn('location /api/ ', c)                 # api nova inteira (sessoes, pedidos, repos)
+        voz = c[c.index('location = /api/voz'):]
+        voz = voz[:voz.index('}')]
+        self.assertIn('client_max_body_size 1m;', voz)
+        self.assertIn('proxy_read_timeout 90s;', voz)
+        self.assertNotIn('include', voz)                    # o include ja define proxy_read_timeout (duplicado = erro)
+        self.assertIn('client_max_body_size 64k;', c)        # resto continua pequeno
+        self.assertIn('location / { return 404; }', c)
+
     def test_bootstrap_sem_tls(self):
         c = m.render_nginx(tls=False)
         self.assertNotIn('ssl', c)
