@@ -199,6 +199,26 @@ Com tela, touch e microfone testados separadamente, o próximo passo é gravar o
 mascote de verdade (LVGL, com o sprite 18×5 do protótipo) e ligar o touch ao
 push-to-talk. Essa parte eu escrevo junto com você quando você chegar aqui.
 
+## Teste do Camarim (acessórios e animações)
+
+Grave `firmware/mascote` como sempre (placa ESP32S3 Dev Module, PSRAM "OPI PSRAM", porta COM5).
+Nada disto foi testado na placa ainda; me conte o que aparecer.
+
+1. Abra o Serial (115200). Logo depois da tela acender deve sair `memoria livre: interna ... B, PSRAM ... B`.
+   A interna deve ficar perto de 200 KB ou mais; a PSRAM, perto de 7 MB (os desenhos ficam nela).
+2. Na tela inicial, toque no **cabide** no canto superior direito: abre o Camarim
+   (mascote à esquerda, coluna com as abas **Animar** e **Visual** à direita, botão **Voltar** embaixo).
+3. Aba **Visual**: em "Cabeca", toque na metade direita da linha (`>`) até aparecer "Cartola".
+   O chapéu aparece na hora. O Serial mostra `camarim: Cabeca = Cartola`.
+4. Desligue e ligue a placa. Abra o Camarim de novo: a cartola continua lá (fica na NVS).
+5. Teste "Sortear" no fim da lista e as outras camadas (cor, fundo, bigode...). Arraste a coluna para rolar.
+6. Aba **Animar**: toque em cada uma das 11 animações. Tocar de novo na mesma para.
+7. Volte para a tela inicial e dê um **toque curto** (rápido) na barriga: ele ri (cócegas).
+8. **Segure** a tela e fale: a gravação de voz tem que funcionar como antes (barras sobem, "ouvindo...").
+9. Gatilhos automáticos (sem tocar nada): sessão que termina = comemorar; última sessão que termina = dancinha;
+   aprovar/recusar = check/X; erro da ponte (ou ponte fora por mais de 1 min) = tonto;
+   10 min parado = cochilo (um toque acorda e não abre nada); com o bigode Guidão, a cada 3 a 6 min ele arruma o bigode.
+
 ## Etapa opcional: botão físico
 
 Um botão tátil entre o **GPIO 21** e o **GND** (resistor pull-up interno do ESP32; sem apertar lê 1, apertado lê 0).
