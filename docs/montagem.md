@@ -65,6 +65,7 @@ o ILI9488 não solta o fio SDO, e isso estraga a leitura do touch.
 
 O VCC fica no 3V3, como na ST7796. Programa de teste: `firmware/testes/etapa2_3_tela_touch_ili9488`.
 Manual e esquema desta variante: `hardware/manual-montagem-ili9488.html` e `hardware/esquema-ligacoes-ili9488.html`.
+Placa ilhada com esta tela: `hardware/manual-placa-ilhada-ili9488.html` (a placa é a mesma da ST7796; só mudam os nomes dos 4 fios do touch).
 O touch resistivo funciona **apertando** e precisa de calibração (x_min, x_max, y_min, y_max no programa).
 
 ### Microfone INMP441 (I2S)
