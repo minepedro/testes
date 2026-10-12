@@ -88,4 +88,11 @@ Respostas de texto livre dependem da voz (microfone).
 
 ## 24. Sessões da nuvem no mascote
 **O mascote mostra as sessões do Remote Control (VPS) e também as da nuvem (claude.ai/code).**
-Nas da nuvem, o mascote mostra a lista, o estado e a última resposta e manda mensagens (quando isso for confirmado em teste), mas **não aprova nem escolhe opções**: isso fica no app. Na lista, as da nuvem levam um ícone diferente, e um pedido pendente nelas aparece como aviso "responda pelo app".
+Na lista, as da nuvem levam um ícone diferente. Nelas o mascote mostra estado e última resposta, manda mensagens (`claude -p ... --cloud`, documentado) e, **como recurso experimental desligável**, responde pedidos: aprovar/recusar, escolher opções (inclusive várias) e aprovar planos.
+Esse recurso usa uma API interna não documentada do Claude Code (testado em 2026-10-11; resultados em `software/bridge/cli/README.md`): pode quebrar sem aviso. Se falhar ou estiver desligado, o pedido aparece como aviso "responda pelo app". Na nuvem não há "sempre permitir" (não comprovado), e pedidos perigosos continuam só pelo app, como na VPS (decisão 23).
+Revisado em 2026-10-11: antes, a nuvem era só para ver.
+
+## 25. Correções das decisões 20 e 22
+- Decisão 20: as sessões da VPS usam o **login completo do claude.ai** na CLI (`claude` → `/login`), não `claude setup-token` (esse token só serve para chamadas ao modelo; o Remote Control exige o login).
+- Decisão 22: "todos os repositórios" inclui os das organizações do Pedro (ex.: `byesolutions`), listados à parte com `gh repo list <org>`.
+- Mensagens novas para sessões da VPS usam `tmux send-keys` (não documentado), só com a sessão parada e confirmando a chegada pelo hook `UserPromptSubmit`.
