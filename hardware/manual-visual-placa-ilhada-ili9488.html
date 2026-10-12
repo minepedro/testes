@@ -299,8 +299,8 @@ void loop() {
 (() => {
   // ================= memoria do navegador =================
   let mem = {};
-  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v5') || '{}'); } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v5', JSON.stringify(mem)); } catch (e) {} };
+  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v6') || '{}'); } catch (e) {}
+  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v6', JSON.stringify(mem)); } catch (e) {} };
   const LADO_A = ['SCK', 'WS', 'L/R'], LADO_B = ['SD', 'VDD', 'GND'];
   const perms = a => [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].map(p => p.map(i => a[i]));
   const cfg = Object.assign({ n: 4, a: 0, b: 0 }, mem.cfg || {});
@@ -310,7 +310,7 @@ void loop() {
   const LN = r => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[r - 1];  // as linhas da placa vêm marcadas com letras
   const LEFT = ['3V3','3V3','RST','4','5','6','7','15','16','17','18','8','3','46','9','10','11','12','13','14','5V','GND'];
   const RIGHT = ['GND','TX','RX','1','2','42','41','40','39','38','37','36','35','0','45','48','47','21','20','19','GND','GND'];
-  const J1R = 11, J3R = 20, E0 = 3, TR = 6, T0 = 9, MR0 = 4, B3 = 2, BG = 9, MC0 = 1;
+  const J1R = 12, J3R = 2, E0 = 2, TR = 17, T0 = 9, MR0 = 17, B3 = 21, BG = 14, MC0 = 1;
   // ESP32 com a antena para a DIREITA e o USB para a ESQUERDA: a fileira J1 fica em cima, com o 3V3 na ponta direita
   const jcol = i => E0 + 21 - i;
   const gcol = g => jcol(LEFT.indexOf(String(g)));
@@ -343,7 +343,7 @@ void loop() {
       mWS: F('mWS', 'Microfone WS → GPIO 16', M.pos.WS, [gcol(16), J1R], 'i2s'),
       mSD: F('mSD', 'Microfone SD → GPIO 17', M.pos.SD, [gcol(17), J1R], 'i2s'),
       mVDD: F('mVDD', 'Microfone VDD → barramento 3V3', M.pos.VDD, [2, B3], 'v33'),
-      mGND: F('mGND', 'Microfone GND → barramento GND', M.pos.GND, [2, BG], 'gnd'),
+      mGND: F('mGND', 'Microfone GND → barramento GND', M.pos.GND, [3, BG], 'gnd'),
       mLR: F('mLR', 'Microfone L/R → barramento GND', M.pos['L/R'], [4, BG], 'gnd'),
     };
     const span = row => { const cs = Object.values(FIOS).filter(f => f.ate[1] === row).map(f => f.ate[0]); return [Math.min(...cs), Math.max(...cs)]; };
@@ -363,7 +363,7 @@ void loop() {
   const PX = 24, ML = 40, MT = 40;
   const W = ML * 2 + (COLS - 1) * PX, H = MT + (ROWS - 1) * PX + 34;
   let verso = false;
-  const x = c => ML + (verso ? (COLS - c) : (c - 1)) * PX, y = r => MT + (r - 1) * PX;
+  const x = c => ML + (verso ? (COLS - c) : (c - 1)) * PX, y = r => MT + (ROWS - r) * PX;  // a letra A fica embaixo, como na placa
   const T = (tx, ty, s, o = {}) => `<text x="${tx}" y="${ty}" font-size="${o.size || 11}" fill="${o.fill || 'var(--tinta-placa)'}" text-anchor="${o.anchor || 'middle'}" font-weight="${o.w || 400}"${o.rot ? ` transform="rotate(${o.rot} ${tx} ${ty})"` : ''} style="paint-order:stroke;stroke:${o.halo || 'var(--pcb-borda)'};stroke-width:3.5px;stroke-linejoin:round">${s}</text>`;
   const halo = (c, r) => `<circle cx="${x(c)}" cy="${y(r)}" r="12.5" fill="none" stroke="var(--accent)" stroke-width="3.5"/>`;
   const blob = (c, r, R = 8) => `<ellipse cx="${x(c)}" cy="${y(r)}" rx="${R}" ry="${R - .8}" fill="var(--solda)" stroke="var(--solda-borda)" stroke-width="1.2"/><ellipse cx="${x(c) - 2.5}" cy="${y(r) - 2.5}" rx="2.5" ry="1.7" fill="#fff" opacity=".6"/>`;
@@ -459,7 +459,7 @@ void loop() {
     <rect x="40" y="40" width="480" height="120" rx="8" fill="#121a18" stroke="#000" stroke-width="2"/>
     ${rng(0, 21).map(i => `<circle cx="${70 + i * 20.5}" cy="54" r="4" fill="var(--cobre)"/><circle cx="${70 + i * 20.5}" cy="146" r="4" fill="var(--cobre)"/>`).join('')}
     <line x1="500" y1="54" x2="500" y2="146" stroke="var(--accent)" stroke-width="2.5"/><path d="M494 64 L500 54 L506 64 M494 136 L500 146 L506 136" stroke="var(--accent)" stroke-width="2.5" fill="none"/>
-    <text x="490" y="105" text-anchor="end" font-size="14" font-weight="700" fill="#eef4f0">22,86 mm = 9 furos</text>
+    <text x="490" y="105" text-anchor="end" font-size="14" font-weight="700" fill="#eef4f0">25,4 mm = 10 furos (o seu)</text>
     <text x="280" y="185" text-anchor="middle" font-size="13" fill="var(--muted)">do centro de um pino ao centro do pino da outra fileira</text></svg>`;
   const figMic = () => {
     const n = cfg.n, pas = 34, cx = 280, cy = 120, half = n * pas / 2, R = half + 26;
@@ -613,15 +613,15 @@ void loop() {
         <li>Ferro, estanho, pasta de fluxo, sugador ou malha, alicate de corte, descascador, multímetro, paquímetro ou régua, caneta permanente, fita crepe.</li></ul>
         <p class="alerta">Nunca solde com o cabo USB ligado. Ferro sempre no suporte.</p>` });
     passo({ t: 'Treine numa sobra de placa', html: () => `<ol><li>Limpe a ponta do ferro e molhe com um pouco de estanho.</li><li>Encoste a ponta na <b>ilha e na perna ao mesmo tempo</b>. Conte 2 segundos.</li><li>Encoste o estanho <b>na ilha e na perna</b> (não no ferro). Ele escorre sozinho.</li><li>Tire o estanho, depois o ferro. Não mexa por 3 segundos.</li></ol><div class="fig">${figSolda()}</div>` });
-    passo({ t: 'Meça o ESP32', html: () => `<div class="fig">${figMedir()}</div><ul><li><b>22,86 mm (9 furos)</b>: siga o manual como está (segunda fileira na linha ${LN(J3R)}).</li><li><b>25,4 mm (10 furos)</b>: a segunda fileira vai na linha ${LN(J3R + 1)}; o resto não muda.</li></ul>` });
+    passo({ t: 'Distância entre as fileiras do ESP32', html: () => `<div class="fig">${figMedir()}</div><p>No seu, as fileiras ficaram nas linhas <b>B</b> e <b>L</b>: <b>10 furos</b> de distância (25,4 mm). O manual já está ajustado para isso.</p>` });
     passo({ t: 'Meça o microfone e ajuste o manual', id: 'mic', html: () => `<p>O INMP441 redondo tem <b>3 pinos de cada lado</b>. Duas coisas mudam de um fabricante para outro, então confira no seu:</p>
         <ol><li><b>Distância entre as fileiras:</b> encaixe o microfone na protoboard e conte quantos furos tem de uma fileira até a outra (contando a outra fileira, sem contar a primeira).</li><li><b>Ordem dos nomes</b> impressos em cada lado.</li></ol>
         ${ajusteMic()}<div class="fig" data-micfig>${figMic()}</div><p class="dica">Ao mudar aqui, todos os desenhos, furos e tamanhos de fio do manual se ajustam.</p>` });
-    passo({ t: 'Conheça a placa', vista: true, novo: [], html: () => `<ol><li>A placa tem <b>27 colunas</b> (números 1 a 27) e <b>22 linhas</b> (letras A a V), e é usada inteira, sem cortar.</li><li>Deixe na sua frente com a <b>letra A em cima</b> e o <b>número 1 à esquerda</b>. Esse é o lado da <b>frente</b> (onde as peças encaixam).</li><li>Neste manual, cada furo tem um nome de <b>letra + número</b>, como no jogo de batalha naval: <b>K3</b> é a linha K, coluna 3.</li><li>Se o <b>verso</b> não tiver letras e números impressos, escreva alguns com caneta permanente (A, E, J, O, T e 1, 5, 10, 15, 20, 25). Lá a coluna 1 fica à <b>direita</b>, como no desenho.</li></ol>` });
+    passo({ t: 'Conheça a placa', vista: true, novo: [], html: () => `<ol><li>A placa tem <b>27 colunas</b> (números 1 a 27) e <b>22 linhas</b> (letras A a V), e é usada inteira, sem cortar.</li><li>Deixe na sua frente com as letras e números impressos para cima, a <b>letra A embaixo</b> e o <b>número 1 à esquerda</b> (do jeito que você soldou o ESP32). Esse é o lado da <b>frente</b>, onde as peças encaixam.</li><li>Neste manual, cada furo tem um nome de <b>letra + número</b>, como no jogo de batalha naval: <b>K3</b> é a linha K, coluna 3.</li><li>Se o <b>verso</b> não tiver letras e números impressos, escreva alguns com caneta permanente (A, E, J, O, T e 1, 5, 10, 15, 20, 25). Lá a coluna 1 fica à <b>direita</b>, como no desenho.</li></ol>` });
     parte('Soquetes');
     passo({ t: 'Corte as barras de pino fêmea', html: () => `<p>Das barras 1×40, corte: <b>2 pedaços de 22</b> (ESP32), <b>1 de 13</b> (tela) e <b>2 de 3</b> (microfone).</p><div class="fig">${figBarra()}</div><p>Corte no meio do furo seguinte ao último que você quer e lixe a ponta.</p>` });
-    passo({ t: 'Posicione os soquetes do ESP32 (ESP32 de gabarito)', vista: true, novo: ['s.J1', 's.J3'], html: () => `<ol><li>Encaixe as duas barras de 22 nos pinos do ESP32.</li><li>Enfie as pernas nos furos: uma fileira na <b>linha ${LN(J1R)}</b>, colunas <b>${E0} a ${E0 + 21}</b>; a outra na <b>linha ${LN(J3R)}</b>, colunas ${E0} a ${E0 + 21}.</li><li>Antena para a <b>direita</b> e portas USB para a <b>esquerda</b>, com os componentes do ESP32 virados para cima.</li><li>Assim, a fileira de cima (linha ${LN(J1R)}) fica, da esquerda para a direita: <b>GND, 5V, 14, 13, 12, 11, 10, 9, 46, 3, 8, 18, 17, 16, 15, 7, 6, 5, 4, RST, 3V3, 3V3</b>. O <b>3V3</b> fica na ponta direita (colunas ${jcol(1)} e ${jcol(0)}).</li><li>A antena passa um pouco da borda direita da placa: tudo bem.</li><li>Prenda com fita crepe antes de virar.</li></ol><p class="alerta"><b>Confira antes de soldar:</b> leia os nomes impressos no seu ESP32 com o USB para a esquerda. A fileira de cima tem que começar com GND, 5V, 14 e terminar com 3V3, 3V3. Se estiver ao contrário, me avise: aí é só girar o ESP32, mas os fios mudam.</p>` });
-    passo({ t: 'Solde os soquetes do ESP32', vista: true, novo: ['j.J1', 'j.J3'], html: () => `<ol><li>Vire a placa com o ESP32 encaixado. Solde só os <b>4 pinos dos cantos</b>.</li><li>Confira se as barras estão retas e encostadas. Ajeite reaquecendo um canto, se precisar.</li><li>Solde os outros 40 pinos com um pouco de fluxo. Espere esfriar e tire o ESP32.</li></ol>` });
+    passo({ t: 'Soquetes do ESP32 (você já soldou)', vista: true, novo: ['s.J1', 's.J3', 'j.J1', 'j.J3'], html: () => `<p class="dica"><b>Feito por você:</b> duas barras de 22, nas linhas <b>${LN(J3R)}</b> e <b>${LN(J1R)}</b>, colunas <b>${E0} a ${E0 + 21}</b> (do furo ${LN(J3R)}${E0} ao ${LN(J1R)}${E0 + 21}).</p><ul><li>O ESP32 encaixa com o <b>USB perto da coluna ${E0}</b> e a antena perto da coluna ${E0 + 21}.</li><li>A fileira da <b>linha ${LN(J1R)}</b> tem, da coluna ${E0} à ${E0 + 21}: <b>GND, 5V, 14, 13, 12, 11, 10, 9, 46, 3, 8, 18, 17, 16, 15, 7, 6, 5, 4, RST, 3V3, 3V3</b>.</li><li>A fileira da <b>linha ${LN(J3R)}</b> tem, da coluna ${E0} à ${E0 + 21}: GND, GND, 19, 20, 21, 47, 48, 45, 0, 35, 36, 37, 38, 39, 40, 41, 42, 2, 1, RX, TX, GND.</li></ul><p>Os nomes estão no desenho, ao lado de cada furo. Todos os outros fios do manual partem desta posição.</p>` });
+
     passo({ t: 'Procure pontes de solda', vista: true, novo: [], sondas: [[gcol(15), J1R, 'A'], [gcol(16), J1R, 'A', '#111'], [gcol(14), J1R, 'B'], [jcol(20), J1R, 'B', '#111']], html: () => `<p>Multímetro em <b>continuidade</b> (o que apita), no verso:</p><ul><li><b>A:</b> GPIO 15 com GPIO 16 → <b style="color:var(--ok)">não pode apitar</b>.</li><li><b>B:</b> GPIO 14 com 5V → <b style="color:var(--ok)">não pode apitar</b>.</li><li>Passe por todos os vizinhos das duas fileiras.</li></ul><p class="alerta">Se apitar, tem estanho ligando os dois: tire com a malha ou o sugador.</p>` });
     passo({ t: 'Posicione os soquetes da tela e do microfone', vista: true, novo: ['s.tela', 's.mic'], html: () => `<ul><li><b>Tela:</b> barra de 13 na <b>linha ${LN(TR)}</b>, colunas <b>${T0} a ${T0 + 12}</b>.</li><li><b>Microfone:</b> encaixe as duas barras de 3 <b>no próprio microfone</b> (ele vira gabarito, como o ESP32). Enfie na placa: ${micTxt()}.</li><li>Segure com fita e vire.</li></ul><p class="dica">O furinho do som fica do lado de cima do microfone (o lado sem o chip). Deixe esse lado livre, virado para fora.</p>` });
     passo({ t: 'Solde os soquetes da tela e do microfone', vista: true, novo: ['j.tela', 'j.mic'], html: () => `<p>Pontas primeiro, confira se ficaram retas, depois o resto. Tire o microfone depois de esfriar. Teste dois vizinhos de cada barra (não podem apitar).</p>` });
