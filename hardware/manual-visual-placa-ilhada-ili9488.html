@@ -657,6 +657,58 @@ void loop() {
       <figure><div class="fig">${figEletroFrente(true)}</div><figcaption><b style="color:var(--ok)">C3 certo:</b> + no 3V3, − no GND.</figcaption></figure>
       <figure><div class="fig">${figEletroFrente(false)}</div><figcaption><b style="color:var(--ruim)">Errado:</b> faixa clara no 3V3.</figcaption></figure>
     </div>`;
+  // ---- close da ponte de estanho (perna do capacitor -> pino vizinho), placa virada com o verso para cima ----
+  function figPonte(tipo) {
+    const P = 70, xp = 100, xl = xp + P, x3 = xp + 2 * P;   // pino do soquete, perna do capacitor, furo vizinho livre
+    let s = `<rect x="10" y="100" width="300" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/><text x="46" y="92" font-size="10.5" fill="var(--muted)">verso ↑</text>`;
+    [xp, xl, x3].forEach(px => s += `<rect x="${px - 15}" y="96" width="30" height="4" fill="var(--cobre)"/><rect x="${px - 15}" y="118" width="30" height="3" fill="var(--cobre)"/>`);
+    s += `<rect x="${xp - 24}" y="121" width="48" height="30" rx="2" fill="#1d2125"/><text x="${xp}" y="140" text-anchor="middle" font-size="9.5" fill="#c9ced3">soquete</text><rect x="${xp - 3}" y="78" width="6" height="66" fill="#c9a84a"/>`
+      + `<ellipse cx="${xl}" cy="140" rx="13" ry="11" fill="#e3a23a" stroke="#8a5a10"/><text x="${xl}" y="144" text-anchor="middle" font-size="8" font-weight="700" fill="#3a2400">104</text><line x1="${xl}" y1="118" x2="${xl}" y2="129" stroke="#aab1ba" stroke-width="2.4"/>`;
+    const cone = px => `<path d="M${px - 15} 96 Q${px - 4} 94 ${px - 3} 84 L${px + 3} 84 Q${px + 4} 94 ${px + 15} 96 Z" fill="var(--solda)" stroke="var(--solda-borda)"/>`;
+    s += cone(xp);
+    const tit = (t, cor = 'var(--fg)') => `<text x="160" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="${cor}">${t}</text>`;
+    if (tipo === 'dobrar') {
+      s += `<path d="M${xl} 96 L${xl} 70" stroke="#aab1ba" stroke-width="2.4" stroke-dasharray="3 3" opacity=".6"/><path d="M${xl} 96 L${xl - 4} 92 L${xp + 8} 92" stroke="#aab1ba" stroke-width="2.6" fill="none"/>`
+        + `<path d="M${xl + 14} 66 Q${xl + 10} 84 ${xl - 14} 86" stroke="var(--accent)" stroke-width="1.8" fill="none" marker-end="url(#seta)"/>`
+        + `<line x1="${xp + 8}" y1="80" x2="${xp + 8}" y2="104" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="3 2"/><text x="${xp + 8}" y="76" text-anchor="middle" font-size="10" fill="var(--accent)" font-weight="700">corte aqui</text>`
+        + tit('1. Deite a perna em direção ao pino');
+    }
+    if (tipo === 'aquecer') {
+      s += `<path d="M${xl} 96 L${xl - 4} 92 L${xp + 8} 92" stroke="#aab1ba" stroke-width="2.6" fill="none"/>`
+        + `<path d="M${xl - 30} 88 L${xl + 10} 42 L${xl + 22} 50 L${xl - 22} 92 Z" fill="#c9ced3" stroke="#6f7881"/><text x="${xl + 26}" y="46" font-size="10.5" fill="var(--fg)">ferro</text>`
+        + `<path d="M${xp + 2} 48 C${xp + 10} 66 ${xp + 18} 80 ${xp + 24} 90" stroke="#b9c0c7" stroke-width="3" fill="none"/><text x="${xp - 6}" y="44" font-size="10.5" fill="var(--fg)">estanho</text>`
+        + tit('2. Ferro na perna e nas duas ilhas, depois o estanho');
+    }
+    if (tipo === 'pronto') {
+      s += `<path d="M${xp - 16} 96 Q${xp - 6} 82 ${xp + 6} 82 Q${(xp + xl) / 2} 80 ${xl - 6} 84 Q${xl + 8} 86 ${xl + 16} 96 Z" fill="var(--solda)" stroke="var(--solda-borda)"/><path d="M${xp + 2} 86 Q${(xp + xl) / 2} 82 ${xl - 8} 87" stroke="#fff" stroke-width="1.6" fill="none" opacity=".6"/>`
+        + tit('3. Uma gota contínua, lisa e brilhante', 'var(--ok)');
+    }
+    if (tipo === 'falha') {
+      s += `<path d="M${xl} 96 L${xl - 4} 92 L${xl - 30} 92" stroke="#aab1ba" stroke-width="2.6" fill="none"/>` + `<ellipse cx="${xl}" cy="90" rx="13" ry="7" fill="#8f969d" stroke="#5c636a"/>`
+        + `<text x="${(xp + xl) / 2}" y="76" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ruim)">✕</text>` + tit('Errado: duas gotas separadas, sem ligar', 'var(--ruim)');
+    }
+    if (tipo === 'vizinho') {
+      s += `<path d="M${xp - 16} 96 Q${xp} 82 ${(xp + xl) / 2} 82 Q${(xl + x3) / 2} 82 ${x3 + 16} 96 Z" fill="var(--solda)" stroke="var(--solda-borda)"/>`
+        + tit('Errado: estanho demais, escorreu no 3º furo', 'var(--ruim)');
+    }
+    return `<svg viewBox="40 14 240 146" role="img" aria-label="Ponte de estanho"><defs><marker id="seta" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="var(--accent)"/></marker></defs>${s}</svg>`;
+  }
+  function figPonteCima() {
+    const P = 60, y0 = 70;
+    let s = `<rect x="10" y="10" width="300" height="130" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    [70, 130, 190, 250].forEach(px => [y0 - P / 2 - 5, y0 + 25].forEach(py => s += `<circle cx="${px}" cy="${py}" r="15" fill="var(--cobre)"/><circle cx="${px}" cy="${py}" r="5" fill="var(--furo)"/>`));
+    s += `<rect x="55" y="${y0 + 10}" width="90" height="30" rx="15" fill="var(--solda)" stroke="var(--solda-borda)"/><rect x="67" y="${y0 + 22}" width="6" height="6" fill="#c9a84a"/><circle cx="130" cy="${y0 + 25}" r="3" fill="#8a9099"/><ellipse cx="90" cy="${y0 + 18}" rx="14" ry="3" fill="#fff" opacity=".55"/>`
+      + `<text x="70" y="${y0 + 58}" text-anchor="middle" font-size="11" font-weight="700" fill="#eef4f0">pino</text><text x="130" y="${y0 + 58}" text-anchor="middle" font-size="11" font-weight="700" fill="#eef4f0">perna</text><text x="190" y="${y0 + 58}" text-anchor="middle" font-size="11" fill="#eef4f0">livre</text>`;
+    return `<svg viewBox="0 0 320 150" role="img" aria-label="Ponte vista de cima">${s}</svg>`;
+  }
+  const closePonte = () => `<h3 style="margin:6px 0 0;font-size:16px">Close: como fazer a gota (ponte de estanho)</h3><div class="closes">
+      <figure><div class="fig">${figPonte('dobrar')}</div><figcaption>No verso, <b>deite a perna</b> do capacitor até encostar na solda do pino vizinho e corte o excesso. A perna vira o “fiozinho” da ponte.</figcaption></figure>
+      <figure><div class="fig">${figPonte('aquecer')}</div><figcaption>Ponha o ferro <b>em cima da perna, encostando nas duas ilhas</b>. Conte 2 s e alimente o estanho devagar, entre o ferro e o pino.</figcaption></figure>
+      <figure><div class="fig">${figPonte('pronto')}</div><figcaption>Pare quando o estanho cobrir a perna e juntar com a solda do pino. Tire o estanho, depois o ferro, e não mexa por 3 s.</figcaption></figure>
+      <figure><div class="fig">${figPonteCima()}</div><figcaption>Vista de cima: um “feijão” de solda ligando pino e perna. O furo seguinte continua livre.</figcaption></figure>
+      <figure><div class="fig">${figPonte('falha')}</div><figcaption>Se ficaram duas bolinhas separadas, reaqueça as duas juntas com um pouco de fluxo até virarem uma.</figcaption></figure>
+      <figure><div class="fig">${figPonte('vizinho')}</div><figcaption>Se escorreu para o 3º furo, tire o excesso com a malha ou o sugador.</figcaption></figure>
+    </div><div class="confere"><b>Confira cada ponte:</b> em continuidade, a perna do capacitor e o pino vizinho <b>apitam</b>; o pino e o furo do outro lado <b>não apitam</b>.</div>`;
   const figBarra = () => `<svg viewBox="0 0 560 120" role="img" aria-label="Cortando a barra fêmea">
     <rect x="20" y="40" width="520" height="24" rx="2" fill="#1d2125" stroke="#000"/>
     ${rng(0, 25).map(i => `<rect x="${30 + i * 20}" y="48" width="8" height="8" fill="#050607"/>`).join('')}
@@ -765,6 +817,7 @@ void loop() {
           <tr><td><b>C3</b> · eletrolítico 10 a 100 µF (opcional)</td><td class="num">+ em ${h(cp.c3[0])}, − em ${h(cp.c3[1])}</td><td class="num">${h(cp.c3[0])}→${h(cp.p2[0])} · ${h(cp.c3[1])}→${h(cp.p2[1])}</td></tr>
         </tbody></table></div>
         <ol><li>Enfie as pernas pela frente e dobre um pouco no verso para não cair.</li><li>No verso, encoste o ferro na perna e no pino vizinho ao mesmo tempo e ponha estanho até formar uma gota que pega os dois.</li><li>Corte o que sobrou da perna.</li></ol>
+        ${closePonte()}
         ${closeCap()}
         <p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Guarde os de 470 µF para o amplificador de som.</p>
         <div class="confere"><b>Confira (USB desligado):</b> entre 3V3 e GND não pode ficar apitando. Com o eletrolítico, um bipe curtinho que para sozinho é normal (é ele carregando).</div>`; } });
