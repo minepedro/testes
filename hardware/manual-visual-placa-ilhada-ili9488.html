@@ -59,6 +59,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 5vw
 .vista .tit b { color: var(--fg); letter-spacing: .06em; font-size: 12.5px; }
 .fig { overflow: auto; border-radius: 8px; }
 .fig svg { display: block; width: 100%; height: auto; }
+.closes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.closes figure { margin: 0; display: grid; gap: 4px; align-content: start; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.closes figcaption { font-size: 13.5px; line-height: 1.4; }
 .fig.zoom svg { width: 230%; max-width: none; }
 .zoombtn { font: inherit; font-size: 13px; background: var(--soft); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
 .nota { font-size: 13.5px; color: var(--muted); }
@@ -464,6 +467,87 @@ void loop() {
       + `<text x="${cx}" y="${cy + R + 40}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">${n} furos de uma fileira à outra (${(n * 2.54).toFixed(1).replace('.', ',')} mm)</text>`;
     return `<svg viewBox="0 0 560 ${cy + R + 52}" role="img" aria-label="Microfone visto de cima">${s}</svg>`;
   };
+  // ---- close-up da solda de um fio (vista de lado e de cima) ----
+  const SOLDA = 'var(--solda)', SB = 'var(--solda-borda)';
+  function ladoBase(viz = true) {
+    let s = `<rect x="10" y="110" width="280" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/>`;
+    [90, 150, 210].forEach(px => {
+      if (!viz && px !== 150) return;
+      s += `<rect x="${px - 15}" y="106" width="30" height="4" fill="var(--cobre)"/><rect x="${px - 15}" y="128" width="30" height="3" fill="var(--cobre)"/>`
+        + `<rect x="${px - 3}" y="88" width="6" height="66" fill="#c9a84a"/>`;
+    });
+    s += `<rect x="60" y="131" width="180" height="34" rx="2" fill="#1d2125"/><text x="150" y="153" text-anchor="middle" font-size="11" fill="#c9ced3">soquete (fica na frente)</text>`;
+    s += `<text x="14" y="100" font-size="10.5" fill="var(--muted)">verso ↑</text>`;
+    return s;
+  }
+  const cone = (px, larg = 15, topo = 94) => `<path d="M${px - larg} 106 Q${px - 4} 104 ${px - 3} ${topo} L${px + 3} ${topo} Q${px + 4} 104 ${px + larg} 106 Z" fill="${SOLDA}" stroke="${SB}" stroke-width="1.2"/><path d="M${px - 8} 103 Q${px - 4} 100 ${px - 3} 96" stroke="#fff" stroke-width="1.6" fill="none" opacity=".6"/>`;
+  const fioLado = (xIso, xPonta, cor, y = 101, estanhado = true) => `<rect x="${xIso}" y="${y - 4}" width="${290 - xIso}" height="8" rx="3" fill="${cor}" stroke="#0006"/><rect x="${xPonta}" y="${y - 2}" width="${xIso - xPonta}" height="4" fill="${estanhado ? '#b9c0c7' : '#d08a4a'}"/>`;
+  function figLado(tipo) {
+    let s = ladoBase(tipo !== 'prep');
+    if (tipo === 'encostar') {
+      s += cone(90) + cone(210) + cone(150);
+      s += fioLado(186, 156, 'var(--spi)');
+      s += `<path d="M196 40 L236 20 L246 34 L206 54 Z" fill="#8a9099"/><path d="M160 95 L196 40 L206 54 L166 99 Z" fill="#c9ced3" stroke="#6f7881"/>`
+        + `<text x="248" y="48" font-size="11" fill="var(--fg)">ferro</text>`
+        + `<path d="M118 40 C126 60 136 80 146 94" stroke="#b9c0c7" stroke-width="3" fill="none"/><text x="92" y="36" font-size="11" fill="var(--fg)">estanho</text>`;
+    }
+    if (tipo === 'pronto') {
+      s += cone(90) + cone(210) + `<path d="M132 106 Q136 98 146 92 L154 92 Q166 96 172 106 Z" fill="${SOLDA}" stroke="${SB}" stroke-width="1.2"/>` + fioLado(178, 160, 'var(--spi)', 101).replace('#b9c0c7', 'transparent')
+        + `<path d="M138 103 Q142 97 147 94" stroke="#fff" stroke-width="1.6" fill="none" opacity=".6"/>`
+        + `<path d="M176 92 L200 72" stroke="var(--ok)" stroke-width="1.5"/><text x="292" y="66" text-anchor="end" font-size="11" fill="var(--ok)" font-weight="700">capa a ~1 mm da solda</text>`
+        + `<path d="M150 88 L120 46" stroke="var(--ok)" stroke-width="1.5"/><text x="10" y="40" font-size="11" fill="var(--ok)" font-weight="700">pino e fio no mesmo “vulcão”</text>`;
+    }
+    if (tipo === 'fria') {
+      s += cone(90) + cone(210) + cone(150) + `<rect x="186" y="80" width="104" height="8" rx="3" fill="var(--spi)" stroke="#0006"/><rect x="150" y="82" width="36" height="4" fill="#b9c0c7"/><ellipse cx="158" cy="86" rx="9" ry="6" fill="#8f969d" stroke="#5c636a"/>`
+        + `<text x="150" y="60" text-anchor="middle" font-size="11.5" fill="var(--ruim)" font-weight="700">fio só apoiado por cima: solda fria</text>`;
+    }
+    if (tipo === 'cobre') {
+      s += cone(90) + cone(210) + `<path d="M135 106 Q138 98 146 93 L154 93 Q160 98 163 106 Z" fill="${SOLDA}" stroke="${SB}"/>` + `<rect x="236" y="97" width="54" height="8" rx="3" fill="var(--spi)" stroke="#0006"/><rect x="156" y="99" width="80" height="4" fill="#d08a4a"/>`
+        + `<text x="150" y="60" text-anchor="middle" font-size="11.5" fill="var(--ruim)" font-weight="700">cobre demais à mostra: encosta no vizinho</text>`;
+    }
+    if (tipo === 'ponte') {
+      s += cone(90) + `<path d="M130 106 Q140 92 150 92 Q170 90 190 93 Q205 92 228 106 Z" fill="${SOLDA}" stroke="${SB}"/>` + fioLado(180, 158, 'var(--spi)')
+        + `<text x="150" y="60" text-anchor="middle" font-size="11.5" fill="var(--ruim)" font-weight="700">estanho demais: ponte com o pino vizinho</text>`;
+    }
+    if (tipo === 'prep') {
+      s = `<rect x="20" y="40" width="170" height="12" rx="5" fill="var(--spi)" stroke="#0006"/>` + [42, 45, 48, 50].map(yy => `<line x1="190" y1="${yy}" x2="222" y2="${yy + (yy - 46) * .3}" stroke="#d08a4a" stroke-width="1.6"/>`).join('')
+        + `<text x="20" y="28" font-size="12" fill="var(--fg)" font-weight="700">1. descasque 3 mm e torça os fiozinhos</text>`
+        + `<line x1="190" y1="62" x2="222" y2="62" stroke="var(--accent)" stroke-width="2"/><line x1="190" y1="57" x2="190" y2="67" stroke="var(--accent)" stroke-width="2"/><line x1="222" y1="57" x2="222" y2="67" stroke="var(--accent)" stroke-width="2"/><text x="206" y="80" text-anchor="middle" font-size="11" fill="var(--accent)" font-weight="700">3 mm</text>`
+        + `<rect x="20" y="118" width="170" height="12" rx="5" fill="var(--spi)" stroke="#0006"/><rect x="190" y="121" width="32" height="6" rx="2" fill="#c3c9cf" stroke="#7d868f"/><rect x="194" y="122" width="22" height="1.6" fill="#fff" opacity=".7"/>`
+        + `<text x="20" y="106" font-size="12" fill="var(--fg)" font-weight="700">2. estanhe a ponta (fica prateada e dura)</text>`
+        + `<text x="20" y="160" font-size="11" fill="var(--muted)">ferro embaixo, estanho em cima, 2 segundos</text>`;
+    }
+    return `<svg viewBox="0 ${tipo === 'prep' ? 10 : 28} 300 ${tipo === 'prep' ? 160 : 142}" role="img" aria-label="Close da solda">${s}</svg>`;
+  }
+  function figCima(tipo) {
+    const P = 56, x0 = 50, y0 = 40;
+    let s = `<rect x="10" y="10" width="${3 * P + 80}" height="${3 * P + 30}" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    for (let c = 0; c < 3; c++) for (let r = 0; r < 3; r++) s += `<circle cx="${x0 + c * P + 30}" cy="${y0 + r * P}" r="17" fill="var(--cobre)"/><circle cx="${x0 + c * P + 30}" cy="${y0 + r * P}" r="6" fill="var(--furo)"/>`;
+    const cx = x0 + P + 30, cy = y0 + P;
+    if (tipo === 'pino') {
+      [[0, 1], [2, 1]].forEach(([c, r]) => s += `<circle cx="${x0 + c * P + 30}" cy="${y0 + r * P}" r="17" fill="${SOLDA}" stroke="${SB}"/><rect x="${x0 + c * P + 27}" y="${y0 + r * P - 3}" width="6" height="6" fill="#c9a84a"/>`);
+      s += `<rect x="${cx + 26}" y="${cy - 5}" width="${3 * P + 80 - (cx + 26) + 6}" height="10" rx="4" fill="var(--spi)" stroke="#0006"/>`
+        + `<ellipse cx="${cx + 4}" cy="${cy}" rx="22" ry="18" fill="${SOLDA}" stroke="${SB}"/><rect x="${cx - 3}" y="${cy - 3}" width="6" height="6" fill="#c9a84a"/><rect x="${cx + 8}" y="${cy - 2.5}" width="14" height="5" fill="#9aa1a8" opacity=".9"/><ellipse cx="${cx - 4}" cy="${cy - 7}" rx="6" ry="3" fill="#fff" opacity=".55"/>`
+        + `<text x="${cx}" y="${y0 + 2 * P + 36}" text-anchor="middle" font-size="11.5" fill="var(--fg)">pino + fio na mesma solda</text>`;
+    } else {
+      s += `<line x1="22" y1="${cy}" x2="${3 * P + 78}" y2="${cy}" stroke="var(--fio)" stroke-width="6" stroke-linecap="round"/>`;
+      [0, 2].forEach(c => s += `<ellipse cx="${x0 + c * P + 30}" cy="${cy}" rx="17" ry="15" fill="${SOLDA}" stroke="${SB}"/>`);
+      s += `<rect x="${cx - 5}" y="${y0 - 30}" width="10" height="${cy - (y0 - 30) - 20}" rx="4" fill="var(--v33)" stroke="#0006"/><rect x="${cx - 2.5}" y="${cy - 22}" width="5" height="14" fill="#9aa1a8"/>`
+        + `<ellipse cx="${cx}" cy="${cy}" rx="21" ry="18" fill="${SOLDA}" stroke="${SB}"/><ellipse cx="${cx - 6}" cy="${cy - 7}" rx="6" ry="3" fill="#fff" opacity=".55"/>`
+        + `<text x="${cx}" y="${y0 + 2 * P + 36}" text-anchor="middle" font-size="11.5" fill="var(--fg)">fio + barramento na mesma solda</text>`;
+    }
+    return `<svg viewBox="0 0 ${3 * P + 100} ${3 * P + 60}" role="img" aria-label="Close visto de cima">${s}</svg>`;
+  }
+  const closeSolda = () => `<div class="closes">
+      <figure><div class="fig">${figLado('prep')}</div><figcaption>Prepare a ponta do fio.</figcaption></figure>
+      <figure><div class="fig">${figLado('encostar')}</div><figcaption>3. Encoste a ponta na solda que já existe no pino. Ferro no pino e no fio ao mesmo tempo; se precisar, um pouquinho de estanho.</figcaption></figure>
+      <figure><div class="fig">${figLado('pronto')}</div><figcaption><b style="color:var(--ok)">Certo:</b> a solda cobre o pino e a ponta do fio, lisa e brilhante.</figcaption></figure>
+      <figure><div class="fig">${figCima('pino')}</div><figcaption>O mesmo, visto de cima no verso.</figcaption></figure>
+      <figure><div class="fig">${figCima('bus')}</div><figcaption>Chegando no barramento: o fio vem por cima do fio nu e uma solda pega os dois.</figcaption></figure>
+      <figure><div class="fig">${figLado('fria')}</div><figcaption><b style="color:var(--ruim)">Errado:</b> fio colado por cima, sem derreter junto.</figcaption></figure>
+      <figure><div class="fig">${figLado('cobre')}</div><figcaption><b style="color:var(--ruim)">Errado:</b> descascou demais.</figcaption></figure>
+      <figure><div class="fig">${figLado('ponte')}</div><figcaption><b style="color:var(--ruim)">Errado:</b> estanho demais, ligou no vizinho.</figcaption></figure>
+    </div>`;
   const figBarra = () => `<svg viewBox="0 0 560 120" role="img" aria-label="Cortando a barra fêmea">
     <rect x="20" y="40" width="520" height="24" rx="2" fill="#1d2125" stroke="#000"/>
     ${rng(0, 25).map(i => `<rect x="${30 + i * 20}" y="48" width="8" height="8" fill="#050607"/>`).join('')}
@@ -505,7 +589,7 @@ void loop() {
   const fiosTab = ids => `<div class="tab"><table><thead><tr><th></th><th>Fio</th><th>Sai de</th><th>Chega em</th><th>Corte</th></tr></thead><tbody>${ids.map(id => { const f = FIOS[id]; return `<tr class="fio" data-fio="${id}"><td><input type="checkbox" data-chk="fio.${id}" aria-label="feito: ${f.nome}"></td><td><span class="cor" style="background:${COR[f.cor][0]}"></span>${f.nome}<br><small style="color:var(--muted)">fio ${COR[f.cor][1]}</small></td><td class="num">col ${f.de[0]}, lin ${f.de[1]}</td><td class="num">col ${f.ate[0]}, lin ${f.ate[1]}</td><td class="num">${f.mm} mm</td></tr>`; }).join('')}</tbody></table></div><p class="nota">Toque numa linha para destacar o fio nos desenhos.</p>`;
   const jumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta fêmea (na tela)</th><th>Ponta macho (na placa)</th></tr></thead><tbody>${TELA.map((p, i) => `<tr class="fio" data-jump="${i}"><td><input type="checkbox" data-chk="jump.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${JCORES[i]};color:${i === 9 || i === 4 ? '#111' : '#fff'}">${i + 1}</span>${JNOMES[i]}</td><td>pino <b>${p}</b></td><td class="num">coluna ${T0 + i}, linha ${TR}</td></tr>`).join('')}
       <tr><td></td><td><span class="badge" style="background:var(--muted)">14</span>nenhum</td><td>pino <b>T_IRQ</b></td><td>fica sem jumper</td></tr></tbody></table></div><p class="nota">Toque numa linha para destacar o jumper no desenho.</p>`;
-  const comoFio = `<ol><li>Corte o fio no tamanho da tabela e descasque <b>3 mm</b> em cada ponta.</li><li>Estanhe as pontas: encoste o ferro e um pouquinho de estanho na parte descascada.</li><li>Com a placa virada (verso para cima), encoste a ponta na solda do furo de saída. Reaqueça e deixe o fio afundar nela. Faça o mesmo na chegada.</li><li>Deixe o fio rente à placa, sem esticar. Ele pode passar por cima de outros fios e soldas: a capa isola. Só não descasque no meio.</li></ol>`;
+  const comoFio = `<ol><li>Corte o fio no tamanho da tabela e descasque <b>3 mm</b> em cada ponta.</li><li>Estanhe as pontas: encoste o ferro e um pouquinho de estanho na parte descascada.</li><li>Com a placa virada (verso para cima), encoste a ponta na solda do furo de saída. Reaqueça e deixe o fio afundar nela. Faça o mesmo na chegada.</li><li>Deixe o fio rente à placa, sem esticar. Ele pode passar por cima de outros fios e soldas: a capa isola. Só não descasque no meio.</li></ol><p class="nota">Dúvida em como a solda deve ficar? Veja o close no passo “Close: como soldar um fio na placa”.</p>`;
   const micTxt = () => `lado de cá (coluna 1, linhas 4 a 6): <b>${M.A.join(', ')}</b>; lado de lá (coluna ${M.cB}, linhas 4 a 6): <b>${M.B.join(', ')}</b>`;
   const ajusteMic = () => `<div class="ajuste">
       <label for="aj-n">Furos entre as fileiras<select id="aj-n">${[3, 4, 5].map(v => `<option value="${v}"${cfg.n === v ? ' selected' : ''}>${v} furos (${(v * 2.54).toFixed(1).replace('.', ',')} mm)</option>`).join('')}</select></label>
@@ -542,6 +626,7 @@ void loop() {
     passo({ t: 'Barramento do 3V3', vista: true, novo: ['b3'], html: () => `<ol><li>Corte um fio <b>sem capa</b> de uns <b>${busMm(SP3)} mm</b>.</li><li>No verso, deite reto sobre a <b>linha 3</b>, da coluna <b>${SP3[0]} à ${SP3[1]}</b>, encostado nas ilhas.</li><li>Solde as pontas e onde houver marca no desenho (ferro no fio e na ilha juntos, 2 s, estanho).</li></ol><div class="confere"><b>Confira:</b> as duas pontas do fio apitam entre si.</div>` });
     passo({ t: 'Barramento do GND', vista: true, novo: ['bg'], html: () => `<ol><li>Fio sem capa de uns <b>${busMm(SPG)} mm</b>.</li><li>Deite sobre a <b>linha 8</b>, da coluna <b>${SPG[0]} à ${SPG[1]}</b>.</li><li>Solde as pontas e um ponto a cada 4 ou 5 furos.</li></ol><p class="alerta">A linha 3 (3V3) e a linha 8 (GND) nunca podem se encostar.</p>` });
     passo({ t: 'Teste: barramentos separados', vista: true, novo: [], sondas: [[SP3[1], B3, '+'], [SPG[0] + 3, BG, '−', '#111']], html: () => `<div class="confere"><b>Continuidade</b> entre o barramento 3V3 e o GND → <b style="color:var(--ruim)">não pode apitar</b>.</div>` });
+    passo({ t: 'Close: como soldar um fio na placa', html: () => `<p>Todos os fios do manual são soldados do mesmo jeito: a ponta do fio entra na <b>mesma solda</b> que já prende o pino do soquete (ou o fio nu do barramento). Não precisa de furo novo.</p>${closeSolda()}<p class="dica">Se a solda ficou opaca ou o fio mexe quando você puxa de leve, reaqueça com um pouquinho de fluxo.</p>` });
     passo({ t: 'Ligue o ESP32 aos barramentos', vista: true, novo: ['esp3', 'espg'], fios: ['esp3', 'espg'], html: () => comoFio + `<p class="dica">O fio vermelho cruza o barramento GND na linha 8. Pode passar por cima: a capa isola.</p>` });
     passo({ t: 'Primeiro teste ligado', vista: true, novo: [], esp: true, html: () => `<ol><li>Encaixe o ESP32 (antena à esquerda). Ligue o cabo USB na porta <b>COM</b> (a mesma que você já usa para gravar).</li><li>Multímetro em <b>tensão (V⎓)</b>: vermelha no barramento 3V3, preta no GND → <b>3,3 V</b>.</li><li>Grave o programa e abra o Monitor Serial (115200): PSRAM perto de 8388608.</li></ol>${bloco('etapa1', 'etapa1_psram.ino')}<p class="alerta">Se marcar 5 V no barramento, desligue: um fio foi para o pino errado.</p>` });
     parte('Tela');
