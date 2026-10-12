@@ -1,0 +1,8 @@
+{
+  "nuvem_ativa": true,
+  "nuvem_responder": true,
+  "nuvem_intervalo": 10,
+  "nuvem_dias": 7,
+  "bridge_desconhecida": "listar",
+  "espera_hook": 300
+}
