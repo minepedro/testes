@@ -551,6 +551,75 @@ void loop() {
       <figure><div class="fig">${figLado('cobre')}</div><figcaption><b style="color:var(--ruim)">Errado:</b> descascou demais.</figcaption></figure>
       <figure><div class="fig">${figLado('ponte')}</div><figcaption><b style="color:var(--ruim)">Errado:</b> estanho demais, ligou no vizinho.</figcaption></figure>
     </div>`;
+  // ---- tutorial visual dos capacitores ----
+  const ceramico = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><line x1="-6" y1="10" x2="-6" y2="56" stroke="#aab1ba" stroke-width="2.4"/><line x1="6" y1="10" x2="6" y2="56" stroke="#aab1ba" stroke-width="2.4"/><ellipse cx="0" cy="0" rx="17" ry="15" fill="#e3a23a" stroke="#8a5a10" stroke-width="1.5"/><text x="0" y="5" text-anchor="middle" font-size="12" font-weight="700" fill="#3a2400">104</text></g>`;
+  const eletrolitico = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><line x1="-7" y1="34" x2="-7" y2="70" stroke="#aab1ba" stroke-width="2.4"/><line x1="7" y1="34" x2="7" y2="84" stroke="#aab1ba" stroke-width="2.4"/><rect x="-18" y="-30" width="36" height="64" rx="6" fill="#223a6a" stroke="#0b1530" stroke-width="1.5"/><rect x="-18" y="-30" width="11" height="64" fill="#d6dbe1"/>${[-18, -4, 10, 24].map(yy => `<text x="-12.5" y="${yy}" text-anchor="middle" font-size="11" font-weight="700" fill="#223a6a">−</text>`).join('')}<text x="6" y="4" text-anchor="middle" font-size="9" fill="#fff" transform="rotate(-90 6 4)">100µF</text></g>`;
+  function figCapConheca() {
+    return `<svg viewBox="0 0 300 190" role="img" aria-label="Os dois tipos de capacitor">${ceramico(70, 50, 1.3)}${eletrolitico(210, 60)}
+      <text x="70" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="var(--fg)">cerâmico (104)</text><text x="70" y="156" text-anchor="middle" font-size="11" fill="var(--muted)">sem lado certo</text>
+      <text x="196" y="160" text-anchor="end" font-size="11" fill="var(--ruim)" font-weight="700">− curta</text><text x="222" y="160" font-size="11" fill="var(--ok)" font-weight="700">+ longa</text>
+      <text x="210" y="182" text-anchor="middle" font-size="12" font-weight="700" fill="var(--fg)">eletrolítico: tem lado</text>
+      <path d="M172 20 L188 34" stroke="var(--fg)" stroke-width="1.5"/><text x="168" y="16" text-anchor="end" font-size="11" fill="var(--fg)">faixa clara = −</text></svg>`;
+  }
+  function figCap104() {
+    return `<svg viewBox="0 0 300 150" role="img" aria-label="Como ler 104">${ceramico(50, 40)}
+      <text x="110" y="40" font-size="26" font-weight="700" fill="var(--fg)">1 0 <tspan fill="var(--accent)">4</tspan></text>
+      <text x="110" y="64" font-size="12" fill="var(--muted)">10 seguido de <tspan fill="var(--accent)" font-weight="700">4</tspan> zeros</text>
+      <text x="110" y="92" font-size="15" font-weight="700" fill="var(--fg)">100 000 pF = 100 nF</text>
+      <text x="110" y="114" font-size="12" fill="var(--muted)">= 0,1 µF (é o mesmo valor)</text>
+      <text x="20" y="140" font-size="11" fill="var(--muted)">103 = 10 nF (pouco) · 105 = 1 µF (também serve)</text></svg>`;
+  }
+  // vista de cima do verso: dois furos vizinhos com solda, capacitor deitado ao lado, pernas nas soldas
+  function figCapVerso(rot, n1, n2) {
+    const P = 56, ax = 120, ay = 70, bx = rot ? ax : ax + P, by = rot ? ay + P : ay;
+    let s = `<rect x="10" y="10" width="280" height="${rot ? 190 : 140}" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    for (let c = -1; c <= 2; c++) for (let r = -1; r <= (rot ? 2 : 1); r++) s += `<circle cx="${ax + c * P}" cy="${ay + r * P}" r="15" fill="var(--cobre)"/><circle cx="${ax + c * P}" cy="${ay + r * P}" r="5" fill="var(--furo)"/>`;
+    const cx = rot ? ax + 70 : (ax + bx) / 2, cy = rot ? (ay + by) / 2 : ay + 58;
+    s += `<path d="M${ax} ${ay} L${rot ? cx - 10 : cx - 6} ${rot ? cy - 6 : cy - 10}" stroke="#aab1ba" stroke-width="3" fill="none"/><path d="M${bx} ${by} L${rot ? cx - 10 : cx + 6} ${rot ? cy + 6 : cy - 10}" stroke="#aab1ba" stroke-width="3" fill="none"/>`;
+    s += `<ellipse cx="${cx}" cy="${cy}" rx="${rot ? 12 : 17}" ry="${rot ? 17 : 12}" fill="#e3a23a" stroke="#8a5a10" stroke-width="1.5"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="10" font-weight="700" fill="#3a2400">104</text>`;
+    [[ax, ay, n1], [bx, by, n2]].forEach(([px, py, n]) => { s += `<ellipse cx="${px}" cy="${py}" rx="19" ry="17" fill="var(--solda)" stroke="var(--solda-borda)"/><rect x="${px - 3}" y="${py - 3}" width="6" height="6" fill="#c9a84a"/><ellipse cx="${px - 6}" cy="${py - 6}" rx="5" ry="2.6" fill="#fff" opacity=".55"/><text x="${px - 24}" y="${py + 4}" text-anchor="end" font-size="12" font-weight="700" fill="#eef4f0" style="paint-order:stroke;stroke:var(--pcb-borda);stroke-width:3px">${n}</text>`; });
+    return `<svg viewBox="0 0 300 ${rot ? 210 : 160}" role="img" aria-label="Capacitor soldado no verso">${s}</svg>`;
+  }
+  function figCapLado() {
+    let s = `<rect x="10" y="110" width="280" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/><rect x="60" y="131" width="180" height="30" rx="2" fill="#1d2125"/><text x="150" y="151" text-anchor="middle" font-size="11" fill="#c9ced3">soquete (na frente)</text><text x="14" y="100" font-size="10.5" fill="var(--muted)">verso ↑</text>`;
+    [120, 180].forEach(px => { s += `<rect x="${px - 15}" y="106" width="30" height="4" fill="var(--cobre)"/><rect x="${px - 3}" y="88" width="6" height="66" fill="#c9a84a"/><path d="M${px - 15} 106 Q${px - 4} 104 ${px - 3} 92 L${px + 3} 92 Q${px + 4} 104 ${px + 15} 106 Z" fill="var(--solda)" stroke="var(--solda-borda)"/>`; });
+    s += `<path d="M126 98 Q136 86 146 86" stroke="#aab1ba" stroke-width="2.4" fill="none"/><path d="M174 98 Q164 86 154 86" stroke="#aab1ba" stroke-width="2.4" fill="none"/><ellipse cx="150" cy="78" rx="16" ry="10" fill="#e3a23a" stroke="#8a5a10"/><text x="150" y="82" text-anchor="middle" font-size="9" font-weight="700" fill="#3a2400">104</text>`
+      + `<text x="150" y="46" text-anchor="middle" font-size="11.5" fill="var(--ok)" font-weight="700">deitado, pernas curtas, cada uma numa solda</text>`;
+    return `<svg viewBox="0 30 300 140" role="img" aria-label="Capacitor visto de lado">${s}</svg>`;
+  }
+  function figEletroFrente(certo = true) {
+    const xa = 95, xb = 205, ok = certo ? 'var(--ok)' : 'var(--ruim)';
+    let s = `<rect x="10" y="130" width="280" height="18" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="1.5"/><text x="14" y="122" font-size="10.5" fill="var(--muted)">frente ↑</text>`;
+    [xa, xb].forEach(px => s += `<rect x="${px - 12}" y="126" width="24" height="4" fill="var(--cobre)"/><rect x="${px - 12}" y="148" width="24" height="4" fill="var(--cobre)"/>`);
+    const pl = certo ? xa : xb, ml = certo ? xb : xa;   // perna + e perna -
+    s += `<path d="M${certo ? 138 : 162} 106 L${pl} 124 L${pl} 158" stroke="#aab1ba" stroke-width="2.6" fill="none"/><path d="M${certo ? 162 : 138} 106 L${ml} 124 L${ml} 158" stroke="#aab1ba" stroke-width="2.6" fill="none"/>`
+      + `<rect x="128" y="40" width="44" height="66" rx="6" fill="#223a6a" stroke="#0b1530"/><rect x="${certo ? 158 : 128}" y="40" width="14" height="66" fill="#d6dbe1"/>`
+      + `<text x="${xa}" y="176" text-anchor="middle" font-size="12" font-weight="700" fill="${ok}">P9 (3V3): ${certo ? '+' : '−'}</text><text x="${xb}" y="176" text-anchor="middle" font-size="12" font-weight="700" fill="${ok}">P10 (GND): ${certo ? '−' : '+'}</text>`
+      + `<text x="150" y="26" text-anchor="middle" font-size="12" font-weight="700" fill="${ok}">${certo ? 'faixa clara do lado do GND' : 'INVERTIDO: esquenta e pode estourar'}</text>`;
+    return `<svg viewBox="0 10 300 175" role="img" aria-label="Eletrolítico em pé">${s}</svg>`;
+  }
+  function figEletroVerso() {
+    const P = 56, y1 = 60, y2 = 116;
+    let s = `<rect x="10" y="10" width="280" height="160" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="2"/>`;
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 3; r++) s += `<circle cx="${66 + c * P}" cy="${y1 - P + 4 + r * P}" r="14" fill="var(--cobre)"/><circle cx="${66 + c * P}" cy="${y1 - P + 4 + r * P}" r="5" fill="var(--furo)"/>`;
+    // no verso a coluna 10 fica a esquerda da 9
+    [[122, 'Q10', 'P10'], [178, 'Q9', 'P9']].forEach(([px, q, p]) => {
+      s += `<rect x="${px - 15}" y="${y1 + 4}" width="30" height="${y2 - y1}" rx="14" fill="var(--solda)" stroke="var(--solda-borda)"/><rect x="${px - 3}" y="${y1 + 1}" width="6" height="6" fill="#c9a84a"/><circle cx="${px}" cy="${y2 + 4}" r="3" fill="#aab1ba"/>`
+        + `<text x="${px}" y="${y1 - 12}" text-anchor="middle" font-size="11" font-weight="700" fill="#eef4f0" style="paint-order:stroke;stroke:var(--pcb-borda);stroke-width:3px">${q}</text><text x="${px}" y="${y2 + 36}" text-anchor="middle" font-size="11" font-weight="700" fill="#eef4f0" style="paint-order:stroke;stroke:var(--pcb-borda);stroke-width:3px">${p}</text>`;
+    });
+    s += `<text x="150" y="162" text-anchor="middle" font-size="11" fill="#eef4f0">uma gota de estanho liga cada perna ao furo de cima</text>`;
+    return `<svg viewBox="0 0 300 180" role="img" aria-label="Pontes de estanho no verso">${s}</svg>`;
+  }
+  const closeCap = () => `<div class="closes">
+      <figure><div class="fig">${figCapConheca()}</div><figcaption>Os dois tipos. O cerâmico não tem lado; o eletrolítico tem: a faixa clara marca o <b>−</b> e a perna mais longa é o <b>+</b>.</figcaption></figure>
+      <figure><div class="fig">${figCap104()}</div><figcaption>Como ler o número do cerâmico.</figcaption></figure>
+      <figure><div class="fig">${figCapVerso(true, LN(M.pos.VDD[1]) + M.pos.VDD[0] + ' VDD', LN(M.pos.GND[1]) + M.pos.GND[0] + ' GND')}</div><figcaption><b>C1</b> no verso do microfone: uma perna em cada solda, o corpo deitado ao lado.</figcaption></figure>
+      <figure><div class="fig">${figCapVerso(false, LN(TR) + tc('GND') + ' GND', LN(TR) + tc('VCC') + ' VCC')}</div><figcaption><b>C2</b> no verso do soquete da tela (no verso, o GND fica à esquerda do VCC).</figcaption></figure>
+      <figure><div class="fig">${figCapLado()}</div><figcaption>Visto de lado: as pernas encostam nas soldas que já existem. Reaqueça e a perna afunda.</figcaption></figure>
+      <figure><div class="fig">${figEletroFrente(true)}</div><figcaption><b style="color:var(--ok)">C3 certo:</b> em pé na frente, + no P9 e − no P10.</figcaption></figure>
+      <figure><div class="fig">${figEletroVerso()}</div><figcaption>C3 no verso: cada perna ganha uma ponte de estanho até o furo de cima do soquete.</figcaption></figure>
+      <figure><div class="fig">${figEletroFrente(false)}</div><figcaption><b style="color:var(--ruim)">Errado:</b> faixa clara no 3V3.</figcaption></figure>
+    </div>`;
   const figBarra = () => `<svg viewBox="0 0 560 120" role="img" aria-label="Cortando a barra fêmea">
     <rect x="20" y="40" width="520" height="24" rx="2" fill="#1d2125" stroke="#000"/>
     ${rng(0, 25).map(i => `<rect x="${30 + i * 20}" y="48" width="8" height="8" fill="#050607"/>`).join('')}
@@ -657,7 +726,7 @@ void loop() {
           <li><b>C2 · 100 nF (104) na tela.</b> Mesmo jeito, no verso, entre as soldas do <b>VCC</b> (${LN(TR)}${tc('VCC')}) e do <b>GND</b> (${LN(TR)}${tc('GND')}) do soquete da tela.</li>
           <li><b>C3 · eletrolítico de 10 a 100 µF (opcional).</b> Na <b>frente</b>, em pé, com a perna <b>+</b> (a mais comprida) no furo ${LN(TR - 1)}${tc('VCC')} e a perna <b>−</b> (a do lado da faixa clara) no ${LN(TR - 1)}${tc('GND')}. No verso, ligue cada perna à solda vizinha de cima (${LN(TR)}${tc('VCC')} e ${LN(TR)}${tc('GND')}) com uma gota de estanho.</li>
         </ul>
-        <p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Invertido, ele esquenta e pode estourar. Guarde os de 470 µF para o amplificador de som.</p>
+        ${closeCap()}<p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Invertido, ele esquenta e pode estourar. Guarde os de 470 µF para o amplificador de som.</p>
         <div class="confere"><b>Confira (USB desligado):</b> entre 3V3 e GND não pode apitar direto. Com o eletrolítico, o multímetro pode dar um bipe curtinho e parar: é ele carregando, está certo.</div>` });
     passo({ t: 'Limpe e inspecione', html: () => `<ul><li>USB desligado. Álcool isopropílico e escova de dentes velha no verso para tirar o fluxo.</li><li>Com lupa: bolinhas de estanho soltas, fios de cobre soltos, juntas opacas. Refaça o que estiver feio.</li></ul>` });
     passo({ t: 'Confira tudo com o multímetro', vista: true, novo: [], html: () => `<p>USB desligado. Em continuidade, cada linha tem que <b>apitar</b>:</p>${fiosTab(Object.keys(FIOS))}` });
