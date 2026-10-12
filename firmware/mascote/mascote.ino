@@ -3,10 +3,14 @@
 //
 // Telas:
 //   - Mascote: o Clawd no meio. Faixa de cima: estado da ponte; toque nela para abrir a lista.
-//     Segure abaixo dela: ele "ouve" e, ao soltar, resume as sessoes (o microfone entra depois).
+//     Segure abaixo dela e fale: ao soltar, a ponte transcreve (Whisper na VPS), o texto aparece
+//     e "Nova sessao" cria uma sessao com essa tarefa (escolhendo repositorio e branch).
 //   - Sessoes: uma por linha, quem precisa de voce primeiro. Arraste para rolar, toque para abrir.
+//     "repo" filtra por repositorio; "+" cria sessao sem tarefa.
 //   - Sessao: o mascote reage ao estado dela. Se pede permissao, aparecem Recusar e Aprovar.
+//     Segure e fale: o texto vira mensagem para a sessao (Enviar ou Descartar).
 //     A seta do canto de cima volta.
+// Microfone INMP441 (I2S): SCK 15, WS 16, SD 17, L/R no GND.
 //
 // Antes de gravar: copie config.exemplo.h para config.h e preencha Wi-Fi e ponte.
 // Transporte: PONTE_URL com https:// usa TLS validado (raizes Let's Encrypt, relogio por SNTP).
@@ -21,6 +25,7 @@
 #include <NetworkClientSecure.h>
 #include <time.h>
 #include <ArduinoJson.h>
+#include <ESP_I2S.h>
 #include <vector>
 #include "config.h"
 #include "tipos.h"
@@ -141,6 +146,10 @@ String redeHora;
 Link redeLink = CONECTANDO;
 uint32_t redeVersao = 0;
 String acaoId, acaoTipo;          // acao pendente (aprovar/recusar), enviada pela tarefa de rede
+Trabalho trabPedido;              // pedido avulso da tela (voz, mensagem, repos, criar); id 0 = nada
+uint32_t trabFeitoId = 0;         // resultado do ultimo pedido avulso
+int trabCod = 0;
+String trabResp;
 
 // copia local usada pela tela
 std::vector<Sessao> sessoes;
@@ -211,6 +220,30 @@ void tarefaRede(void *) {
       }
       proximaBusca = 0;
     }
+    // pedido avulso da tela
+    Trabalho tb;
+    xSemaphoreTake(trava, portMAX_DELAY);
+    tb = trabPedido; trabPedido = Trabalho();
+    xSemaphoreGive(trava);
+    if (tb.id) {
+      HTTPClient http;
+      http.setTimeout(tb.binario ? 90000 : 20000);   // a 1a transcricao carrega o modelo na VPS
+      int cod = -1;
+      String resp;
+      if (abrirPonte(http, cliente, tb.caminho.c_str())) {
+        http.addHeader("X-Token", PONTE_TOKEN);
+        if (tb.binario) { http.addHeader("Content-Type", "application/octet-stream"); cod = http.POST((uint8_t *)tb.dados, tb.n); }
+        else if (tb.post) { http.addHeader("Content-Type", "application/json"); cod = http.POST(tb.corpo); }
+        else cod = http.GET();
+        if (cod > 0) resp = http.getString();
+      }
+      http.end();
+      Serial.printf("%s %s: HTTP %d\n", tb.post || tb.binario ? "POST" : "GET", tb.caminho.c_str(), cod);
+      xSemaphoreTake(trava, portMAX_DELAY);
+      trabFeitoId = tb.id; trabCod = cod; trabResp = resp;
+      xSemaphoreGive(trava);
+      proximaBusca = 0;
+    }
     if (millis() >= proximaBusca) {
       proximaBusca = millis() + 3000;
       HTTPClient http;
@@ -252,6 +285,35 @@ void tarefaRede(void *) {
       xSemaphoreGive(trava);
     }
     vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
+// ---- microfone (INMP441, I2S) --------------------------------------------------------------
+constexpr int PIN_MIC_SCK = 15, PIN_MIC_WS = 16, PIN_MIC_SD = 17;
+constexpr int TAXA = 16000, MAX_SEG = 20, MAX_AMOSTRAS = TAXA * MAX_SEG;
+I2SClass mic;
+int16_t *audio = nullptr;          // PSRAM: ate 20 s de PCM 16 bits (640 KB)
+volatile bool gravando = false;
+volatile size_t nAmostras = 0;
+volatile float nivelMic = 0;       // volume atual (0..1), para as barras
+bool micOk = false;
+
+// Le o microfone sem parar (o DMA nao pode encher) e guarda so enquanto "gravando".
+void tarefaAudio(void *) {
+  static int32_t bloco[256];
+  float dc = 0;
+  for (;;) {
+    size_t n = mic.readBytes((char *)bloco, sizeof(bloco)) / sizeof(int32_t);
+    if (!n) { vTaskDelay(1); continue; }
+    float soma = 0;
+    for (size_t i = 0; i < n; i++) {
+      float x = (float)(bloco[i] >> 14);   // 24 bits do INMP441 -> 16 bits, com ganho 4x
+      dc += (x - dc) * 0.001f;             // tira o nivel continuo
+      float y = x - dc;
+      soma += fabsf(y);
+      if (gravando && nAmostras < (size_t)MAX_AMOSTRAS) audio[nAmostras++] = (int16_t)constrain((int)y, -32768, 32767);
+    }
+    nivelMic = soma / n / 32768.0f;
   }
 }
 
@@ -307,6 +369,43 @@ String resumoCasa() {
   return r.length() ? r : "Nenhuma sessao precisa de voce agora.";
 }
 
+struct {
+  FaseVoz fase = V_NADA;
+  String texto;                    // o que a ponte entendeu
+  String aviso;                    // mensagem curta no rodape (4 s)
+  uint16_t avisoCor = 0;
+  uint32_t avisoAte = 0;
+} voz;
+Proposito trabProposito = PR_NADA;
+uint32_t trabId = 0, trabSeq = 0;
+uint32_t assinaturaMascote = 0, assinaturaRodape = 0;
+
+void avisar(const String &txt, uint16_t cor) {
+  voz.aviso = txt; voz.avisoCor = cor; voz.avisoAte = millis() + 4000;
+  assinaturaRodape = 0xFFFFFFFF;
+  Serial.printf("aviso: %s\n", txt.c_str());
+}
+
+bool pedirRede(Proposito p, bool post, const String &caminho, const String &corpo = "", const uint8_t *dados = nullptr, size_t n = 0) {
+  if (trabProposito != PR_NADA) return false;   // um por vez
+  Trabalho t;
+  t.id = ++trabSeq; t.post = post; t.binario = dados != nullptr; t.caminho = caminho; t.corpo = corpo; t.dados = dados; t.n = n;
+  xSemaphoreTake(trava, portMAX_DELAY);
+  trabPedido = t;
+  xSemaphoreGive(trava);
+  trabProposito = p; trabId = t.id;
+  return true;
+}
+
+// menu generico (filtro, repositorios, branches)
+std::vector<ItemMenu> menuItens;
+Menu menuTipo = M_FILTRO;
+String menuTitulo, menuCarregando;  // menuCarregando: texto enquanto espera a ponte
+int menuRolagem = 0;
+String filtro;                      // "" = todas; "-" = sem repositorio; senao o repositorio
+String novaTexto, novaRepo;         // sessao nova em montagem
+Tela telaAntesDoMenu = T_MASCOTE;
+
 void entrar(Estado e) {
   m.estado = e; m.t = 0;
   m.eyeH = 1; m.eyeDy = 0; m.eyeDx = 0; m.mouth = 0; m.typed = 0;
@@ -334,13 +433,12 @@ void atualizar(float dt) {
     m.eyeDx = t < m.glanceUntil ? m.glanceDx : 0;
   }
   if (m.estado == OUVINDO) {
-    float env = .35f + .65f * fabsf(sinf(t * 2.3f)) * (t > .5f ? 1 : .2f);
+    float env = min(1.0f, nivelMic * 14);   // volume real do microfone
     for (int i = 0; i < 16; i++) {
       if (rnd() < .3f) m.barsAlvo[i] = env * (.3f + rnd() * .7f);
       m.bars[i] += (m.barsAlvo[i] - m.bars[i]) * min(1.0f, dt * 14);
     }
   } else for (int i = 0; i < 16; i++) m.bars[i] *= .8f;
-  if (m.estado == PENSANDO && t > 1.2f) entrar(RESPONDENDO);
   if (m.estado == RESPONDENDO) {
     int len = m.texto.length();
     m.typed = (int)(t * TYPE_CPS);
@@ -458,24 +556,46 @@ void desenharAprovacao(Sessao &s) {
   rodape.drawString("Aprovar", xa + BTN_W / 2, by + BTN_H / 2 + 1);
 }
 
+void desenharConfirmacao() {
+  int y0 = FOOT_TOP;
+  static String l[2];
+  int q = quebrar("Voce disse: " + voz.texto, l, 2, W - 32);
+  rodape.setTextDatum(middle_left);
+  rodape.setTextColor(C_FG);
+  for (int i = 0; i < q; i++) rodape.drawString((i == 1 && rodape.textWidth(("Voce disse: " + voz.texto).c_str()) > 2 * (W - 32)) ? cortar(rodape, l[i] + "...", W - 32).c_str() : l[i].c_str(), 16, 249 + i * 14 - y0);
+  int xr = 16, xa = 16 + BTN_W + 12, by = BTN_Y - y0;
+  rodape.fillRect(xr, by, BTN_W, BTN_H, botaoApertado == 3 ? C_BAD : C_BG);
+  rodape.drawRect(xr, by, BTN_W, BTN_H, C_BAD); rodape.drawRect(xr + 1, by + 1, BTN_W - 2, BTN_H - 2, C_BAD);
+  rodape.fillRect(xa, by, BTN_W, BTN_H, botaoApertado == 4 ? C_FG : C_OK);
+  rodape.setTextDatum(middle_center);
+  rodape.setTextColor(botaoApertado == 3 ? C_BG : C_BAD);
+  rodape.drawString("Descartar", xr + BTN_W / 2, by + BTN_H / 2 + 1);
+  rodape.setTextColor(C_BG);
+  rodape.drawString(tela == T_SESSAO ? "Enviar" : "Nova sessao", xa + BTN_W / 2, by + BTN_H / 2 + 1);
+}
+
 void desenharRodape() {
   rodape.fillScreen(C_BG);
   int y0 = FOOT_TOP;
   Sessao *s = tela == T_SESSAO ? sessaoAtual() : nullptr;
-  if (s && s->status == "waiting" && (m.estado == ALERTA)) { desenharAprovacao(*s); rodape.pushSprite(0, FOOT_TOP); return; }
+  if (voz.fase == V_CONFIRMAR) { desenharConfirmacao(); rodape.pushSprite(0, FOOT_TOP); return; }
+  if (s && s->status == "waiting" && (m.estado == ALERTA) && voz.fase == V_NADA) { desenharAprovacao(*s); rodape.pushSprite(0, FOOT_TOP); return; }
   int bw = 6, gap = 4, total = 16 * bw + 15 * gap, bx = (W - total) / 2, base = FOOT_Y - 6;
   for (int i = 0; i < 16; i++) {
     int h = max(2, (int)roundf(m.bars[i] * 14) * 2);
     rodape.fillRect(bx + i * (bw + gap), base - h - y0, bw, h, m.bars[i] > .05f ? C_BODY : C_DIM);
   }
   String txt; uint16_t cor = C_DIM; bool repouso = m.estado == REPOUSO || m.estado == TRABALHANDO || m.estado == ALERTA;
-  if (m.estado == OUVINDO) txt = "ouvindo... (o microfone entra depois)";
+  if (millis() < voz.avisoAte) { txt = voz.aviso; cor = voz.avisoCor; repouso = true; }
+  else if (m.estado == OUVINDO) { txt = "ouvindo... solte para enviar"; cor = C_FG; }
+  else if (voz.fase == V_TRANSCREVENDO) txt = "transcrevendo...";
+  else if (voz.fase == V_ENVIANDO) txt = "enviando...";
   else if (m.estado == PENSANDO) txt = "";
   else if (m.estado == RESPONDENDO) { txt = m.texto.substring(0, m.typed); cor = C_FG; }
   else if (s) { txt = s->last; cor = C_FG; }
   else if (m.estado == ALERTA) { txt = String(aguardando()) + " aguardando - toque no topo"; cor = C_WARN; }
   else if (respostaCasa.length()) { txt = respostaCasa; cor = C_FG; }
-  else txt = "segure para falar";
+  else txt = micOk ? "segure e fale para criar uma sessao" : "microfone nao iniciou (confira os fios)";
   static String linhas[24];
   int qtd = quebrar(txt, linhas, 24, W - 48);
   int ini = repouso ? 0 : max(0, qtd - 2);
@@ -531,15 +651,22 @@ void desenharCabecalhoSessao() {
 }
 
 int rolagem = 0;
-int rolagemMax() { return max(0, (int)sessoes.size() * RH - (H - HDR)); }
+std::vector<int> visiveis;          // indices de sessoes que passam no filtro
+void recalcVisiveis() {
+  visiveis.clear();
+  for (size_t i = 0; i < sessoes.size(); i++)
+    if (filtro == "" || (filtro == "-" ? sessoes[i].repo == "" : sessoes[i].repo == filtro)) visiveis.push_back(i);
+}
+int rolagemMax() { return max(0, (int)visiveis.size() * RH - (H - HDR)); }
+String rotuloFiltro() { return filtro == "" ? "todas" : filtro == "-" ? "sem repositorio" : filtro.substring(filtro.indexOf('/') + 1); }
 
 void desenharLista() {
   lista.fillScreen(C_BG);
   lista.setFont(&fonts::Font2);
-  for (size_t i = 0; i < sessoes.size(); i++) {
-    int y = i * RH - rolagem;
+  for (size_t k = 0; k < visiveis.size(); k++) {
+    int y = k * RH - rolagem;
     if (y > H - HDR || y + RH < 0) continue;
-    Sessao &s = sessoes[i];
+    Sessao &s = sessoes[visiveis[k]];
     if (s.status == "waiting") lista.fillRect(0, y, W, RH - 1, C_WARN_BG);
     lista.fillRect(0, y + RH - 1, W, 1, C_LINE);
     glifo(lista, s.status, 14, y + 21);
@@ -553,14 +680,21 @@ void desenharLista() {
     lista.setTextColor(corStatus(s.status));
     lista.drawString(rotuloStatus(s.status), W - 14, y + 40);
   }
-  if (sessoes.empty()) {
+  if (visiveis.empty()) {
     lista.setTextDatum(middle_center);
     lista.setTextColor(C_DIM);
-    lista.drawString(conexao == PONTE_OK ? "nenhuma sessao" : "sem ponte: as sessoes aparecem quando ela responder", W / 2, 120);
+    lista.drawString(conexao != PONTE_OK ? "sem ponte: as sessoes aparecem quando ela responder"
+                     : sessoes.empty() ? "nenhuma sessao: toque em + para criar" : ("nenhuma sessao em " + rotuloFiltro()).c_str(), W / 2, 120);
+  }
+  if (millis() < voz.avisoAte) {     // aviso por cima da lista
+    lista.fillRect(0, H - HDR - 28, W, 28, C_PANEL);
+    lista.setTextDatum(middle_center);
+    lista.setTextColor(voz.avisoCor);
+    lista.drawString(cortar(lista, voz.aviso, W - 20).c_str(), W / 2, H - HDR - 14);
   }
   int mx = rolagemMax();
   if (mx > 0) {
-    int trilho = H - HDR - 8, polegar = max(24, trilho * (H - HDR) / (int)(sessoes.size() * RH));
+    int trilho = H - HDR - 8, polegar = max(24, trilho * (H - HDR) / (int)(visiveis.size() * RH));
     lista.fillRect(W - 4, 4, 2, trilho, C_LINE);
     lista.fillRect(W - 4, 4 + (trilho - polegar) * rolagem / mx, 2, polegar, C_DIM);
   }
@@ -575,28 +709,87 @@ void desenharCabecalhoLista() {
   tft.setTextDatum(middle_left);
   tft.setTextColor(C_FG, C_PANEL);
   tft.drawString("Sessoes", 44, HDR / 2 + 1);
-  tft.setTextDatum(middle_right);
-  tft.setTextColor(C_DIM, C_PANEL);
-  tft.drawString(conexao == PONTE_OK ? hora.c_str() : "sem ponte", W - 14, HDR / 2 + 1);
+  // filtro por repositorio
+  bool on = filtro != "";
+  int bx = 150, bw = 264;
+  tft.fillRect(bx, 6, bw, 24, C_BG);
+  tft.drawRect(bx, 6, bw, 24, on ? C_BODY : C_LINE); tft.drawRect(bx + 1, 7, bw - 2, 22, on ? C_BODY : C_LINE);
+  tft.setTextColor(on ? C_FG : C_DIM, C_BG);
+  tft.drawString(cortar(tft, "repo: " + rotuloFiltro(), bw - 40).c_str(), bx + 10, 19);
+  const int D[5][2] = {{-6, -3}, {-3, 0}, {0, 3}, {3, 0}, {6, -3}};
+  for (auto &d : D) tft.fillRect(bx + bw - 18 + d[0], 17 + d[1], 3, 3, on ? C_BODY : C_DIM);
+  // criar sessao
+  tft.fillRect(424, 4, 44, 28, C_BODY);
+  tft.fillRect(437, 16, 18, 4, C_BG); tft.fillRect(444, 9, 4, 18, C_BG);
+}
+
+// ---- menu (filtro, repositorios, branches) ----------------------------------------------------
+constexpr int MH = 48;
+int menuRolagemMax() { return max(0, (int)menuItens.size() * MH - (H - HDR)); }
+
+void desenharMenu() {
+  lista.fillScreen(C_BG);
+  lista.setFont(&fonts::Font2);
+  if (menuCarregando.length()) {
+    lista.setTextDatum(middle_center);
+    lista.setTextColor(C_DIM);
+    lista.drawString(menuCarregando.c_str(), W / 2, 110);
+  }
+  for (size_t i = 0; !menuCarregando.length() && i < menuItens.size(); i++) {
+    int y = i * MH - menuRolagem;
+    if (y > H - HDR || y + MH < 0) continue;
+    ItemMenu &it = menuItens[i];
+    bool atual = menuTipo == M_FILTRO && it.valor == filtro;
+    lista.fillRect(0, y + MH - 1, W, 1, C_LINE);
+    if (atual) lista.fillRect(0, y, 4, MH - 1, C_BODY);
+    lista.setTextDatum(middle_left);
+    lista.setTextColor(atual ? C_BODY : C_FG);
+    lista.drawString(cortar(lista, it.rotulo, W - 40 - 150).c_str(), 18, y + MH / 2);
+    lista.setTextDatum(middle_right);
+    lista.setTextColor(C_DIM);
+    lista.drawString(cortar(lista, it.sub, 140).c_str(), W - 18, y + MH / 2);
+  }
+  if (millis() < voz.avisoAte) {
+    lista.fillRect(0, H - HDR - 28, W, 28, C_PANEL);
+    lista.setTextDatum(middle_center);
+    lista.setTextColor(voz.avisoCor);
+    lista.drawString(cortar(lista, voz.aviso, W - 20).c_str(), W / 2, H - HDR - 14);
+  }
+  int mx = menuRolagemMax();
+  if (mx > 0) {
+    int trilho = H - HDR - 8, polegar = max(24, trilho * (H - HDR) / (int)(menuItens.size() * MH));
+    lista.fillRect(W - 4, 4, 2, trilho, C_LINE);
+    lista.fillRect(W - 4, 4 + (trilho - polegar) * menuRolagem / mx, 2, polegar, C_DIM);
+  }
+  lista.pushSprite(0, HDR);
+}
+
+void desenharCabecalhoMenu() {
+  tft.fillRect(0, 0, W, HDR, C_PANEL);
+  tft.fillRect(0, HDR - 1, W, 1, C_LINE);
+  seta(tft, 15, HDR / 2 - 1, C_FG, 'l');
+  tft.setFont(&fonts::Font2);
+  tft.setTextDatum(middle_left);
+  tft.setTextColor(C_FG, C_PANEL);
+  tft.drawString(cortar(tft, menuTitulo, W - 60).c_str(), 44, HDR / 2 + 1);
 }
 
 // ---- navegacao -----------------------------------------------------------------------------
-uint32_t assinaturaMascote = 0, assinaturaRodape = 0;
-
 void redesenharTudo() {
   assinaturaMascote = assinaturaRodape = 0xFFFFFFFF;  // forca o redesenho no proximo quadro
-  if (tela == T_LISTA) { desenharCabecalhoLista(); desenharLista(); return; }
+  if (tela == T_LISTA) { recalcVisiveis(); desenharCabecalhoLista(); desenharLista(); return; }
+  if (tela == T_MENU) { desenharCabecalhoMenu(); desenharMenu(); return; }
   if (tela == T_SESSAO) desenharCabecalhoSessao(); else desenharTopo();
 }
 
 void irPara(Tela t, const String &id = "") {
   tela = t;
   if (id.length()) atualId = id;
-  if (t == T_LISTA) rolagem = min(rolagem, rolagemMax());
-  if (t != T_LISTA) entrar(estadoDeRepouso());
+  if (t == T_LISTA) { recalcVisiveis(); rolagem = min(rolagem, rolagemMax()); }
+  if (t == T_MASCOTE || t == T_SESSAO) entrar(estadoDeRepouso());
   tft.fillScreen(C_BG);  // troca de tela: limpa tudo uma vez
   redesenharTudo();
-  Serial.printf("tela: %s %s\n", t == T_MASCOTE ? "mascote" : t == T_LISTA ? "lista" : "sessao", t == T_SESSAO ? atualId.c_str() : "");
+  Serial.printf("tela: %s %s\n", t == T_MASCOTE ? "mascote" : t == T_LISTA ? "lista" : t == T_MENU ? "menu" : "sessao", t == T_SESSAO ? atualId.c_str() : "");
 }
 
 void dadosNovos() {
@@ -604,13 +797,169 @@ void dadosNovos() {
   sessoes = redeSessoes; hora = redeHora; conexao = redeLink; versaoVista = redeVersao;
   xSemaphoreGive(trava);
   if (tela == T_SESSAO && !sessaoAtual() && conexao == PONTE_OK) { irPara(T_LISTA); return; }
-  bool conversando = m.estado == OUVINDO || m.estado == PENSANDO || m.estado == RESPONDENDO;
-  if (tela != T_LISTA && !conversando) {
+  bool conversando = m.estado == OUVINDO || m.estado == PENSANDO || m.estado == RESPONDENDO || voz.fase != V_NADA;
+  if ((tela == T_MASCOTE || tela == T_SESSAO) && !conversando) {
     Estado e = estadoDeRepouso();
     if (e != m.estado) entrar(e);
   }
-  if (tela == T_LISTA) rolagem = min(rolagem, rolagemMax());
+  if (tela == T_MENU) return;                    // o menu nao depende das sessoes
+  if (tela == T_LISTA) { recalcVisiveis(); rolagem = min(rolagem, rolagemMax()); }
   redesenharTudo();
+}
+
+// ---- voz, sessao nova e menus -----------------------------------------------------------------
+String jsonCorpo(JsonDocument &d) { String s; serializeJson(d, s); return s; }
+
+void abrirMenu(Menu tipo, const String &titulo, const String &carregando) {
+  if (tela != T_MENU) telaAntesDoMenu = tela;
+  menuTipo = tipo; menuTitulo = titulo; menuCarregando = carregando; menuRolagem = 0;
+  if (carregando.length()) menuItens.clear();
+  irPara(T_MENU);
+}
+
+void abrirFiltro() {
+  menuItens.clear();
+  menuItens.push_back({"todas", String(sessoes.size()), ""});
+  std::vector<String> repos;
+  int semRepo = 0;
+  for (auto &s : sessoes) {
+    if (!s.repo.length()) { semRepo++; continue; }
+    if (std::find(repos.begin(), repos.end(), s.repo) == repos.end()) repos.push_back(s.repo);
+  }
+  std::sort(repos.begin(), repos.end(), [](const String &a, const String &b) { return a.compareTo(b) < 0; });
+  for (auto &r : repos) {
+    int n = 0; for (auto &s : sessoes) n += s.repo == r;
+    menuItens.push_back({r.substring(r.indexOf('/') + 1), String(n) + (n > 1 ? " sessoes" : " sessao"), r});
+  }
+  if (semRepo) menuItens.push_back({"sem repositorio", String(semRepo), "-"});
+  abrirMenu(M_FILTRO, "Filtrar por repositorio", "");
+}
+
+void comecarNovaSessao(const String &texto) {
+  novaTexto = texto;
+  if (!pedirRede(PR_REPOS, false, "/api/repos")) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  abrirMenu(M_REPOS, "Nova sessao: repositorio", "carregando repositorios...");
+}
+
+void escolheuRepo(const ItemMenu &it) {
+  novaRepo = it.valor;
+  if (!pedirRede(PR_BRANCHES, false, "/api/repos/" + it.valor + "/branches")) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  // guarda a branch padrao no titulo do menu seguinte
+  abrirMenu(M_BRANCHES, "Branch de " + it.rotulo + (it.sub.length() ? " (padrao " + it.sub + ")" : ""), "carregando branches...");
+  menuCarregando = "carregando branches...";
+  novaRepo = it.valor;
+}
+
+void escolheuBranch(const ItemMenu &it) {
+  JsonDocument d;
+  d["origem"] = "vps"; d["repo"] = novaRepo; d["branch"] = it.valor;
+  String titulo = novaTexto.length() ? novaTexto.substring(0, 50) : "Sessao do mascote";
+  d["titulo"] = titulo;
+  if (novaTexto.length()) d["prompt"] = novaTexto; else d["prompt"] = nullptr;
+  if (!pedirRede(PR_CRIAR, true, "/api/sessoes", jsonCorpo(d))) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+  menuCarregando = "criando a sessao...";
+  desenharMenu();
+}
+
+void terminarFala() {
+  gravando = false;
+  size_t n = nAmostras;
+  if (n < (size_t)TAXA / 2) { voz.fase = V_NADA; entrar(estadoDeRepouso()); avisar("muito curto: segure enquanto fala", C_DIM); return; }
+  if (!pedirRede(PR_VOZ, true, "/api/voz", "", (const uint8_t *)audio, n * sizeof(int16_t))) {
+    voz.fase = V_NADA; entrar(estadoDeRepouso()); avisar("aguarde: a ponte esta ocupada", C_DIM); return;
+  }
+  voz.fase = V_TRANSCREVENDO;
+  entrar(PENSANDO);
+  Serial.printf("voz: %.1f s gravados\n", n / (float)TAXA);
+}
+
+void confirmarFala() {
+  if (tela == T_SESSAO) {
+    Sessao *s = sessaoAtual();
+    if (!s) { voz.fase = V_NADA; return; }
+    JsonDocument d; d["texto"] = voz.texto;
+    if (!pedirRede(PR_MSG, true, "/api/sessoes/" + s->id + "/mensagem", jsonCorpo(d))) { avisar("aguarde: a ponte esta ocupada", C_DIM); return; }
+    voz.fase = V_ENVIANDO;
+    assinaturaRodape = 0xFFFFFFFF;
+  } else {
+    voz.fase = V_NADA;
+    comecarNovaSessao(voz.texto);
+  }
+}
+
+String erroDe(const String &resp) {
+  JsonDocument d;
+  if (deserializeJson(d, resp)) return "";
+  return String((const char *)(d["erro"] | ""));
+}
+
+void resultadoRede() {
+  if (trabProposito == PR_NADA) return;
+  int cod; String resp; bool pronto;
+  xSemaphoreTake(trava, portMAX_DELAY);
+  pronto = trabFeitoId == trabId;
+  if (pronto) { cod = trabCod; resp = trabResp; }
+  xSemaphoreGive(trava);
+  if (!pronto) return;
+  Proposito p = trabProposito;
+  trabProposito = PR_NADA;
+  String erro = cod > 0 ? erroDe(resp) : (cod == -1 ? "sem ponte" : "rede");
+  switch (p) {
+    case PR_VOZ: {
+      JsonDocument d;
+      String txt = (cod == 200 && !deserializeJson(d, resp)) ? String((const char *)(d["texto"] | "")) : "";
+      txt.trim();
+      if (cod == 200 && txt.length()) { voz.texto = txt; voz.fase = V_CONFIRMAR; }
+      else {
+        voz.fase = V_NADA;
+        avisar(cod == 200 ? "nao entendi: tente de novo" : cod == 503 ? "transcricao desligada na VPS" : "transcricao falhou (" + String(cod) + ")", cod == 200 ? C_DIM : C_BAD);
+      }
+      entrar(estadoDeRepouso());
+      break;
+    }
+    case PR_MSG:
+      voz.fase = V_NADA;
+      if (cod == 202) avisar("enviado", C_OK);
+      else if (cod == 409) avisar("sessao ocupada: espere ela parar", C_WARN);
+      else if (cod == 403) avisar("so leitura: responda pelo app", C_WARN);
+      else if (cod == 504) avisar("sem confirmacao: confira no app", C_WARN);
+      else avisar("nao enviou (" + String(cod) + ") " + erro, C_BAD);
+      entrar(estadoDeRepouso());
+      break;
+    case PR_REPOS: {
+      JsonDocument d;
+      if (cod != 200 || deserializeJson(d, resp)) { menuCarregando = "nao carregou (" + String(cod) + ") " + erro; desenharMenu(); break; }
+      menuItens.clear();
+      for (JsonObject o : d.as<JsonArray>()) {
+        String nome = o["nome"] | "";
+        menuItens.push_back({nome.substring(nome.indexOf('/') + 1), String((const char *)(o["branch_padrao"] | "")), nome});
+      }
+      std::sort(menuItens.begin(), menuItens.end(), [](const ItemMenu &a, const ItemMenu &b) { return a.rotulo.compareTo(b.rotulo) < 0; });
+      menuCarregando = menuItens.empty() ? "nenhum repositorio" : "";
+      if (tela == T_MENU && menuTipo == M_REPOS) desenharMenu();
+      break;
+    }
+    case PR_BRANCHES: {
+      JsonDocument d;
+      if (cod != 200 || deserializeJson(d, resp)) { menuCarregando = "nao carregou (" + String(cod) + ") " + erro; desenharMenu(); break; }
+      int ini = menuTitulo.indexOf("(padrao "), fim = menuTitulo.lastIndexOf(')');
+      String padrao = ini >= 0 ? menuTitulo.substring(ini + 8, fim) : "";
+      menuItens.clear();
+      for (JsonObject o : d.as<JsonArray>()) {
+        String b = o["nome"] | "";
+        ItemMenu it{b, b == padrao ? "padrao" : "", b};
+        if (b == padrao) menuItens.insert(menuItens.begin(), it); else menuItens.push_back(it);
+      }
+      menuCarregando = menuItens.empty() ? "nenhuma branch" : "";
+      if (tela == T_MENU && menuTipo == M_BRANCHES) desenharMenu();
+      break;
+    }
+    case PR_CRIAR:
+      if (cod == 202) { avisar("sessao criada: aparece na lista em instantes", C_OK); filtro = ""; irPara(T_LISTA); }
+      else { menuCarregando = ""; avisar("nao criou (" + String(cod) + ") " + erro, C_BAD); desenharMenu(); }
+      break;
+    default: break;
+  }
 }
 
 void agir(const char *tipo) {
@@ -637,12 +986,20 @@ struct {
 } toque;
 
 bool areaDeFala(int x, int y) {
+  if (tela != T_MASCOTE && tela != T_SESSAO) return false;
+  if (voz.fase != V_NADA || trabProposito != PR_NADA) return false;
   int topo = tela == T_SESSAO ? HDR_S : TOP_HIT;
   if (y < topo || y >= FOOT_TOP) return false;
   return true;
 }
 
 int botaoEm(int x, int y) {
+  if (voz.fase == V_CONFIRMAR && (tela == T_MASCOTE || tela == T_SESSAO) && y >= BTN_Y - 6 && y <= BTN_Y + BTN_H + 6) {
+    if (x >= 16 && x < 16 + BTN_W) return 3;
+    if (x >= 16 + BTN_W + 12 && x < W - 16) return 4;
+    return 0;
+  }
+  if (voz.fase != V_NADA) return 0;
   Sessao *s = sessaoAtual();
   if (tela != T_SESSAO || !s || s->status != "waiting" || y < BTN_Y - 6 || y > BTN_Y + BTN_H + 6) return 0;
   if (x >= 16 && x < 16 + BTN_W) return 1;
@@ -651,11 +1008,35 @@ int botaoEm(int x, int y) {
 }
 
 void tocou(int x, int y) {
-  if (tela == T_MASCOTE) { if (y < TOP_HIT) irPara(T_LISTA); return; }
+  int b0 = botaoEm(x, y);
+  if (b0 == 3) { voz.fase = V_NADA; avisar("descartado", C_DIM); entrar(estadoDeRepouso()); return; }
+  if (b0 == 4) { confirmarFala(); return; }
+  if (tela == T_MASCOTE) { if (y < TOP_HIT && voz.fase == V_NADA) irPara(T_LISTA); return; }
   if (tela == T_LISTA) {
-    if (y < HDR) { if (x < 120) irPara(T_MASCOTE); return; }
-    int i = (y - HDR + rolagem) / RH;
-    if (i >= 0 && i < (int)sessoes.size()) irPara(T_SESSAO, sessoes[i].id);
+    if (y < HDR) {
+      if (x < 120) irPara(T_MASCOTE);
+      else if (x >= 150 && x < 414) abrirFiltro();
+      else if (x >= 420) comecarNovaSessao("");
+      return;
+    }
+    int k = (y - HDR + rolagem) / RH;
+    if (k >= 0 && k < (int)visiveis.size()) irPara(T_SESSAO, sessoes[visiveis[k]].id);
+    return;
+  }
+  if (tela == T_MENU) {
+    if (y < HDR) {
+      if (x >= 120) return;
+      if (menuTipo == M_BRANCHES) { comecarNovaSessao(novaTexto); return; }
+      irPara(menuTipo == M_FILTRO ? T_LISTA : telaAntesDoMenu);
+      return;
+    }
+    if (menuCarregando.length()) return;
+    int k = (y - HDR + menuRolagem) / MH;
+    if (k < 0 || k >= (int)menuItens.size()) return;
+    ItemMenu it = menuItens[k];
+    if (menuTipo == M_FILTRO) { filtro = it.valor; rolagem = 0; irPara(T_LISTA); }
+    else if (menuTipo == M_REPOS) escolheuRepo(it);
+    else escolheuBranch(it);
     return;
   }
   if (tela == T_SESSAO) {
@@ -676,22 +1057,28 @@ void lerToque(uint32_t agora) {
     toque.ativo = true; toque.x0 = toque.x = tx; toque.y0 = toque.y = ty; toque.desde = toque.ultimo = agora; toque.rolagem0 = rolagem;
     int b = botaoEm(tx, ty);
     if (b) { botaoApertado = b; assinaturaRodape = 0xFFFFFFFF; }
+    if (tela == T_MENU) toque.rolagem0 = menuRolagem;
   } else if (apertado) {
     int dy = toque.y - toque.y0;
-    if (tela == T_LISTA) {
+    if (tela == T_LISTA || tela == T_MENU) {
       if (abs(dy) > 8) toque.arrastando = true;
-      if (toque.arrastando) {
+      if (toque.arrastando && tela == T_LISTA) {
         int nova = constrain(toque.rolagem0 - dy, 0, rolagemMax());
         if (abs(nova - rolagem) >= 3) { rolagem = nova; desenharLista(); }
       }
+      if (toque.arrastando && tela == T_MENU) {
+        int nova = constrain(toque.rolagem0 - dy, 0, menuRolagemMax());
+        if (abs(nova - menuRolagem) >= 3) { menuRolagem = nova; desenharMenu(); }
+      }
     } else if (!toque.falando && agora - toque.desde > 250 && areaDeFala(toque.x0, toque.y0) && !botaoEm(toque.x0, toque.y0)) {
       toque.falando = true;
-      entrar(OUVINDO);
+      if (!micOk) avisar("microfone nao iniciou: confira os fios", C_BAD);
+      else { nAmostras = 0; gravando = true; voz.fase = V_GRAVANDO; entrar(OUVINDO); }
     }
   } else if (toque.ativo) {
     toque.ativo = false;
     if (botaoApertado) { botaoApertado = 0; assinaturaRodape = 0xFFFFFFFF; }
-    if (toque.falando) entrar(PENSANDO);
+    if (toque.falando) { if (voz.fase == V_GRAVANDO) terminarFala(); }
     else if (!toque.arrastando && agora - toque.desde < 800) tocou(toque.x0, toque.y0);
   }
 }
@@ -724,6 +1111,12 @@ void setup() {
   trava = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(tarefaRede, "rede", 12288, nullptr, 1, nullptr, 0);
 
+  audio = (int16_t *)ps_malloc(MAX_AMOSTRAS * sizeof(int16_t));
+  mic.setPins(PIN_MIC_SCK, PIN_MIC_WS, -1, PIN_MIC_SD);
+  micOk = audio && mic.begin(I2S_MODE_STD, TAXA, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT);
+  if (micOk) xTaskCreatePinnedToCore(tarefaAudio, "audio", 4096, nullptr, 2, nullptr, 1);
+  else Serial.println("microfone: falhou ao iniciar o I2S (fios SCK 15, WS 16, SD 17?)");
+
   entrar(REPOUSO);
   redesenharTudo();
   ultimoQuadro = millis();
@@ -735,9 +1128,14 @@ void loop() {
   ultimoQuadro = agora;
 
   if (redeVersao != versaoVista) dadosNovos();
+  resultadoRede();
   lerToque(agora);
+  // aviso que acabou de expirar na lista/menu: redesenha para apagar a faixa
+  static bool avisoAtivo = false;
+  bool av = millis() < voz.avisoAte;
+  if (av != avisoAtivo) { avisoAtivo = av; if (tela == T_LISTA) desenharLista(); if (tela == T_MENU) desenharMenu(); }
 
-  if (tela != T_LISTA) {
+  if (tela == T_MASCOTE || tela == T_SESSAO) {
     atualizar(dt);
     uint32_t a = m.estado;
     a = a * 31u + (m.blinkT >= 0);
@@ -748,7 +1146,8 @@ void loop() {
     if (m.estado == PENSANDO || m.estado == TRABALHANDO) a = a * 31u + (uint32_t)(m.t * 4) % 4;
     if (m.estado == ALERTA) a = a * 31u + (uint32_t)(m.t * 3) % 2;
     if (a != assinaturaMascote) { desenharMascote(); assinaturaMascote = a; }
-    uint32_t b = m.estado * 7u + m.typed * 131u + botaoApertado * 17u + versaoVista * 1009u;
+    uint32_t b = m.estado * 7u + m.typed * 131u + botaoApertado * 17u + versaoVista * 1009u + voz.fase * 7919u + av * 104729u
+               + voz.texto.length() * 31u + (uint32_t)voz.avisoAte;
     for (int i = 0; i < 16; i++) b = b * 31u + (uint32_t)(m.bars[i] * 14);
     if (b != assinaturaRodape) { desenharRodape(); assinaturaRodape = b; }
   }
