@@ -299,11 +299,11 @@ void loop() {
 (() => {
   // ================= memoria do navegador =================
   let mem = {};
-  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v6') || '{}'); } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v6', JSON.stringify(mem)); } catch (e) {} };
+  try { mem = JSON.parse(localStorage.getItem('manual-placa-mascote-v7') || '{}'); } catch (e) {}
+  const salvar = () => { try { localStorage.setItem('manual-placa-mascote-v7', JSON.stringify(mem)); } catch (e) {} };
   const LADO_A = ['SCK', 'WS', 'L/R'], LADO_B = ['SD', 'VDD', 'GND'];
   const perms = a => [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].map(p => p.map(i => a[i]));
-  const cfg = Object.assign({ n: 4, a: 0, b: 0 }, mem.cfg || {});
+  const cfg = Object.assign({ n: 3, a: 0, b: 0 }, mem.cfg || {});
 
   // ================= modelo da placa =================
   const COLS = 27, ROWS = 22;
@@ -467,7 +467,7 @@ void loop() {
     M.A.forEach((p, i) => { const py = cy - pas + i * pas; s += `<circle cx="${cx - half}" cy="${py}" r="7" fill="var(--cobre)"/><circle cx="${cx - half}" cy="${py}" r="2.6" fill="#111"/><line x1="${cx - half - 8}" y1="${py}" x2="${cx - R - 6}" y2="${py}" stroke="var(--muted)" stroke-width="1.5"/><text x="${cx - R - 12}" y="${py + 5}" text-anchor="end" font-size="15" font-weight="700" fill="var(--fg)">${p}</text>`; });
     M.B.forEach((p, i) => { const py = cy - pas + i * pas; s += `<circle cx="${cx + half}" cy="${py}" r="7" fill="var(--cobre)"/><circle cx="${cx + half}" cy="${py}" r="2.6" fill="#111"/><line x1="${cx + half + 8}" y1="${py}" x2="${cx + R + 6}" y2="${py}" stroke="var(--muted)" stroke-width="1.5"/><text x="${cx + R + 12}" y="${py + 5}" font-size="15" font-weight="700" fill="var(--fg)">${p}</text>`; });
     s += `<line x1="${cx - half}" y1="${cy + R + 16}" x2="${cx + half}" y2="${cy + R + 16}" stroke="var(--accent)" stroke-width="2.5"/>` + rng(0, n).map(i => `<line x1="${cx - half + i * pas}" y1="${cy + R + 10}" x2="${cx - half + i * pas}" y2="${cy + R + 22}" stroke="var(--accent)" stroke-width="2"/>`).join('')
-      + `<text x="${cx}" y="${cy + R + 40}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">${n} furos de uma fileira à outra (${(n * 2.54).toFixed(1).replace('.', ',')} mm)</text>`;
+      + `<text x="${cx}" y="${cy + R + 40}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">vão de ${n - 1} furos vazios entre as fileiras (${(n * 2.54).toFixed(1).replace('.', ',')} mm)</text>`;
     return `<svg viewBox="0 0 560 ${cy + R + 52}" role="img" aria-label="Microfone visto de cima">${s}</svg>`;
   };
   // ---- close-up da solda de um fio (vista de lado e de cima) ----
@@ -595,7 +595,7 @@ void loop() {
   const comoFio = `<ol><li>Corte o fio no tamanho da tabela e descasque <b>3 mm</b> em cada ponta.</li><li>Estanhe as pontas: encoste o ferro e um pouquinho de estanho na parte descascada.</li><li>Com a placa virada (verso para cima), encoste a ponta na solda do furo de saída. Reaqueça e deixe o fio afundar nela. Faça o mesmo na chegada.</li><li>Deixe o fio rente à placa, sem esticar. Ele pode passar por cima de outros fios e soldas: a capa isola. Só não descasque no meio.</li></ol><p class="nota">Dúvida em como a solda deve ficar? Veja o close no passo “Close: como soldar um fio na placa”.</p>`;
   const micTxt = () => `um lado (coluna ${M.cA}, linhas ${LN(MR0)} a ${LN(MR0 + 2)}): <b>${M.A.join(', ')}</b>; outro lado (coluna ${M.cB}, linhas ${LN(MR0)} a ${LN(MR0 + 2)}): <b>${M.B.join(', ')}</b>`;
   const ajusteMic = () => `<div class="ajuste">
-      <label for="aj-n">Furos entre as fileiras<select id="aj-n">${[3, 4, 5].map(v => `<option value="${v}"${cfg.n === v ? ' selected' : ''}>${v} furos (${(v * 2.54).toFixed(1).replace('.', ',')} mm)</option>`).join('')}</select></label>
+      <label for="aj-n">Vão entre as fileiras<select id="aj-n">${[2, 3, 4, 5].map(v => `<option value="${v}"${cfg.n === v ? ' selected' : ''}>${v - 1} ${v - 1 === 1 ? 'furo vazio' : 'furos vazios'} (fileiras a ${(v * 2.54).toFixed(1).replace('.', ',')} mm)</option>`).join('')}</select></label>
       <label for="aj-a">Ordem de um lado<select id="aj-a">${perms(LADO_A).map((p, i) => `<option value="${i}"${cfg.a === i ? ' selected' : ''}>${p.join(' · ')}</option>`).join('')}</select></label>
       <label for="aj-b">Ordem do outro lado<select id="aj-b">${perms(LADO_B).map((p, i) => `<option value="${i}"${cfg.b === i ? ' selected' : ''}>${p.join(' · ')}</option>`).join('')}</select></label></div>`;
 
@@ -615,7 +615,7 @@ void loop() {
     passo({ t: 'Treine numa sobra de placa', html: () => `<ol><li>Limpe a ponta do ferro e molhe com um pouco de estanho.</li><li>Encoste a ponta na <b>ilha e na perna ao mesmo tempo</b>. Conte 2 segundos.</li><li>Encoste o estanho <b>na ilha e na perna</b> (não no ferro). Ele escorre sozinho.</li><li>Tire o estanho, depois o ferro. Não mexa por 3 segundos.</li></ol><div class="fig">${figSolda()}</div>` });
     passo({ t: 'Distância entre as fileiras do ESP32', html: () => `<div class="fig">${figMedir()}</div><p>No seu, as fileiras ficaram nas linhas <b>B</b> e <b>L</b>: <b>10 furos</b> de distância (25,4 mm). O manual já está ajustado para isso.</p>` });
     passo({ t: 'Meça o microfone e ajuste o manual', id: 'mic', html: () => `<p>O INMP441 redondo tem <b>3 pinos de cada lado</b>. Duas coisas mudam de um fabricante para outro, então confira no seu:</p>
-        <ol><li><b>Distância entre as fileiras:</b> encaixe o microfone na protoboard e conte quantos furos tem de uma fileira até a outra (contando a outra fileira, sem contar a primeira).</li><li><b>Ordem dos nomes</b> impressos em cada lado.</li></ol>
+        <ol><li><b>Distância entre as fileiras:</b> encaixe o microfone na protoboard e conte quantos <b>furos vazios</b> ficam entre as duas fileiras de pinos (o seu tem <b>2</b>).</li><li><b>Ordem dos nomes</b> impressos em cada lado.</li></ol>
         ${ajusteMic()}<div class="fig" data-micfig>${figMic()}</div><p class="dica">Ao mudar aqui, todos os desenhos, furos e tamanhos de fio do manual se ajustam.</p>` });
     passo({ t: 'Conheça a placa', vista: true, novo: [], html: () => `<ol><li>A placa tem <b>27 colunas</b> (números 1 a 27) e <b>22 linhas</b> (letras A a V), e é usada inteira, sem cortar.</li><li>Deixe na sua frente com as letras e números impressos para cima, a <b>letra A embaixo</b> e o <b>número 1 à esquerda</b> (do jeito que você soldou o ESP32). Esse é o lado da <b>frente</b>, onde as peças encaixam.</li><li>Neste manual, cada furo tem um nome de <b>letra + número</b>, como no jogo de batalha naval: <b>K3</b> é a linha K, coluna 3.</li><li>Se o <b>verso</b> não tiver letras e números impressos, escreva alguns com caneta permanente (A, E, J, O, T e 1, 5, 10, 15, 20, 25). Lá a coluna 1 fica à <b>direita</b>, como no desenho.</li></ol>` });
     parte('Soquetes');
