@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mascote Claude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Silkscreen&display=swap">
+<style>
+/* Layout: bancada de trabalho. Hero com o aparelho de verdade (tela 480×320), depois ficha técnica em blocos e índice dos documentos. */
+:root {
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --ink: #15171c;
+  --muted: #5a6170;
+  --line: #d3d8e0;
+  --accent: #c95a30;
+  --accent-soft: #f6e3da;
+  --ok: #1f7a4d;
+  --ok-soft: #dcefe4;
+  --warn: #9a6400;
+  --warn-soft: #f6ebd3;
+  --case: #22262d;
+  --case-edge: #3a3f48;
+  --screen: #0e1114;
+  --screen-ink: #e9e6df;
+  --screen-dim: #7d8590;
+  --mascot: #d97a52;
+
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-pixel: "Silkscreen", ui-monospace, monospace;
+
+  --r: 10px;
+  --wrap: 1120px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --surface: #171b21; --ink: #e8eaee; --muted: #9aa2ae; --line: #2a3039;
+    --accent: #ec8156; --accent-soft: #3a2219; --ok: #5cc98f; --ok-soft: #15301f;
+    --warn: #e2b24f; --warn-soft: #34290f; --case: #262b33; --case-edge: #3d434d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1216; --surface: #171b21; --ink: #e8eaee; --muted: #9aa2ae; --line: #2a3039;
+  --accent: #ec8156; --accent-soft: #3a2219; --ok: #5cc98f; --ok-soft: #15301f;
+  --warn: #e2b24f; --warn-soft: #34290f; --case: #262b33; --case-edge: #3d434d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1rem/1.6 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-inline: 20px; }
+
+/* ---------- topo ---------- */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding-block: 22px;
+  font: 500 .8rem/1 var(--f-mono); color: var(--muted);
+}
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 500; }
+.brand canvas { width: 30px; height: 20px; image-rendering: pixelated; }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.top nav a { text-decoration: none; }
+.top nav a:hover { color: var(--accent); }
+
+/* ---------- hero ---------- */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: clamp(28px, 5vw, 64px); align-items: center;
+  padding-block: clamp(24px, 6vw, 72px) clamp(40px, 6vw, 80px);
+}
+.eyebrow {
+  font: 500 .75rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 18px;
+}
+h1 {
+  font: 800 clamp(2.6rem, 6.4vw, 4.6rem)/.95 var(--f-display);
+  letter-spacing: -.035em; margin: 0 0 22px; text-wrap: balance;
+}
+h1 em { font-style: normal; color: var(--accent); }
+.lede { font-size: 1.125rem; color: var(--muted); max-width: 34em; margin: 0 0 28px; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.specline {
+  display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 0; margin: 0; list-style: none;
+  font: 400 .82rem/1.4 var(--f-mono); color: var(--muted);
+}
+.specline b { color: var(--ink); font-weight: 500; }
+
+/* ---------- o aparelho ---------- */
+.device {
+  background: var(--case);
+  border: 1px solid var(--case-edge);
+  border-radius: 22px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 30px 60px -30px rgba(10, 14, 20, .55), inset 0 1px 0 rgba(255,255,255,.06);
+  max-width: 100%;
+}
+.screen {
+  aspect-ratio: 480 / 320; max-width: 100%;
+  background: var(--screen); color: var(--screen-ink);
+  border-radius: 4px; overflow: hidden;
+  display: grid; grid-template-columns: 38% 1fr;
+  font-family: var(--f-pixel);
+  container-type: inline-size;
+}
+.stage { position: relative; display: grid; place-items: center; border-right: 1px solid #22282f; }
+.stage canvas { width: 78%; image-rendering: pixelated; image-rendering: crisp-edges; }
+.stage .say {
+  position: absolute; bottom: 7%; left: 0; right: 0; text-align: center;
+  font-size: 3.1cqi; color: var(--screen-dim);
+}
+.list { display: flex; flex-direction: column; padding: 4.5cqi 4cqi 3.5cqi; gap: 2.2cqi; min-width: 0; }
+.list h3 { font: inherit; font-size: 3.4cqi; margin: 0 0 .6cqi; color: var(--screen-dim); display: flex; justify-content: space-between; }
+.sess {
+  display: grid; grid-template-columns: 2.2cqi 1fr auto; align-items: center; gap: 2cqi;
+  font-size: 3.2cqi; line-height: 1.2; padding: 1.8cqi 2cqi; border-radius: 1cqi;
+  background: #171c22; white-space: nowrap;
+}
+.sess span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+.sess .dot { width: 1.6cqi; height: 1.6cqi; background: var(--screen-dim); }
+.sess.ask { background: #2a1d17; outline: 1px solid #6b3a26; }
+.sess.ask .dot { background: var(--mascot); animation: blink 1.1s steps(1) infinite; }
+.sess.run .dot { background: #5cc98f; }
+.sess small { font-size: 2.6cqi; color: var(--screen-dim); }
+.btns { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2cqi; }
+.btns span { text-align: center; font-size: 3.2cqi; padding: 2.2cqi 0; border-radius: 1cqi; }
+.btns .yes { background: var(--mascot); color: #1a0f0a; }
+.btns .no { background: #262c34; }
+.device-foot {
+  display: flex; justify-content: space-between; gap: 12px; margin-top: 12px;
+  font: 400 .7rem/1 var(--f-mono); color: #8b929c; letter-spacing: .04em;
+}
+.device-foot .usb { display: inline-flex; align-items: center; gap: 6px; }
+.device-foot .usb::before { content: ""; width: 16px; height: 5px; border: 1px solid #8b929c; border-radius: 3px; }
+.caption { font: 400 .78rem/1.4 var(--f-mono); color: var(--muted); margin-top: 12px; text-align: right; }
+@keyframes blink { 50% { opacity: .15; } }
+
+/* ---------- seções ---------- */
+section { padding-block: clamp(40px, 6vw, 72px); border-top: 1px solid var(--line); }
+.sec-head { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; margin-bottom: 32px; align-items: baseline; }
+.sec-head .eyebrow { margin: 0; }
+h2 { font: 700 clamp(1.6rem, 3vw, 2.2rem)/1.1 var(--f-display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.sec-head p { grid-column: 2; margin: 10px 0 0; color: var(--muted); max-width: 38em; }
+
+/* status */
+.status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.status article { padding: 22px 22px 24px; min-width: 0; }
+.status article + article { border-left: 1px solid var(--line); }
+.status h3 { font: 600 1.05rem/1.3 var(--f-body); margin: 12px 0 8px; }
+.status p { margin: 0; color: var(--muted); font-size: .94rem; }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 500 .72rem/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 6px 9px; border-radius: 99px;
+}
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.proven { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.proven > span:first-child { font: 500 .75rem/1 var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 6px; }
+.chip { font-size: .85rem; padding: 5px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+
+/* fluxo */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1.15fr; align-items: stretch; gap: 0; }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; }
+.node.hot { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.node .k { font: 500 .7rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.node h4 { font: 700 1.15rem/1.2 var(--f-display); margin: 8px 0 6px; }
+.node p { margin: 0; font-size: .88rem; color: var(--muted); }
+.node code, .pins code, .docs code { font-family: var(--f-mono); font-size: .85em; }
+.node .sub { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.node .sub + .sub { margin-top: 10px; }
+.arrow { display: grid; place-items: center; padding: 0 8px; color: var(--muted); font: 400 .68rem/1.2 var(--f-mono); text-align: center; }
+.arrow svg { width: 44px; height: 12px; display: block; margin: 6px auto 0; }
+.arrow svg path { stroke: var(--accent); fill: none; stroke-width: 1.5; }
+
+/* pinos */
+.pins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.pinbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; min-width: 0; }
+.pinbox header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.pinbox header b { font: 700 1rem/1.2 var(--f-display); }
+.pinbox header span { font: 400 .74rem/1.2 var(--f-mono); color: var(--muted); }
+.pinbox table { width: 100%; border-collapse: collapse; font: 400 .86rem/1.3 var(--f-mono); font-variant-numeric: tabular-nums; }
+.pinbox td { padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.pinbox tr:last-child td { border-bottom: 0; }
+.pinbox td:last-child { text-align: right; color: var(--accent); font-weight: 500; }
+.pinbox td.off { color: var(--muted); font-weight: 400; }
+.note { margin-top: 18px; font-size: .9rem; color: var(--muted); max-width: 52em; }
+.note b { color: var(--ink); font-weight: 600; }
+
+/* documentos */
+.featured {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center;
+  background: var(--accent-soft); border-radius: var(--r); padding: 24px 26px; margin-bottom: 28px;
+  text-decoration: none;
+}
+.featured .k { font: 500 .72rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.featured h3 { font: 700 clamp(1.3rem, 2.4vw, 1.7rem)/1.15 var(--f-display); margin: 8px 0 6px; letter-spacing: -.01em; }
+.featured p { margin: 0; color: var(--muted); max-width: 46em; }
+.featured .go { font: 500 .9rem/1 var(--f-mono); color: var(--accent); white-space: nowrap; }
+.featured:hover .go { text-decoration: underline; }
+.docs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px 24px; }
+.docs h3 { font: 500 .75rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.docs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.docs a { display: block; text-decoration: none; padding: 8px 10px; margin-inline: -10px; border-radius: 8px; }
+.docs a:hover { background: var(--surface); }
+.docs a b { display: block; font-weight: 600; font-size: .95rem; }
+.docs a:hover b { color: var(--accent); }
+.docs a span { display: block; font-size: .84rem; color: var(--muted); line-height: 1.45; }
+.legacy { margin-top: 22px; font-size: .85rem; color: var(--muted); }
+.legacy a { color: var(--muted); }
+
+/* próximos passos */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; counter-reset: s; }
+.steps li { position: relative; padding: 0 22px 0 0; counter-increment: s; min-width: 0; }
+.steps li::before {
+  content: counter(s); display: grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%; margin-bottom: 14px;
+  font: 600 .9rem/1 var(--f-mono); background: var(--surface); border: 1px solid var(--line);
+  position: relative; z-index: 1;
+}
+.steps li:first-child::before { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.steps li::after { content: ""; position: absolute; top: 16px; left: 32px; right: 0; height: 1px; background: var(--line); }
+.steps li:last-child::after { display: none; }
+.steps b { display: block; font-weight: 600; margin-bottom: 4px; }
+.steps span { font-size: .9rem; color: var(--muted); }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; font: 400 .8rem/1.6 var(--f-mono); color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 960px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .arrow { padding: 10px 0; }
+  .arrow svg { transform: rotate(90deg); }
+  .docs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pins { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .sec-head { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .sec-head p { grid-column: 1; }
+  .status { grid-template-columns: minmax(0, 1fr); }
+  .status article + article { border-left: 0; border-top: 1px solid var(--line); }
+  .steps { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .steps li { padding: 0 0 0 48px; }
+  .steps li::before { position: absolute; left: 0; top: -4px; }
+  .steps li::after { top: 32px; bottom: -22px; left: 16px; right: auto; width: 1px; height: auto; }
+  .featured { grid-template-columns: minmax(0, 1fr); }
+  .caption { text-align: left; }
+}
+@media (max-width: 480px) {
+  .docs { grid-template-columns: minmax(0, 1fr); }
+  .top nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sess.ask .dot { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span class="brand"><canvas id="mini" width="15" height="10" aria-hidden="true"></canvas>mascote-claude</span>
+    <nav aria-label="Seções">
+      <a href="#status">status</a>
+      <a href="#como-funciona">como funciona</a>
+      <a href="#pinos">pinos</a>
+      <a href="#documentos">documentos</a>
+    </nav>
+    <span>v1 · atualizado 12/out/2026</span>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">Projeto pessoal · ESP32-S3 + tela 3,5"</p>
+      <h1>Um Claude que mora <em>na mesa.</em></h1>
+      <p class="lede">Mascote de mesa com tela touch que mostra as <strong>sessões do Claude</strong> em andamento e deixa aprovar, recusar e responder perguntas com um toque. A conversa por voz vem a seguir.</p>
+      <ul class="specline">
+        <li><b>ESP32-S3</b> N16R8</li>
+        <li><b>480 × 320</b> ILI9488</li>
+        <li><b>HTTPS</b> até a VPS</li>
+        <li><b>USB-C</b> 5 V</li>
+      </ul>
+    </div>
+
+    <figure style="margin:0">
+      <div class="device" role="img" aria-label="Desenho do mascote: tela com o personagem laranja à esquerda e a lista de sessões à direita, com botões Aprovar e Recusar">
+        <div class="screen">
+          <div class="stage">
+            <canvas id="clawd" width="15" height="10" aria-hidden="true"></canvas>
+            <div class="say" id="say">pedindo aprovação</div>
+          </div>
+          <div class="list">
+            <h3><span>sessões</span><span>3</span></h3>
+            <div class="sess ask"><i class="dot"></i><span>testes / ponte</span><small>bash</small></div>
+            <div class="sess run"><i class="dot"></i><span>firmware camarim</span><small>vps</small></div>
+            <div class="sess"><i class="dot"></i><span>caixa impressa</span><small>nuvem</small></div>
+            <div class="btns"><span class="yes">aprovar</span><span class="no">recusar</span></div>
+          </div>
+        </div>
+        <div class="device-foot"><span>3,5" · 480×320</span><span class="usb">USB-C</span></div>
+      </div>
+      <figcaption class="caption">Tela de exemplo. As sessões são ilustrativas.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<section id="status">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Onde está</p>
+      <div>
+        <h2>Funcionando na protoboard, ligado às sessões reais.</h2>
+      </div>
+    </div>
+    <div class="status">
+      <article>
+        <span class="pill warn">em teste</span>
+        <h3>Hardware</h3>
+        <p>Protótipo na protoboard com ESP32-S3 N16R8 e tela ILI9488 com touch resistivo. Microfone ainda não ligado. Placa ilhada e caixa em desenho.</p>
+      </article>
+      <article>
+        <span class="pill ok">no aparelho</span>
+        <h3>Firmware</h3>
+        <p>Wi-Fi, lista de sessões, tela de cada sessão, Aprovar e Recusar, HTTPS validado por CA e IP. Camarim com acessórios e 11 animações compilado, ainda sem teste na placa.</p>
+      </article>
+      <article>
+        <span class="pill ok">em produção</span>
+        <h3>Ponte</h3>
+        <p>Roda na VPS como serviço <code>systemd --user</code>, atrás do nginx com HTTPS. Mostra as sessões da VPS (Remote Control) e da nuvem (claude.ai/code).</p>
+      </article>
+    </div>
+    <div class="proven">
+      <span>Testado de verdade</span>
+      <span class="chip">aprovar e recusar</span>
+      <span class="chip">"sempre permitir"</span>
+      <span class="chip">perguntas com várias opções</span>
+      <span class="chip">aprovar plano</span>
+      <span class="chip">perigosos só no app</span>
+      <span class="chip">app e mascote juntos</span>
+      <span class="chip">mensagens via tmux</span>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Como funciona</p>
+      <div>
+        <h2>O mascote é só a tela. A inteligência fica no servidor.</h2>
+        <p>O ESP32 cuida de tela, toque e microfone. A ponte na VPS lê as sessões, recebe as aprovações e transcreve a voz. Nada de Raspberry Pi: o servidor já fica ligado o dia todo.</p>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="node hot">
+        <span class="k">Na mesa</span>
+        <h4>Mascote</h4>
+        <p>ESP32-S3 com tela 3,5" touch. Mostra a lista, toca para aprovar, segura para falar.</p>
+      </div>
+      <div class="arrow">HTTPS<br>CA + IP<svg viewBox="0 0 44 12" aria-hidden="true"><path d="M0 6h42M36 1l6 5-6 5"/></svg></div>
+      <div class="node">
+        <span class="k">VPS</span>
+        <h4>nginx</h4>
+        <p>Certificado Let's Encrypt emitido para o IP. Repassa para a ponte local.</p>
+      </div>
+      <div class="arrow">proxy<svg viewBox="0 0 44 12" aria-hidden="true"><path d="M0 6h42M36 1l6 5-6 5"/></svg></div>
+      <div class="node">
+        <span class="k">VPS</span>
+        <h4>Ponte</h4>
+        <p><code>127.0.0.1:8787</code>. Hooks, tmux e Whisper local para a voz (16 kHz, português).</p>
+      </div>
+      <div class="arrow">lê e<br>responde<svg viewBox="0 0 44 12" aria-hidden="true"><path d="M0 6h42M36 1l6 5-6 5"/></svg></div>
+      <div class="node">
+        <span class="k">Sessões</span>
+        <h4>Claude Code</h4>
+        <div class="sub"><p><b>VPS:</b> Remote Control, fonte estável. Aprovar, recusar, "sempre", perguntas, planos.</p></div>
+        <div class="sub"><p><b>Nuvem:</b> claude.ai/code por adaptador experimental, sem "sempre".</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pinos">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Mapa de pinos</p>
+      <div>
+        <h2>Tudo em 3,3 V, longe dos pinos reservados.</h2>
+        <p>Variante atual, com a tela ILI9488 de teste. O touch resistivo tem SPI próprio, porque o ILI9488 não solta o fio SDO.</p>
+      </div>
+    </div>
+    <div class="pins">
+      <div class="pinbox">
+        <header><b>Tela ILI9488</b><span>SPI2</span></header>
+        <table>
+          <tr><td>CS</td><td>GPIO 10</td></tr>
+          <tr><td>SCK</td><td>GPIO 12</td></tr>
+          <tr><td>SDI (MOSI)</td><td>GPIO 11</td></tr>
+          <tr><td>SDO (MISO)</td><td>GPIO 13</td></tr>
+          <tr><td>DC</td><td>GPIO 14</td></tr>
+          <tr><td>RESET</td><td>GPIO 6</td></tr>
+          <tr><td>LED</td><td>GPIO 7</td></tr>
+        </table>
+      </div>
+      <div class="pinbox">
+        <header><b>Touch XPT2046</b><span>SPI3</span></header>
+        <table>
+          <tr><td>T_CLK</td><td>GPIO 9</td></tr>
+          <tr><td>T_CS</td><td>GPIO 5</td></tr>
+          <tr><td>T_DIN</td><td>GPIO 8</td></tr>
+          <tr><td>T_DO</td><td>GPIO 4</td></tr>
+          <tr><td>T_IRQ</td><td class="off">sem ligar</td></tr>
+        </table>
+      </div>
+      <div class="pinbox">
+        <header><b>Microfone INMP441</b><span>I2S</span></header>
+        <table>
+          <tr><td>SCK (BCLK)</td><td>GPIO 15</td></tr>
+          <tr><td>WS</td><td>GPIO 16</td></tr>
+          <tr><td>SD</td><td>GPIO 17</td></tr>
+          <tr><td>L/R</td><td class="off">GND</td></tr>
+          <tr><td>VDD</td><td class="off">3V3</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="note"><b>Não use:</b> 0, 3, 45, 46 (boot) · 19, 20 (USB) · 26 a 37 (flash e PSRAM) · 43, 44 (serial) · 38 e 48 (LED da placa). Desligue o USB antes de mexer em qualquer fio.</p>
+  </div>
+</section>
+
+<section id="documentos">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Documentos</p>
+      <div>
+        <h2>Manuais, esquemas e decisões.</h2>
+      </div>
+    </div>
+
+    <a class="featured" data-path="hardware/manual-visual-placa-ilhada-ili9488.html" href="hardware/manual-visual-placa-ilhada-ili9488.html">
+      <div>
+        <span class="k">Referência atual da montagem</span>
+        <h3>Montando a Placa do Mascote</h3>
+        <p>Passo a passo com desenho em cada etapa: placa de 27 × 22 furos, ESP32 nas linhas B e L, capacitores com ponte de estanho no verso e barramentos com medidas de corte.</p>
+      </div>
+      <span class="go">abrir →</span>
+    </a>
+
+    <div class="docs">
+      <div>
+        <h3>Montagem</h3>
+        <ul>
+          <li><a data-path="hardware/manual-montagem-ili9488.html" href="hardware/manual-montagem-ili9488.html"><b>Manual da protoboard</b><span>Peças ligáveis, multímetro virtual e 3 vistas</span></a></li>
+          <li><a data-path="hardware/manual-placa-ilhada-ili9488.html" href="hardware/manual-placa-ilhada-ili9488.html"><b>Placa ilhada interativa</b><span>Soquetes, barramentos e fios do verso (layout antigo 31 × 23)</span></a></li>
+          <li><a data-path="hardware/barramento-placa-ilhada.html" href="hardware/barramento-placa-ilhada.html"><b>Barramento</b><span>Como fazer as trilhas de 3V3 e GND</span></a></li>
+          <li><a data-path="hardware/solda-passo-a-passo.html" href="hardware/solda-passo-a-passo.html"><b>Solda dos pinos</b><span>Desenhos de lado, erros comuns e conserto</span></a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Desenhos</h3>
+        <ul>
+          <li><a data-path="hardware/esquema-ligacoes-ili9488.html" href="hardware/esquema-ligacoes-ili9488.html"><b>Esquema de ligações</b><span>Cada fio colorido, tela ILI9488</span></a></li>
+          <li><a data-path="hardware/pcb-placa-base.html" href="hardware/pcb-placa-base.html"><b>Placa-base 80 × 60 mm</b><span>Rascunho da PCB do modelo final</span></a></li>
+          <li><a data-path="hardware/caixa-desenho.html" href="hardware/caixa-desenho.html"><b>Caixa do mascote</b><span>Vistas, corte e impressão na Bambu A1</span></a></li>
+          <li><a data-path="hardware/entendendo-os-componentes.html" href="hardware/entendendo-os-componentes.html"><b>Entendendo os componentes</b><span>Capacitor, resistor, botão, multímetro</span></a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Planejamento</h3>
+        <ul>
+          <li><a data-path="docs/decisoes.md" href="docs/decisoes.md"><b>Decisões</b><span>27 perguntas, resposta e motivo</span></a></li>
+          <li><a data-path="docs/montagem.md" href="docs/montagem.md"><b>Guia de montagem</b><span>Etapas com um teste cada e mapa de pinos</span></a></li>
+          <li><a data-path="docs/bom.md" href="docs/bom.md"><b>Lista de peças</b><span>BOM para a Santa Ifigênia</span></a></li>
+          <li><a data-path="docs/guia-de-compras.pdf" href="docs/guia-de-compras.pdf"><b>Guia de compras</b><span>PDF ilustrado com marcas e preços</span></a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Software</h3>
+        <ul>
+          <li><a data-path="docs/camarim/index.html" href="docs/camarim/index.html"><b>Camarim</b><span>Acessórios e animações do mascote</span></a></li>
+          <li><a data-path="software/ui-proto/index.html" href="software/ui-proto/index.html"><b>Protótipo da tela</b><span>480 × 320 com push-to-talk</span></a></li>
+          <li><a data-path="software/bridge/real/README.md" href="software/bridge/real/README.md"><b>Ponte em produção</b><span>Instalação, troca e rollback</span></a></li>
+          <li><a data-path="software/bridge/cli/README.md" href="software/bridge/cli/README.md"><b>Testes reais</b><span>Resultados da Fase 1 na VPS e na nuvem</span></a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legacy">Versões para a tela ST7796:
+      <a data-path="hardware/manual-montagem.html" href="hardware/manual-montagem.html">manual</a> ·
+      <a data-path="hardware/esquema-ligacoes.html" href="hardware/esquema-ligacoes.html">esquema</a> ·
+      <a data-path="hardware/manual-placa-ilhada.html" href="hardware/manual-placa-ilhada.html">placa ilhada</a></p>
+  </div>
+</section>
+
+<section id="proximos">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">Próximos passos</p>
+      <div><h2>Na ordem em que vão acontecer.</h2></div>
+    </div>
+    <ol class="steps">
+      <li><b>Usar no dia a dia</b><span>Rodar com as sessões reais e corrigir os bugs que aparecerem.</span></li>
+      <li><b>Firmware na API nova</b><span>Perguntas com opções, aprovar plano, criar sessão escolhendo repositório e branch.</span></li>
+      <li><b>Ligar o microfone</b><span>Segurar a tela, falar e soltar. O texto aparece antes de ir para o Claude.</span></li>
+      <li><b>Placa e caixa</b><span>Placa ilhada soldada, depois PCB e caixa impressa.</span></li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>Mascote Claude · uso pessoal</span>
+    <span id="where">Links abrem os arquivos do repositório.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Clawd em pixels: 15 × 10. b = corpo, e = olho, . = vazio
+  var ROWS = [
+    "..bbbbbbbbbbb..",
+    "..bbbbbbbbbbb..",
+    "..bbebbbbbebb..",
+    "bbbbebbbbbebbbb",
+    "bbbbbbbbbbbbbbb",
+    "..bbbbbbbbbbb..",
+    "..bbbbbbbbbbb..",
+    "..bbbbbbbbbbb..",
+    "...b.b...b.b...",
+    "...b.b...b.b..."
+  ];
+  var BODY = "#d97a52", EYE = "#0e1114";
+
+  function draw(cv, blink, lift) {
+    var c = cv.getContext("2d");
+    c.clearRect(0, 0, cv.width, cv.height);
+    for (var y = 0; y < ROWS.length; y++) {
+      for (var x = 0; x < 15; x++) {
+        var ch = ROWS[y][x];
+        if (ch === ".") continue;
+        var yy = y;
+        if (lift && y < 8) yy = y - 1;          // corpo sobe, pernas ficam
+        c.fillStyle = (ch === "e" && !blink) ? EYE : BODY;
+        c.fillRect(x, yy, 1, 1);
+      }
+    }
+  }
+
+  var big = document.getElementById("clawd");
+  var mini = document.getElementById("mini");
+  big.width = 15; big.height = 11;
+  // desenha deslocado 1 px para baixo para caber o pulo
+  var ctxShift = function (blink, lift) {
+    var c = big.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 1);
+    draw(big, blink, lift);
+  };
+  ctxShift(false, false);
+  draw(mini, false, false);
+
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!still) {
+    var t = 0;
+    var say = document.getElementById("say");
+    var lines = ["pedindo aprovação", "trabalhando", "pedindo aprovação", "ouvindo"];
+    setInterval(function () {
+      t++;
+      var blink = t % 14 === 0;
+      var lift = (t % 6) < 1;
+      ctxShift(blink, lift);
+      if (t % 20 === 0) say.textContent = lines[(t / 20) % lines.length];
+    }, 180);
+  }
+
+  // Fora do repositório (página publicada), aponta os links para o GitHub.
+  var local = location.protocol === "file:" || /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+  if (!local) {
+    var base = "https://github.com/minepedro/testes/blob/main/";
+    document.querySelectorAll("a[data-path]").forEach(function (a) {
+      a.href = base + a.getAttribute("data-path");
+      a.target = "_blank";
+      a.rel = "noopener";
+    });
+    document.getElementById("where").textContent = "Links abrem os arquivos no GitHub (minepedro/testes).";
+  }
+})();
+</script>
+</body>
+</html>
