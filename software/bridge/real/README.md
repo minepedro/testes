@@ -96,3 +96,47 @@ So age com cwd sob `~/repos/` ou `~/mascote-cli-lab/`; ponte fora do ar em 2 s -
 - Dedupe: sessao `bridge` da API da nuvem com titulo ou (repo, branch) de sessao VPS conhecida e omitida; outras
   bridge aparecem como `origem vps`, `somente_leitura: true` (config `bridge_desconhecida: omitir` esconde).
 - Pedido VPS so_no_app some quando a sessao volta a andar (hook de estado posterior).
+
+## tmux proprio (`tmux -L mascote`) e reabertura
+
+Desde 15/10/2026 todas as sessoes da ponte usam o servidor tmux do socket dedicado `mascote`
+(`fonte_vps.TMUX = ['/usr/bin/tmux', '-L', 'mascote']`), nunca o socket padrao. Motivo: o servidor
+padrao tinha nascido dentro do `hermes-dashboard.service`; quando o Hermes se atualizou e reiniciou,
+o servidor tmux morreu e derrubou todas as sessoes Claude.
+
+| Unit (`systemctl --user`) | Papel |
+|---|---|
+| `mascote-tmux.service` | servidor `tmux -L mascote` com sessao-ancora `_mascote` (`sleep infinity`). O PID do servidor fica no cgroup desta unit; cada painel ganha seu proprio `tmux-spawn-*.scope` (integracao systemd do tmux 3.4). Reiniciar a ponte ou o Hermes nao derruba nada. Parar esta unit derruba todas as sessoes. |
+| `mascote-rc.service` | oneshot: cria (se nao existir) a sessao tmux `mascote-rc` com `claude remote-control --name mascote-rc --permission-mode auto --spawn worktree` em `~/repos/testes-lab`. Volta sozinha apos reboot. Ao subir, o servidor reconectou sozinho a sessao do app que ja existia. |
+| `mascote-ponte-real.service` | `Wants=`/`After=mascote-tmux.service`. No startup (config `reabrir_no_inicio`, padrao true) reabre as sessoes salvas em `sessoes_vps.json` sem tmux vivo. |
+
+Instalar: `./instalar_usuario.sh` (links das units + `enable --now`). Para `mascote-rc`:
+`ln -sf $PWD/mascote-rc.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now mascote-rc`.
+
+Ver/entrar: `tmux -L mascote ls`, `tmux -L mascote attach -t NOME` (sair sem matar: Ctrl-b d).
+
+Sessao remota resistente aberta a mao (nao precisa ser do mascote):
+
+    tmux -L mascote new -d -s NOME -c PASTA 'claude --remote-control NOME --permission-mode auto'
+
+Reabertura (`reabrir_sessoes.py`, tambem automatica no startup da ponte):
+- reabre `claude --continue --remote-control 'TITULO' --permission-mode auto` na mesma pasta e no
+  mesmo nome tmux (`--continue` so se existir transcript em `~/.claude/projects/<cwd>`);
+- ignora titulos `TESTE...`, pastas inexistentes e sessoes encerradas de proposito (`/exit`/logout via
+  `SessionEnd`, ou `encerrar()` da ponte -> `encerrada: true` no estado);
+- `--listar` mostra o que faria; `--rc` tambem garante `mascote-rc`.
+- `--continue` retoma a conversa local; no app ela pode aparecer com um id de sessao novo.
+
+## Aparelho offline: o hook nao espera (`dispositivo_online`)
+
+A ponte guarda o horario do ultimo `/api/*` com `X-Token` valido (o aparelho le `/api/estado` a cada
+3 s). `dispositivo_online` = acesso nos ultimos `dispositivo_timeout` s (config, padrao 15).
+`POST /interno/pedidos` e `GET /interno/pedidos/{id}` devolvem `dispositivo_online`.
+
+- Offline ao registrar (pergunta, plano ou permissao) -> o hook sai na hora sem decisao: a sessao se
+  comporta exatamente como sem a ponte (dialogo normal no terminal e no app). O pedido vira `no_app`
+  (o aparelho mostra "RESPONDA PELO APP", sem botao; 409 se alguem tentar responder).
+- Offline no meio da espera -> mesmo efeito no proximo polling (1 s).
+- Unica excecao: comandos perigosos continuam forcando `ask` (aprovar so no app), com ou sem aparelho.
+- Online: comportamento anterior (pergunta/plano seguros no PreToolUse ate 300 s; permissao aparece
+  no app em paralelo).

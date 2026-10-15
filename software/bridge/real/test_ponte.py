@@ -11,6 +11,7 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+import urllib.request
 from http.server import ThreadingHTTPServer
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -461,6 +462,11 @@ class TestHook(unittest.TestCase):
         cls.cwd = os.path.join(os.path.expanduser('~'), 'mascote-cli-lab', 'teste-unit-hook')
         os.makedirs(cls.cwd, exist_ok=True)
 
+    def setUp(self):
+        # aparelho "online" por padrao nestes testes
+        self.p.cfg['dispositivo_timeout'] = 3600
+        self.p.marcar_aparelho()
+
     @classmethod
     def tearDownClass(cls):
         cls.srv.shutdown()
@@ -532,6 +538,72 @@ class TestHook(unittest.TestCase):
         self.assertIsNone(self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash',
                                       'tool_input': {'command': 'make t'}}, espera='1'))
         self.assertTrue(any(x['estado'] == 'expirado' for x in self.p.listar_pedidos()))
+
+    def test_offline_ao_registrar_pergunta_nao_espera(self):
+        self.p.ultimo_acesso_aparelho = 0
+        inp = {'questions': [{'question': 'Offline?', 'options': [{'label': 'Sim'}, {'label': 'Nao'}]}]}
+        t = time.time()
+        self.assertIsNone(self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'AskUserQuestion',
+                                      'tool_input': inp}))
+        self.assertLess(time.time() - t, 5)
+        ped = [x for x in self.p.listar_pedidos() if x['perguntas'] and x['perguntas'][0]['pergunta'] == 'Offline?']
+        self.assertEqual(ped[-1]['estado'], 'no_app')
+        self.assertEqual(self.p.responder(ped[-1]['id'], {'decisao': 'aprovar'})[0], 409)
+
+    def test_offline_ao_registrar_permissao_e_plano(self):
+        self.p.ultimo_acesso_aparelho = 0
+        t = time.time()
+        self.assertIsNone(self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash',
+                                      'tool_input': {'command': 'make off'}}))
+        self.assertIsNone(self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'ExitPlanMode',
+                                      'tool_input': {'plan': 'off'}}))
+        self.assertLess(time.time() - t, 8)
+
+    def test_offline_no_meio_libera(self):
+        self.p.cfg['dispositivo_timeout'] = 2
+        self.p.marcar_aparelho()
+        t = time.time()
+        self.assertIsNone(self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash',
+                                      'tool_input': {'command': 'make meio'}}, espera='30'))
+        self.assertLess(time.time() - t, 10)
+        ped = [x for x in self.p.listar_pedidos() if x['resumo'].endswith('make meio')]
+        self.assertIn(ped[-1]['estado'], ('no_app', 'respondido_app'))  # _limpar pode concluir
+
+    def test_online_responde_pergunta(self):
+        inp = {'questions': [{'question': 'Online?', 'options': [{'label': 'Sim'}, {'label': 'Nao'}]}]}
+        o = self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'AskUserQuestion', 'tool_input': inp},
+                       {'decisao': 'aprovar', 'respostas': {'Online?': 'Sim'}})
+        self.assertEqual(o['hookSpecificOutput']['updatedInput']['answers'], {'Online?': 'Sim'})
+
+    def test_http_marca_aparelho(self):
+        self.p.ultimo_acesso_aparelho = 0
+        self.assertFalse(self.p.dispositivo_online())
+        r = urllib.request.Request(self.url + '/api/estado', headers={'X-Token': TOKEN})
+        urllib.request.urlopen(r, timeout=5).read()
+        self.assertTrue(self.p.dispositivo_online())
+
+
+class TestReabrir(unittest.TestCase):
+    def test_reabre_so_caidas_validas_no_socket_mascote(self):
+        import fonte_vps
+        chamadas = []
+
+        def run(args, **kw):
+            chamadas.append(args)
+            return 'viva\n' if 'list-sessions' in args else ''
+        d = tempfile.mkdtemp()
+        try:
+            f = fonte_vps.FonteVPS(run=run, dir_estado=d)
+            f.criadas = {'a': {'titulo': 'Real', 'cwd': d, 'tmux': 'm-a'},
+                         'b': {'titulo': 'TESTE x', 'cwd': d, 'tmux': 'm-b'},
+                         'c': {'titulo': 'Viva', 'cwd': d, 'tmux': 'viva'},
+                         'e': {'titulo': 'Fim', 'cwd': d, 'tmux': 'm-e', 'encerrada': True},
+                         'g': {'titulo': 'Sumiu', 'cwd': d + '/nao', 'tmux': 'm-g'}}
+            feitas = fonte_vps.reabrir_caidas(f, aceitar=False)
+        finally:
+            shutil.rmtree(d)
+        self.assertEqual([x[1] for x in feitas], ['m-a'])
+        self.assertTrue(all(c[:3] == ['/usr/bin/tmux', '-L', 'mascote'] for c in chamadas))
 
 
 if __name__ == '__main__':

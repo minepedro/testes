@@ -1,0 +1,18 @@
+[Unit]
+Description=Servidor Remote Control mascote-rc (claude remote-control) dentro do tmux -L mascote
+Requires=mascote-tmux.service
+After=mascote-tmux.service network-online.target
+PartOf=mascote-tmux.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+UnsetEnvironment=ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL
+WorkingDirectory=%h
+# cria a sessao so se nao existir (idempotente); o processo vive no cgroup de mascote-tmux.service
+ExecStart=/bin/sh -c '/usr/bin/tmux -L mascote has-session -t mascote-rc 2>/dev/null || /usr/bin/tmux -L mascote new-session -d -s mascote-rc -c %h/repos/testes-lab -x 200 -y 50 "env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL claude remote-control --name mascote-rc --permission-mode auto --spawn worktree"'
+ExecStop=-/usr/bin/tmux -L mascote kill-session -t mascote-rc
+
+[Install]
+WantedBy=default.target

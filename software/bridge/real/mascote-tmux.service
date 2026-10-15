@@ -1,0 +1,16 @@
+[Unit]
+Description=Servidor tmux proprio do mascote (socket -L mascote), independente do Hermes
+
+[Service]
+Type=forking
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+UnsetEnvironment=ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL
+WorkingDirectory=%h
+# sessao-ancora: o servidor nao sai quando nao ha sessoes claude
+ExecStart=/usr/bin/tmux -L mascote new-session -d -s _mascote 'sleep infinity'
+ExecStop=/usr/bin/tmux -L mascote kill-server
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

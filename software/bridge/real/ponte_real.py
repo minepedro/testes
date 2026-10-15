@@ -57,6 +57,15 @@ class Ponte:
         self.nuvem_sessoes = {}    # sid -> dict (origem nuvem ou bridge desconhecida)
         self.nuvem_detalhe = {}    # sid -> (ts, ultima_resposta, ultimo_prompt)
         self.nuvem_erro = None
+        self.ultimo_acesso_aparelho = 0.0  # ultimo /api/* com X-Token valido
+
+    # ------------------------------------------------------------------ aparelho online?
+    def marcar_aparelho(self):
+        self.ultimo_acesso_aparelho = time.time()
+
+    def dispositivo_online(self):
+        lim = float(self.cfg.get('dispositivo_timeout', 15))
+        return time.time() - self.ultimo_acesso_aparelho <= lim
 
     # ------------------------------------------------------------------ pedidos
     def _novo_pedido(self, **c):
@@ -90,14 +99,14 @@ class Ponte:
             if not p:
                 return None
             return {'id': pid, 'estado': p['estado'], 'decisao': p.get('_decisao'), 'motivo': p.get('_motivo'),
-                    'answers': p.get('_answers')}
+                    'answers': p.get('_answers'), 'dispositivo_online': self.dispositivo_online()}
 
     def pedido_hook_fim(self, pid, estado):
         with self.trava:
             p = self.pedidos.get(pid)
             if not p:
                 return
-            if p['estado'] == 'pendente' and estado in ('respondido_app', 'expirado'):
+            if p['estado'] == 'pendente' and estado in ('respondido_app', 'expirado', 'no_app'):
                 p['estado'] = estado
             p['_finalizado'] = time.time()
             sid = p['sessao_id']
@@ -108,7 +117,7 @@ class Ponte:
         with self.trava:
             self._limpar()
             lst = [p for p in self.pedidos.values()
-                   if (not so_pendentes or p['estado'] in ('pendente', 'so_no_app'))
+                   if (not so_pendentes or p['estado'] in ('pendente', 'so_no_app', 'no_app'))
                    and (not sessao_id or p['sessao_id'] == sessao_id)]
             lst.sort(key=lambda p: p['criado_em'])
             return [{k: v for k, v in p.items() if not k.startswith('_')} for p in lst]
@@ -118,11 +127,11 @@ class Ponte:
         agora = time.time()
         for pid in list(self.pedidos):
             p = self.pedidos[pid]
-            if p['estado'] == 'so_no_app' and p['origem'] == 'vps':
+            if p['estado'] in ('so_no_app', 'no_app') and p['origem'] == 'vps':
                 s = self.vps.get(p['sessao_id']) or {}
                 if s.get('atualizado', 0) > p['criado_em'] + 1 and s.get('estado') in ('trabalhando', 'parada', 'encerrada'):
                     p['estado'] = 'respondido_app'
-            if p['estado'] not in ('pendente', 'so_no_app') and agora - p['criado_em'] > 3600:
+            if p['estado'] not in ('pendente', 'so_no_app', 'no_app') and agora - p['criado_em'] > 3600:
                 del self.pedidos[pid]
 
     def responder(self, pid, corpo):
@@ -183,7 +192,7 @@ class Ponte:
     def _pend_por_sessao(self):
         d = {}
         for p in self.pedidos.values():
-            if p['estado'] in ('pendente', 'so_no_app'):
+            if p['estado'] in ('pendente', 'so_no_app', 'no_app'):
                 d.setdefault(p['sessao_id'], []).append(p)
         return d
 
@@ -335,6 +344,8 @@ class Ponte:
                     self.servido[s['id']] = p['id']
                     if p['estado'] == 'so_no_app':
                         txt = 'APROVE PELO APP: ' + p['resumo']
+                    elif p['estado'] == 'no_app':
+                        txt = 'RESPONDA PELO APP: ' + p['resumo']
                     elif p['tipo'] == 'pergunta':
                         txt = ' / '.join(q['pergunta'] + ' [' + ', '.join(o['rotulo'] for o in q['opcoes']) + ']'
                                          for q in p['perguntas']) + ' (responda pelo app)'
@@ -534,6 +545,7 @@ def criar_handler(ponte, token_aparelho, token_hook):
                 return self._json(404, {'erro': 'nao existe'})
             if not self._ok_token('X-Token', token_aparelho):
                 return
+            ponte.marcar_aparelho()
             return self._api(metodo, partes[1:], qs)
 
         def _interno(self, metodo, p):
@@ -545,7 +557,8 @@ def criar_handler(ponte, token_aparelho, token_hook):
                     ponte.vps.evento(d)
                     return self._json(200, {'ok': True}, False)
                 if p == ['pedidos']:
-                    return self._json(200, {'id': ponte.pedido_hook(d)['id']}, False)
+                    return self._json(200, {'id': ponte.pedido_hook(d)['id'],
+                                            'dispositivo_online': ponte.dispositivo_online()}, False)
                 if len(p) == 3 and p[0] == 'pedidos' and p[2] == 'fim':
                     ponte.pedido_hook_fim(p[1], d.get('estado'))
                     return self._json(200, {'ok': True}, False)
@@ -633,6 +646,15 @@ def main():
                   Transcritor(cfg) if cfg.get('stt_ativo', True) else None)
     if cfg.get('nuvem_ativa', True):
         threading.Thread(target=ponte.laco_nuvem, daemon=True).start()
+    if cfg.get('reabrir_no_inicio', True):
+        def _reabrir():
+            from fonte_vps import reabrir_caidas
+            try:
+                for sid, tm, cmd in reabrir_caidas(ponte.vps):
+                    log('reaberta', sid, tm, cmd)
+            except Exception as e:  # noqa: BLE001
+                log('reabrir: erro', type(e).__name__, str(e)[:200])
+        threading.Thread(target=_reabrir, daemon=True).start()
     srv = ThreadingHTTPServer(('127.0.0.1', a.porta), criar_handler(ponte, token, th))
     srv.daemon_threads = True
     log(f'Ponte real v1 em 127.0.0.1:{a.porta} (nuvem_ativa={cfg.get("nuvem_ativa")}, '

@@ -12,6 +12,8 @@ Eventos:
   PermissionRequest espera a ponte: aprovar->allow; sempre->allow + addRules(comando exato, session);
                     recusar->deny; plano aprovado -> allow + setMode auto (session).
                     Sem resposta em 300 s -> sem saida (dialogo normal / app).
+  Aparelho offline (ponte: dispositivo_online=False ao registrar ou no polling) -> nao espera:
+                    sai sem decisao (dialogo normal no terminal/app); pedido vira 'no_app'.
   SessionStart, UserPromptSubmit, Notification, Stop, SessionEnd, PostToolUse -> /interno/eventos.
 Guarda: so age com cwd sob ~/repos/ ou ~/mascote-cli-lab/.
 Resposta pelo app enquanto espera: detectada por tool_result no transcript (resolvido_fora).
@@ -111,7 +113,11 @@ def fim(pid, estado):
         pass
 
 
-def esperar(pid, d):
+def esperar(pid, d, online=True):
+    """None = fluxo normal. Aparelho offline (ao registrar ou no meio) -> libera na hora ('no_app')."""
+    if not online:
+        fim(pid, 'no_app')
+        return None
     limite = time.time() + ESPERA
     while time.time() < limite:
         if resolvido_fora(d.get('transcript_path'), d.get('tool_name'), d.get('tool_input') or {}, d.get('tool_use_id')):
@@ -121,6 +127,9 @@ def esperar(pid, d):
             p = req('GET', '/interno/pedidos/' + pid)
         except Exception:
             return None  # ponte caiu: fluxo normal
+        if p.get('dispositivo_online') is False and p.get('estado') == 'pendente':
+            fim(pid, 'no_app')
+            return None
         if p.get('estado') == 'respondido_mascote':
             fim(pid, 'usado')
             return p
@@ -168,10 +177,12 @@ def main():
         sys.exit(0)
 
     def novo_pedido(**extra):
-        return req('POST', '/interno/pedidos', dict(base, ferramenta=tool, tool_input=inp,
+        """(id, dispositivo_online)"""
+        r = req('POST', '/interno/pedidos', dict(base, ferramenta=tool, tool_input=inp,
                                                     tool_use_id=d.get('tool_use_id'),
                                                     explicacao=ultimo_texto_assistente(d.get('transcript_path')),
-                                                    origem_hook=ev, **extra))['id']
+                                                    origem_hook=ev, **extra))
+        return r['id'], r.get('dispositivo_online', True)
 
     if ev == 'PreToolUse':
         perigo = classificar(tool, inp)
@@ -186,12 +197,12 @@ def main():
         if tool not in alvo:
             sys.exit(0)  # deixa o modo (auto) decidir; se pedir, cai no PermissionRequest
         try:
-            pid = novo_pedido()
+            pid, online = novo_pedido()
         except Exception:
             sys.exit(0)
-        p = esperar(pid, d)
+        p = esperar(pid, d, online)
         if not p:
-            out({'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'ask'}})
+            sys.exit(0)  # fluxo normal: o dialogo aparece no terminal/app
         if p['decisao'] == 'recusar':
             out({'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'deny',
                                         'permissionDecisionReason': p.get('motivo') or 'Recusado no mascote'}})
@@ -202,10 +213,10 @@ def main():
         if classificar(tool, inp) or tool == 'AskUserQuestion':
             sys.exit(0)  # perigoso: so no app (PreToolUse ja registrou); pergunta: tratada no PreToolUse
         try:
-            pid = novo_pedido(sugestoes=d.get('permission_suggestions'))
+            pid, online = novo_pedido(sugestoes=d.get('permission_suggestions'))
         except Exception:
             sys.exit(0)
-        p = esperar(pid, d)
+        p = esperar(pid, d, online)
         if not p:
             sys.exit(0)
         if p['decisao'] == 'recusar':

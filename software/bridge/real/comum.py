@@ -19,6 +19,8 @@ DIR_REPOS = os.environ.get('MASCOTE_REPOS_DIR', os.path.join(HOME, 'repos'))
 DIRS_PERMITIDOS = (os.path.join(HOME, 'repos') + '/', os.path.join(HOME, 'mascote-cli-lab') + '/')
 
 CONFIG_PADRAO = {
+    'reabrir_no_inicio': True,  # no startup, reabre sessoes salvas sem tmux vivo (reabrir_sessoes.py)
+    'dispositivo_timeout': 15,  # s sem /api/* do aparelho -> offline (hook nao espera)
     'nuvem_ativa': True,        # listar sessoes da nuvem (API interna)
     'nuvem_responder': True,    # EXPERIMENTAL: responder pedidos da nuvem pela API interna
     'nuvem_intervalo': 10,      # segundos entre leituras da nuvem

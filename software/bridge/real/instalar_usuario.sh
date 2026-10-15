@@ -20,8 +20,10 @@ fi
 [ -f "$CFG/ponte.json" ] || cp "$AQUI/ponte.exemplo.json" "$CFG/ponte.json"
 echo "PORTA=$PORTA" > "$CFG/unit.env"
 chmod 600 "$CFG"/*
+ln -sf "$AQUI/mascote-tmux.service" "$HOME/.config/systemd/user/mascote-tmux.service"
 ln -sf "$AQUI/mascote-ponte-real.service" "$HOME/.config/systemd/user/mascote-ponte-real.service"
 systemctl --user daemon-reload
+systemctl --user enable --now mascote-tmux.service
 systemctl --user enable mascote-ponte-real.service
 systemctl --user restart mascote-ponte-real.service
 sleep 2

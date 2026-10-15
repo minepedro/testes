@@ -1,6 +1,7 @@
 [Unit]
 Description=Ponte REAL do mascote (v1) - systemd --user
-After=network-online.target
+Wants=mascote-tmux.service
+After=network-online.target mascote-tmux.service
 
 [Service]
 Type=simple
@@ -14,8 +15,8 @@ WorkingDirectory=%h
 ExecStart=/usr/bin/python3 %h/testes/software/bridge/real/ponte_real.py --porta ${PORTA}
 Restart=on-failure
 RestartSec=3
-# tmux das sessoes criadas fica fora do cgroup? Nao: o servidor tmux nasce aqui se nao existir.
-# Por isso KillMode=process (parar a ponte nao mata as sessoes claude em tmux).
+# Sessoes claude vivem no servidor `tmux -L mascote` de mascote-tmux.service (outro cgroup).
+# KillMode=process mantido por seguranca caso o servidor nasca aqui.
 KillMode=process
 
 [Install]

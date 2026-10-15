@@ -22,7 +22,8 @@ import time
 
 from comum import DIR_ESTADO, DIR_REPOS, ascii_tela, env_limpo, slug
 
-TMUX = '/usr/bin/tmux'
+# servidor tmux proprio (mascote-tmux.service), nunca o socket padrao
+TMUX = ['/usr/bin/tmux', '-L', os.environ.get('MASCOTE_TMUX_SOCKET', 'mascote')]
 
 
 def id_de_cwd(cwd):
@@ -91,6 +92,8 @@ class FonteVPS:
             if e == 'SessionStart':
                 s['estado'] = 'parada'
                 s['iniciada'] = True
+                if self.criadas.get(s['id'], {}).pop('encerrada', None):
+                    self._salvar()
             elif e == 'UserPromptSubmit':
                 s['estado'] = 'trabalhando'
                 if ev.get('prompt'):
@@ -111,6 +114,10 @@ class FonteVPS:
                     s['estado'] = 'parada'
             elif e == 'SessionEnd':
                 s['estado'] = 'encerrada'
+                # saida deliberada (/exit, logout): nao reabrir sozinho depois
+                if ev.get('reason') in ('prompt_input_exit', 'logout') and s['id'] in self.criadas:
+                    self.criadas[s['id']]['encerrada'] = True
+                    self._salvar()
             elif e == 'pedido':
                 s['estado'] = 'esperando'
             s['atualizado'] = time.time()
@@ -145,7 +152,7 @@ class FonteVPS:
     # ---- tmux ----
     def _tmux_vivos(self):
         try:
-            out = self.run([TMUX, 'list-sessions', '-F', '#{session_name}'], timeout=5)
+            out = self.run([*TMUX, 'list-sessions', '-F', '#{session_name}'], timeout=5)
             return set(out.split())
         except Exception:
             return None
@@ -153,7 +160,7 @@ class FonteVPS:
     def _tmux_por_cwd(self, cwd):
         """Sessao tmux cujo painel roda claude nesse cwd (sessoes abertas a mao)."""
         try:
-            out = self.run([TMUX, 'list-panes', '-a', '-F', '#{pane_id}|#{pane_current_path}|#{pane_current_command}'], timeout=5)
+            out = self.run([*TMUX, 'list-panes', '-a', '-F', '#{pane_id}|#{pane_current_path}|#{pane_current_command}'], timeout=5)
         except Exception:
             return None
         for linha in out.splitlines():
@@ -164,15 +171,15 @@ class FonteVPS:
 
     def _pane(self, nome):
         try:
-            return self.run([TMUX, 'capture-pane', '-p', '-t', nome], timeout=5)
+            return self.run([*TMUX, 'capture-pane', '-p', '-t', nome], timeout=5)
         except Exception:
             return ''
 
     def _send(self, nome, *teclas, literal=None):
         if literal is not None:
-            self.run([TMUX, 'send-keys', '-t', nome, '-l', literal], timeout=5)
+            self.run([*TMUX, 'send-keys', '-t', nome, '-l', literal], timeout=5)
         if teclas:
-            self.run([TMUX, 'send-keys', '-t', nome, *teclas], timeout=5)
+            self.run([*TMUX, 'send-keys', '-t', nome, *teclas], timeout=5)
 
     # ---- criar sessao ----
     def _worktree_novo(self, base, branch_base, nova_branch, nome_slug):
@@ -241,7 +248,7 @@ class FonteVPS:
                                  'atualizado': time.time()}
         env = ' '.join(f'-u {k}' for k in os.environ if k.startswith(('ANTHROPIC_', 'CLAUDE_CODE_USE_')))
         cmd = f"env {env} claude --remote-control {shlex.quote(titulo_a)} --permission-mode auto"
-        self.run([TMUX, 'new-session', '-d', '-s', tmux, '-c', pasta, '-x', '200', '-y', '50', cmd],
+        self.run([*TMUX, 'new-session', '-d', '-s', tmux, '-c', pasta, '-x', '200', '-y', '50', cmd],
                  env=env_limpo())
         threading.Thread(target=self._iniciar, args=(sid, tmux, prompt, espera_inicio), daemon=True).start()
         return sid
@@ -287,8 +294,52 @@ class FonteVPS:
 
     def encerrar(self, sid):
         s = self.get(sid)
+        with self.trava:
+            if sid in self.criadas:
+                self.criadas[sid]['encerrada'] = True
+                self._salvar()
         if s and s.get('tmux'):
             try:
-                self.run([TMUX, 'kill-session', '-t', s['tmux']], timeout=5)
+                self.run([*TMUX, 'kill-session', '-t', s['tmux']], timeout=5)
             except Exception:
                 pass
+
+
+# ---- reabertura (apos reboot / queda do servidor tmux) ----
+def tem_conversa(cwd, dir_projetos=os.path.expanduser('~/.claude/projects')):
+    """True se o claude tem transcript salvo para esse cwd (entao --continue retoma a conversa)."""
+    d = os.path.join(dir_projetos, os.path.realpath(cwd).replace('/', '-').replace('.', '-').replace('_', '-'))
+    try:
+        return any(n.endswith('.jsonl') for n in os.listdir(d))
+    except OSError:
+        return False
+
+
+def comando_reabrir(titulo, cwd):
+    cont = '--continue ' if tem_conversa(cwd) else ''
+    return f"claude {cont}--remote-control {shlex.quote(titulo)} --permission-mode auto"
+
+
+def reabrir_caidas(fonte, prefixos_ignorar=('TESTE',), aceitar=True, dormir=time.sleep):
+    """Reabre no `tmux -L mascote` as sessoes salvas cuja tmux morreu. Devolve [(sid, tmux, comando)].
+
+    Ignora: titulo com prefixo de teste, pasta inexistente, marcada 'encerrada' (saida deliberada).
+    """
+    vivos = fonte._tmux_vivos()
+    if vivos is None:  # servidor tmux fora: nao adianta (mascote-tmux.service cuida)
+        return []
+    feitas = []
+    with fonte.trava:
+        itens = list(fonte.criadas.items())
+    for sid, c in itens:
+        tmux, cwd, tit = c.get('tmux'), c.get('cwd'), c.get('titulo') or ''
+        if not tmux or tmux in vivos or c.get('encerrada') or tit.upper().startswith(prefixos_ignorar):
+            continue
+        if not cwd or not os.path.isdir(cwd):
+            continue
+        cmd = comando_reabrir(tit, cwd)
+        fonte.run([*TMUX, 'new-session', '-d', '-s', tmux, '-c', cwd, '-x', '200', '-y', '50', cmd], env=env_limpo())
+        if aceitar:
+            threading.Thread(target=fonte._iniciar, args=(sid, tmux, None, 60), daemon=True).start()
+        feitas.append((sid, tmux, cmd))
+    return feitas
