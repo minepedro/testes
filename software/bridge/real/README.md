@@ -113,7 +113,7 @@ o servidor tmux morreu e derrubou todas as sessoes Claude.
 Instalar: `./instalar_usuario.sh` (links das units + `enable --now`). Para `mascote-rc`:
 `ln -sf $PWD/mascote-rc.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now mascote-rc`.
 
-`mascote-rc-boost.service`: igual, para `~/repos/boost-your-business` (aparece no app como
+`mascote-rc-boost.service` e `mascote-rc-vega.service` (tmux `rc-vega`, `~/repos/vega`): iguais, para `~/repos/boost-your-business` (aparece no app como
 "boost-your-business"; tmux `rc-boost`). Outro repo: copie a unit trocando nome, sessao tmux e pasta.
 A pasta-base nao e atualizada sozinha: para trabalhar em outra branch, peca ao Claude na sessao
 (`git switch`/novo worktree). Branch padrao com push direto continua decisao da sessao (sem bloqueio).
