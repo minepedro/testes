@@ -503,12 +503,50 @@ class TestHook(unittest.TestCase):
                                       'tool_input': {'command': 'ls'}}, url='http://127.0.0.1:9'))
         self.assertLess(time.time() - t, 5)
 
-    def test_perigoso_ask(self):
-        o = self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash', 'tool_input': {'command': 'rm -rf x'}})
+    def _como_mascote(self):
+        self.p.vps.criadas['m1'] = {'titulo': 'TESTE', 'cwd': os.path.realpath(self.cwd)}
+        self.addCleanup(self.p.vps.criadas.pop, 'm1', None)
+
+    def _perigosos(self):
+        return [x for x in self.p.listar_pedidos(True) if x['so_no_app'] and x['estado'] == 'so_no_app']
+
+    def test_perigoso_ask_sessao_mascote(self):  # (a)
+        self._como_mascote()
+        o = self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash', 'tool_input': {'command': 'rm -rf x'},
+                        'session_id': 'outro-id'})  # identificada pelo cwd
         self.assertEqual(o['hookSpecificOutput']['permissionDecision'], 'ask')
-        self.assertTrue(any(x['so_no_app'] for x in self.p.listar_pedidos(True)))
+        n = len(self._perigosos())
+        self.assertGreater(n, 0)
         self.assertIsNone(self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash',
                                       'tool_input': {'command': 'rm -rf x'}}))
+        self.assertEqual(len(self._perigosos()), n)  # nao duplica
+
+    def test_perigoso_sessao_pedro_pre_sem_saida(self):  # (b)
+        n = len(self._perigosos())
+        self.assertIsNone(self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash',
+                                      'tool_input': {'command': 'rm -rf x'}}))
+        self.assertEqual(len(self._perigosos()), n)
+
+    def test_perigoso_sessao_pedro_permission_so_no_app(self):  # (c)
+        n = len(self._perigosos())
+        t = time.time()
+        self.assertIsNone(self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash',
+                                      'tool_input': {'command': 'git push --force'}}))
+        self.assertLess(time.time() - t, 5)
+        self.assertEqual(len(self._perigosos()), n + 1)
+
+    def test_perigoso_ponte_fora_nao_forca_ask(self):  # (d)
+        self._como_mascote()
+        t = time.time()
+        self.assertIsNone(self.rodar({'hook_event_name': 'PreToolUse', 'tool_name': 'Bash',
+                                      'tool_input': {'command': 'rm -rf x'}}, url='http://127.0.0.1:9'))
+        self.assertLess(time.time() - t, 5)
+
+    def test_rota_sessao_mascote(self):
+        self._como_mascote()
+        self.assertTrue(self.p.vps.do_mascote(None, os.path.join(self.cwd, 'sub')))
+        self.assertTrue(self.p.vps.do_mascote('m1', None))
+        self.assertFalse(self.p.vps.do_mascote('x', self.cwd + '-outro'))
 
     def test_permissao_sempre(self):
         o = self.rodar({'hook_event_name': 'PermissionRequest', 'tool_name': 'Bash', 'tool_input': {'command': 'make'}},

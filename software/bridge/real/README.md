@@ -137,6 +137,11 @@ A ponte guarda o horario do ultimo `/api/*` com `X-Token` valido (o aparelho le 
   comporta exatamente como sem a ponte (dialogo normal no terminal e no app). O pedido vira `no_app`
   (o aparelho mostra "RESPONDA PELO APP", sem botao; 409 se alguem tentar responder).
 - Offline no meio da espera -> mesmo efeito no proximo polling (1 s).
-- Unica excecao: comandos perigosos continuam forcando `ask` (aprovar so no app), com ou sem aparelho.
+- Unica excecao: nas sessoes CRIADAS PELO MASCOTE (registradas em sessoes_vps.json, por cwd), comandos
+  perigosos continuam forcando `ask` (aprovar so no app), com ou sem aparelho. Nas sessoes do Pedro
+  (app via mascote-rc, ou abertas a mao) o hook nao forca nada: decide o modo Automatico; um
+  PermissionRequest perigoso nelas vira `so_no_app` e o hook sai sem decidir. Ponte fora do ar -> nao forca.
+  Testado real (2026-10-15): sessao do mascote -> "Hook PreToolUse:Bash requires confirmation";
+  sessao aberta a mao no tmux -L mascote -> o modo auto rodou `rm -rf ./lixo-inexistente-teste` sem dialogo.
 - Online: comportamento anterior (pergunta/plano seguros no PreToolUse ate 300 s; permissao aparece
   no app em paralelo).

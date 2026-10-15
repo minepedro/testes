@@ -184,9 +184,17 @@ def main():
                                                     origem_hook=ev, **extra))
         return r['id'], r.get('dispositivo_online', True)
 
+    def do_mascote():
+        """Regra de perigosos so vale em sessao criada pelo mascote; sem resposta em 2 s -> nao."""
+        try:
+            return bool(req('POST', '/interno/sessao_mascote',
+                            {'session_id': d.get('session_id'), 'cwd': d.get('cwd')}, timeout=2.0).get('mascote'))
+        except Exception:
+            return False
+
     if ev == 'PreToolUse':
         perigo = classificar(tool, inp)
-        if perigo:
+        if perigo and do_mascote():
             try:
                 novo_pedido(perigoso=True, so_no_app=True, motivo_so_no_app='Perigoso (%s)' % perigo)
             except Exception:
@@ -210,8 +218,18 @@ def main():
         out({'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'allow', 'updatedInput': novo}})
 
     if ev == 'PermissionRequest':
-        if classificar(tool, inp) or tool == 'AskUserQuestion':
-            sys.exit(0)  # perigoso: so no app (PreToolUse ja registrou); pergunta: tratada no PreToolUse
+        if tool == 'AskUserQuestion':
+            sys.exit(0)  # pergunta: tratada no PreToolUse
+        perigo = classificar(tool, inp)
+        if perigo:
+            # sessao do mascote: PreToolUse ja registrou. Sessao do Pedro: registra so_no_app e sai sem decidir.
+            if not do_mascote():
+                try:
+                    novo_pedido(perigoso=True, so_no_app=True, motivo_so_no_app='Perigoso (%s)' % perigo,
+                                sugestoes=d.get('permission_suggestions'))
+                except Exception:
+                    pass
+            sys.exit(0)
         try:
             pid, online = novo_pedido(sugestoes=d.get('permission_suggestions'))
         except Exception:

@@ -130,6 +130,19 @@ class FonteVPS:
                 s['estado'] = 'trabalhando'
                 s['atualizado'] = time.time()
 
+    def do_mascote(self, sid=None, cwd=None):
+        """Sessao criada pelo mascote (registrada em criadas), por id ou cwd (decisao 23 revisada)."""
+        with self.trava:
+            if sid and sid in self.criadas:
+                return True
+            if cwd:
+                c = os.path.realpath(cwd).rstrip('/') + '/'
+                for x in self.criadas.values():
+                    p = (x.get('cwd') or '').rstrip('/')
+                    if p and c.startswith(p + '/'):
+                        return True
+        return False
+
     def listar(self):
         with self.trava:
             vivos = self._tmux_vivos()

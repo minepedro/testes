@@ -556,6 +556,8 @@ def criar_handler(ponte, token_aparelho, token_hook):
                 if p == ['eventos']:
                     ponte.vps.evento(d)
                     return self._json(200, {'ok': True}, False)
+                if p == ['sessao_mascote']:
+                    return self._json(200, {'mascote': ponte.vps.do_mascote(d.get('session_id'), d.get('cwd'))}, False)
                 if p == ['pedidos']:
                     return self._json(200, {'id': ponte.pedido_hook(d)['id'],
                                             'dispositivo_online': ponte.dispositivo_online()}, False)
