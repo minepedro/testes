@@ -231,9 +231,9 @@ Teste: `firmware/testes/extra_botao`. Está na Parte 2 do manual interativo (`ha
 Sem voz falada (decisão 16), mas com som se você quiser (decisão 18). Monte o MAX98357A com o
 alto-falante e o capacitor, conforme a tabela opcional acima.
 
-Na placa ilhada, o amplificador encaixa por jumpers, como a tela: um soquete de 5 na linha S,
-colunas 12 a 16 (LRC, BCLK, DIN, GND, VIN, a mesma ordem dos pinos do amplificador), com fios no
-verso até L15 (GPIO 16), L16 (GPIO 15), L13 (GPIO 18), N10 (barramento GND) e L3 (5V). Os fios do 15
+Na placa ilhada, o amplificador encaixa por jumpers, como a tela: um soquete de 5 em pé na
+coluna 26, de R26 a V26 (LRC, BCLK, DIN, GND, VIN, a mesma ordem dos pinos do amplificador), com
+fios no verso até L15 (GPIO 16), L16 (GPIO 15), L13 (GPIO 18), N10 (barramento GND) e L3 (5V). Os fios do 15
 e do 16 entram na mesma solda dos fios do microfone. Daí saem 5 jumpers macho-fêmea de 20 cm até o
 amplificador (GAIN e SD sem ligar). Passo a passo nos passos 29 a 33 do manual visual
 (`hardware/manual-visual-placa-ilhada-ili9488.html`). O programa do mascote ainda não toca som; por

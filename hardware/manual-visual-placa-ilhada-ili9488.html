@@ -362,9 +362,9 @@ void loop() {
   const TELA = ['VCC','GND','CS','RESET','DC','SDI','SCK','LED','SDO','T_CLK','T_CS','T_DIN','T_DO'];
   const COR = { v33: ['var(--v33)', 'vermelho'], gnd: ['var(--gnd)', 'preto'], spi: ['var(--spi)', 'laranja'], tch: ['var(--tch)', 'azul'], i2s: ['var(--i2s)', 'verde'] };
   const tc = p => T0 + TELA.indexOf(p);
-  // som (opcional): soquete de 5 na linha S, longe dos fios do verso e a 2 linhas do barramento 3V3; mesma ordem dos pinos do amplificador
-  const AMP = ['LRC', 'BCLK', 'DIN', 'GND', 'VIN'], AR = 19, A0 = 12;
-  const ac = p => A0 + AMP.indexOf(p);
+  // som (opcional): soquete de 5 em pé na coluna 26, linhas R a V (canto livre, longe dos fios do verso e da antena); mesma ordem dos pinos do amplificador
+  const AMP = ['LRC', 'BCLK', 'DIN', 'GND', 'VIN'], AC = 26, AR0 = 18;
+  const furoA = p => [AC, AR0 + AMP.indexOf(p)], nomeA = p => LN(AR0 + AMP.indexOf(p)) + AC;
   let M, FIOS, SP3, SPG, SOQ;
   function modelo() {
     const A = perms(LADO_A)[cfg.a], B = perms(LADO_B)[cfg.b], cB = MC0 + cfg.n, cm = MC0 + Math.floor(cfg.n / 2);
@@ -394,11 +394,11 @@ void loop() {
       mVDD: F('mVDD', 'Microfone VDD → barramento 3V3', M.pos.VDD, [2, B3], 'v33'),
       mGND: F('mGND', 'Microfone GND → barramento GND', M.pos.GND, [3, BG], 'gnd'),
       mLR: F('mLR', 'Microfone L/R → barramento GND', M.pos['L/R'], [4, BG], 'gnd'),
-      aLRC: FA('aLRC', 'Amplificador LRC → GPIO 16', [ac('LRC'), AR], [gcol(16), J1R], 'i2s'),
-      aBCLK: FA('aBCLK', 'Amplificador BCLK → GPIO 15', [ac('BCLK'), AR], [gcol(15), J1R], 'i2s'),
-      aDIN: FA('aDIN', 'Amplificador DIN → GPIO 18', [ac('DIN'), AR], [gcol(18), J1R], 'i2s'),
-      aGND: FA('aGND', 'Amplificador GND → barramento GND', [ac('GND'), AR], [tc('GND'), BG], 'gnd'),
-      aVIN: FA('aVIN', 'Amplificador VIN → 5V', [ac('VIN'), AR], [jcol(20), J1R], 'v33'),
+      aLRC: FA('aLRC', 'Amplificador LRC → GPIO 16', furoA('LRC'), [gcol(16), J1R], 'i2s'),
+      aBCLK: FA('aBCLK', 'Amplificador BCLK → GPIO 15', furoA('BCLK'), [gcol(15), J1R], 'i2s'),
+      aDIN: FA('aDIN', 'Amplificador DIN → GPIO 18', furoA('DIN'), [gcol(18), J1R], 'i2s'),
+      aGND: FA('aGND', 'Amplificador GND → barramento GND', furoA('GND'), [tc('GND'), BG], 'gnd'),
+      aVIN: FA('aVIN', 'Amplificador VIN → 5V', furoA('VIN'), [jcol(20), J1R], 'v33'),
     };
     const span = row => { const cs = Object.values(FIOS).filter(f => f.ate[1] === row).map(f => f.ate[0]); return [Math.min(...cs), Math.max(...cs)]; };
     SP3 = span(B3); SPG = span(BG);
@@ -408,7 +408,7 @@ void loop() {
       tela: { pinos: TELA.map((p, i) => [T0 + i, TR, p]), lab: 'cima' },
       micA: { pinos: A.map((p, i) => [MC0, MR0 + i, p]), lab: 'dir' },
       micB: { pinos: B.map((p, i) => [cB, MR0 + i, p]), lab: 'dir' },
-      amp: { pinos: AMP.map((p, i) => [A0 + i, AR, p]), lab: 'cima' },
+      amp: { pinos: AMP.map(p => [...furoA(p), p]), lab: 'esq' },
     };
   }
   modelo();
@@ -890,9 +890,9 @@ void loop() {
       s += `<g opacity="${dim ? .2 : 1}">${sel === 'ampj.' + p ? `<path d="${d}" stroke="var(--accent)" stroke-width="13" opacity=".35" fill="none"/>` : ''}<path d="${d}" stroke="#000a" stroke-width="7" fill="none"/><path d="${d}" stroke="${cor}" stroke-width="4.5" fill="none"/>`
         + `<rect x="${SX - 3}" y="${ys - 2}" width="12" height="4" fill="#bbb"/><rect x="${SX + 8}" y="${ys - 6}" width="16" height="12" rx="2" fill="#1b1b1b"/><rect x="${AX - 28}" y="${ya - 6}" width="22" height="12" rx="2" fill="#1b1b1b"/>`
         + `<circle cx="${SX + 50}" cy="${ys - 14}" r="9" fill="${cor}" stroke="#fff" stroke-width="1.5"/><text x="${SX + 50}" y="${ys - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="${i === 1 ? '#111' : '#fff'}">${i + 1}</text>`
-        + `<text x="${SX - 20}" y="${ys + 4}" text-anchor="end" font-size="12" font-weight="700" fill="var(--tinta-placa)">${LN(AR)}${A0 + i} · ${p}</text></g>`;
+        + `<text x="${SX - 20}" y="${ys + 4}" text-anchor="end" font-size="12" font-weight="700" fill="var(--tinta-placa)">${nomeA(p)} · ${p}</text></g>`;
     });
-    s += `<text x="111" y="262" text-anchor="middle" font-size="11" fill="var(--muted)">soquete de 5, linha ${LN(AR)}</text>`;
+    s += `<text x="111" y="262" text-anchor="middle" font-size="11" fill="var(--muted)">soquete de 5, coluna ${AC}</text>`;
     // conector verde e alto-falante
     s += `<rect x="${AX + 130}" y="110" width="40" height="80" rx="4" fill="#2e8b57" stroke="#1d5a38" stroke-width="2"/>` + [130, 170].map((yy, i) => `<circle cx="${AX + 150}" cy="${yy}" r="9" fill="#c9ced3" stroke="#666"/><text x="${AX + 150}" y="${yy - 13}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${i ? '−' : '+'}</text>`).join('');
     s += `<path d="M${AX + 159} 130 C${AX + 200} 130 ${AX + 205} 150 ${AX + 232} 160" stroke="#e04848" stroke-width="4" fill="none"/><path d="M${AX + 159} 170 C${AX + 200} 170 ${AX + 205} 176 ${AX + 232} 180" stroke="#2a2f35" stroke-width="4" fill="none"/>`
@@ -900,7 +900,7 @@ void loop() {
     s += `<text x="${(SX + AX) / 2 + 20}" y="332" text-anchor="middle" font-size="12" fill="var(--muted)">5 jumpers macho-fêmea: ponta macho no soquete, ponta fêmea no pino do amplificador</text>`;
     return `<svg viewBox="0 0 790 345" role="img" aria-label="Jumpers do soquete da placa até o amplificador e o alto-falante">${s}</svg>`;
   }
-  const ampJumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta macho (furo da placa)</th><th>Ponta fêmea (no amplificador)</th></tr></thead><tbody>${AMP.map((p, i) => `<tr class="fio" data-fio="ampj.${p}"><td><input type="checkbox" data-chk="ampj.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${AJCORES[i]};color:${i === 1 ? '#111' : '#fff'}">${i + 1}</span>${AJNOMES[i]}</td><td class="num">${LN(AR)}${A0 + i}</td><td>pino <b>${p}</b></td></tr>`).join('')}
+  const ampJumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta macho (furo da placa)</th><th>Ponta fêmea (no amplificador)</th></tr></thead><tbody>${AMP.map((p, i) => `<tr class="fio" data-fio="ampj.${p}"><td><input type="checkbox" data-chk="ampj.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${AJCORES[i]};color:${i === 1 ? '#111' : '#fff'}">${i + 1}</span>${AJNOMES[i]}</td><td class="num">${nomeA(p)}</td><td>pino <b>${p}</b></td></tr>`).join('')}
       <tr><td></td><td><span class="badge" style="background:var(--muted)">–</span>nenhum</td><td>–</td><td>pinos <b>GAIN</b> e <b>SD</b> ficam sem jumper</td></tr></tbody></table></div><p class="nota">Toque numa linha para destacar o jumper no desenho.</p>`;
 
   // ================= passos =================
@@ -996,9 +996,9 @@ void loop() {
         <details><summary>Se não funcionar</summary><ul><li><b>“Falha ao iniciar o I2S”:</b> confira os fios do 15, 16 e 18.</li><li><b>Serial certo, mas mudo:</b> VIN e GND, o DIN no 18 e os fios do alto-falante bem presos. O SD não pode estar no GND (isso desliga o amplificador).</li><li><b>Chiado ou estalos:</b> o capacitor de 470 µF resolve (passo do teste final).</li><li><b>Baixo demais:</b> no programa, troque <code>VOLUME = 0.25f</code> por <code>0.5f</code>.</li></ul></details>
         <p class="dica">Funcionou? Desligue o USB e volte o ESP32 para a placa.</p>` });
     passo({ t: 'Soquete e fios do amplificador', vista: true, novo: ['s.amp', 'j.amp', 'aLRC', 'aBCLK', 'aDIN', 'aGND', 'aVIN'], fios: ['aLRC', 'aBCLK', 'aDIN', 'aGND', 'aVIN'], antes: 'Desligue o USB e tire o ESP32.', html: () => `<p>O amplificador não vai soldado: ele encaixa por jumpers, como a tela. Na placa entra um <b>soquete de 5</b> (corte da sobra da barra fêmea) e 5 fios no verso.</p>
-        <ol><li>Encaixe o soquete de 5 na <b>linha ${LN(AR)}</b>, colunas <b>${A0} a ${A0 + 4}</b>. Segure com fita, vire e solde as pontas primeiro, depois o resto.</li><li>Agora os 5 fios no verso, um de cada vez, pela tabela. Nos furos <b>${LN(J1R)}${gcol(15)}</b> e <b>${LN(J1R)}${gcol(16)}</b> já tem o fio do microfone: o novo entra <b>na mesma solda</b>, junto com ele.</li></ol>`
+        <ol><li>Encaixe o soquete de 5 em pé na <b>coluna ${AC}</b>, do furo <b>${nomeA('LRC')}</b> ao <b>${nomeA('VIN')}</b> (linhas ${LN(AR0)} a ${LN(AR0 + 4)}). Segure com fita, vire e solde as pontas primeiro, depois o resto.</li><li>Agora os 5 fios no verso, um de cada vez, pela tabela. Nos furos <b>${LN(J1R)}${gcol(15)}</b> e <b>${LN(J1R)}${gcol(16)}</b> já tem o fio do microfone: o novo entra <b>na mesma solda</b>, junto com ele.</li></ol>`
         + comoFio + `<p class="alerta">O VIN é <b>5 V</b>. Ele não pode encostar no barramento 3V3 (linha ${LN(B3)}) nem no GND.</p>
-        <div class="confere"><b>Confira (USB desligado):</b><span>Cada furo do soquete e o furo da outra ponta do fio → <b>apitam</b>.</span><span>Dois vizinhos do soquete → <b style="color:var(--ruim)">não apitam</b>.</span><span>VIN (${LN(AR)}${ac('VIN')}) com o barramento 3V3 e com o GND → <b style="color:var(--ruim)">não apitam</b>.</span></div>` });
+        <div class="confere"><b>Confira (USB desligado):</b><span>Cada furo do soquete e o furo da outra ponta do fio → <b>apitam</b>.</span><span>Dois vizinhos do soquete → <b style="color:var(--ruim)">não apitam</b>.</span><span>VIN (${nomeA('VIN')}) com o barramento 3V3 e com o GND → <b style="color:var(--ruim)">não apitam</b>.</span></div>` });
     passo({ t: 'Ligue o amplificador com 5 jumpers', ampfig: true, html: () => `<p>Igual à tela: <b>5 jumpers macho-fêmea de 20 cm</b>, um por vez. A ponta <b>macho</b> vai no soquete da placa e a ponta <b>fêmea</b> no pino do amplificador. A ordem é a mesma dos dois lados, então os jumpers ficam lado a lado, sem cruzar.</p>${ampJumpTab()}
         <p class="dica">Use o <b>vermelho no VIN</b> e o <b>preto no GND</b>. Os outros 3 podem ser de qualquer cor, desde que siga a ordem.</p>
         <p class="nota">O amplificador pode ficar perto da placa, dentro da caixa. Se o alto-falante ficar longe, quem cresce é o fio do alto-falante: ele pode ser emendado sem problema.</p>` });
