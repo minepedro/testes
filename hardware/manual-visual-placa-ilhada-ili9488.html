@@ -362,9 +362,12 @@ void loop() {
   const TELA = ['VCC','GND','CS','RESET','DC','SDI','SCK','LED','SDO','T_CLK','T_CS','T_DIN','T_DO'];
   const COR = { v33: ['var(--v33)', 'vermelho'], gnd: ['var(--gnd)', 'preto'], spi: ['var(--spi)', 'laranja'], tch: ['var(--tch)', 'azul'], i2s: ['var(--i2s)', 'verde'] };
   const tc = p => T0 + TELA.indexOf(p);
-  // som (opcional): soquete de 5 em pé na coluna 26, linhas R a V (canto livre, longe dos fios do verso e da antena); mesma ordem dos pinos do amplificador
-  const AMP = ['LRC', 'BCLK', 'DIN', 'GND', 'VIN'], AC = 26, AR0 = 18;
+  // som (opcional): soquete de 5 em pé na coluna 27, linhas R a V (borda livre, longe dos fios do verso e da antena); mesma ordem dos pinos do amplificador
+  const AMP = ['LRC', 'BCLK', 'DIN', 'GND', 'VIN'], AC = 27, AR0 = 18;
   const furoA = p => [AC, AR0 + AMP.indexOf(p)], nomeA = p => LN(AR0 + AMP.indexOf(p)) + AC;
+  // C4 (470 uF) deitado na frente, pernas na coluna ao lado do GND e do VIN do soquete; no verso, uma gota liga cada perna ao pino vizinho
+  const capA = () => ({ neg: [AC - 1, furoA('GND')[1]], pos: [AC - 1, furoA('VIN')[1]] });
+  const nomeF = f => LN(f[1]) + f[0];
   let M, FIOS, SP3, SPG, SOQ;
   function modelo() {
     const A = perms(LADO_A)[cfg.a], B = perms(LADO_B)[cfg.b], cB = MC0 + cfg.n, cm = MC0 + Math.floor(cfg.n / 2);
@@ -408,7 +411,7 @@ void loop() {
       tela: { pinos: TELA.map((p, i) => [T0 + i, TR, p]), lab: 'cima' },
       micA: { pinos: A.map((p, i) => [MC0, MR0 + i, p]), lab: 'dir' },
       micB: { pinos: B.map((p, i) => [cB, MR0 + i, p]), lab: 'dir' },
-      amp: { pinos: AMP.map(p => [...furoA(p), p]), lab: 'esq' },
+      amp: { pinos: AMP.map(p => [...furoA(p), p]), lab: 'dir' },
     };
   }
   modelo();
@@ -521,6 +524,19 @@ void loop() {
           s += `<line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda-borda)" stroke-width="17" stroke-linecap="round"/><line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda)" stroke-width="15" stroke-linecap="round"/><circle cx="${x(f[0])}" cy="${y(f[1])}" r="2.6" fill="#8a9099"/>`;
         }));
       }
+    }
+    if (tem('c.amp')) {
+      const ca = capA(), lado = [[ca.neg, furoA('GND')], [ca.pos, furoA('VIN')]];
+      if (!verso) {
+        const xe = x(ca.neg[0]) - 12, comp = 4.3 * PX, ym = (y(ca.neg[1]) + y(ca.pos[1])) / 2, h = 2.5 * PX;
+        s += lado.map(([f]) => `<circle cx="${x(f[0])}" cy="${y(f[1])}" r="3" fill="#aab1ba"/><line x1="${x(f[0])}" y1="${y(f[1])}" x2="${xe}" y2="${y(f[1])}" stroke="#aab1ba" stroke-width="2"/>`).join('')
+          + `<rect x="${xe - comp}" y="${ym - h / 2}" width="${comp}" height="${h}" rx="9" fill="#223a6a" stroke="#0b1530" stroke-width="1.5" opacity=".95"/><rect x="${xe - comp}" y="${ym + h / 2 - 13}" width="${comp}" height="13" rx="5" fill="#d6dbe1"/>`
+          + T(xe - comp / 2, ym + h / 2 - 3, '−  −  −  −', { size: 10, w: 700, fill: '#223a6a', halo: '#d6dbe1' }) + T(xe - comp / 2, ym - 4, 'C4 · 470µF', { size: 10, w: 700, fill: '#fff', halo: '#223a6a' })
+          + T(x(ca.pos[0]), y(ca.pos[1]) - 10, '+', { size: 13, w: 700, fill: '#ff9b9b' }) + T(x(ca.neg[0]), y(ca.neg[1]) + 19, '−', { size: 14, w: 700, fill: '#cfe0ef' });
+      } else {
+        lado.forEach(([f, q]) => s += `<line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda-borda)" stroke-width="17" stroke-linecap="round"/><line x1="${x(f[0])}" y1="${y(f[1])}" x2="${x(q[0])}" y2="${y(q[1])}" stroke="var(--solda)" stroke-width="15" stroke-linecap="round"/><circle cx="${x(f[0])}" cy="${y(f[1])}" r="2.6" fill="#8a9099"/>`);
+      }
+      if (novo('c.amp')) lado.forEach(([f]) => s += halo(f[0], f[1]));
     }
     (o.sondas || []).forEach(([c, r, t, cor]) => { s += `<circle cx="${x(c)}" cy="${y(r)}" r="11" fill="${cor || 'var(--ruim)'}" stroke="#fff" stroke-width="2"/>` + T(x(c), y(r) + 4, t, { size: 10, w: 700, fill: '#fff', halo: cor || 'var(--ruim)' }); });
     let vb = `0 0 ${W} ${H}`;
@@ -868,18 +884,11 @@ void loop() {
   }
   // a ligacao: soquete de 5 na frente da placa → 5 jumpers → pinos do amplificador → alto-falante
   const AJCORES = ['#f08a3c', '#e6c200', '#4a8fe0', '#2a2f35', '#e04848'], AJNOMES = ['laranja', 'amarelo', 'azul', 'preto', 'vermelho'];
-  function figAmp(sel, comCap) {
+  function figAmp(sel) {
     const py = i => 70 + i * 33, SX = 150, AX = 450;
     let s = `<rect x="16" y="30" width="190" height="215" rx="8" fill="var(--pcb)" stroke="var(--pcb-borda)" stroke-width="3"/><text x="111" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--fg)">placa (frente)</text>`
       + `<rect x="${SX - 13}" y="${py(0) - 16}" width="26" height="${py(4) - py(0) + 32}" rx="2" fill="#1d2125" stroke="#000" stroke-width="1.4"/>`;
     s += `<rect x="${AX}" y="40" width="160" height="270" rx="10" fill="#4a2f86" stroke="#2a1850" stroke-width="2"/><rect x="${AX + 70}" y="150" width="46" height="46" rx="3" fill="#111"/><text x="${AX + 93}" y="212" text-anchor="middle" font-size="10" fill="#e6dcff">MAX98357A</text>`;
-    // capacitor de 470 uF por cima dos pinos GND e VIN (opcional); fica embaixo dos nomes dos pinos
-    if (comCap) {
-      const ya = py(5), yb = py(6);
-      s += `<line x1="${AX + 10}" y1="${ya}" x2="${AX + 66}" y2="${ya + 4}" stroke="#aab1ba" stroke-width="2.4"/><line x1="${AX + 10}" y1="${yb}" x2="${AX + 66}" y2="${yb - 4}" stroke="#aab1ba" stroke-width="2.4"/>`
-        + `<rect x="${AX + 64}" y="${ya - 8}" width="62" height="${yb - ya + 16}" rx="6" fill="#223a6a" stroke="#0b1530" stroke-width="1.5"/><rect x="${AX + 64}" y="${ya - 8}" width="62" height="12" rx="4" fill="#d6dbe1"/><text x="${AX + 95}" y="${ya + 2}" text-anchor="middle" font-size="11" font-weight="700" fill="#223a6a">−  −  −</text><text x="${AX + 95}" y="${yb + 4}" text-anchor="middle" font-size="10" fill="#fff">470µF</text>`
-        + `<text x="${AX + 95}" y="${yb + 30}" text-anchor="middle" font-size="11" fill="#fff">faixa clara (−) no GND</text>`;
-    }
     AMP_PINOS.forEach((p, i) => {
       const yy = py(i);
       s += `<rect x="${AX - 8}" y="${yy - 1.5}" width="14" height="3" fill="#d9a441"/><circle cx="${AX + 10}" cy="${yy}" r="5" fill="#d9a441"/><text x="${AX + 22}" y="${yy + 4}" font-size="12" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:#4a2f86;stroke-width:4px">${p}</text>`;
@@ -900,29 +909,21 @@ void loop() {
     s += `<text x="${(SX + AX) / 2 + 20}" y="332" text-anchor="middle" font-size="12" fill="var(--muted)">5 jumpers macho-fêmea: ponta macho no soquete, ponta fêmea no pino do amplificador</text>`;
     return `<svg viewBox="0 0 790 345" role="img" aria-label="Jumpers do soquete da placa até o amplificador e o alto-falante">${s}</svg>`;
   }
-  // close do capacitor de 470 uF deitado em cima do amplificador, soldado nas bolinhas dos pinos GND e VIN
-  const closeCapAmp = () => {
-    const px = i => 45 + i * 35, CAP = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="#223a6a" stroke="#0b1530" stroke-width="1.5"/>`;
-    let cima = `<rect x="20" y="20" width="260" height="175" rx="8" fill="#4a2f86" stroke="#2a1850" stroke-width="2"/><rect x="118" y="6" width="56" height="26" rx="3" fill="#2e8b57" stroke="#1d5a38"/><rect x="60" y="62" width="44" height="44" rx="3" fill="#111"/>`;
-    AMP_PINOS.forEach((p, i) => cima += `<circle cx="${px(i)}" cy="160" r="7" fill="#c9ced3" stroke="#8a9099"/><text x="${px(i)}" y="185" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${p}</text>`);
-    const xg = px(5), xv = px(6), xm = (xg + xv) / 2;
-    cima += `<path d="M${xm - 7} 122 L${xg} 160" stroke="#aab1ba" stroke-width="3"/><path d="M${xm + 7} 122 L${xv} 160" stroke="#aab1ba" stroke-width="3"/>`
-      + CAP(xm - 17, 44, 34, 80) + `<rect x="${xm - 17}" y="44" width="11" height="80" rx="4" fill="#d6dbe1"/>` + [62, 82, 102].map(yy => `<text x="${xm - 11.5}" y="${yy}" text-anchor="middle" font-size="11" font-weight="700" fill="#223a6a">−</text>`).join('')
-      + `<text x="${xm + 5}" y="88" text-anchor="middle" font-size="9" fill="#fff" transform="rotate(-90 ${xm + 5} 88)">470µF</text>`
-      + `<circle cx="${xg}" cy="160" r="9" fill="none" stroke="#ffb27a" stroke-width="2.5"/><circle cx="${xv}" cy="160" r="9" fill="none" stroke="#ffb27a" stroke-width="2.5"/>`
-      + `<text x="${xm - 26}" y="58" text-anchor="end" font-size="11" fill="#fff">faixa clara = −</text>`;
-    let lado = `<rect x="96" y="104" width="172" height="8" fill="#4a2f86" stroke="#2a1850"/><text x="100" y="124" font-size="10" fill="var(--fg)">plaquinha (de lado)</text>`
-      + `<rect x="222" y="112" width="20" height="10" fill="#111"/><rect x="230" y="84" width="4" height="96" fill="#d9a441"/><path d="M222 104 Q232 90 242 104 Z" fill="#c9ced3" stroke="#8a9099"/>`
-      + `<rect x="223" y="140" width="18" height="34" rx="2" fill="#1b1b1b" stroke="#8a9099"/><path d="M232 174 V205" stroke="#2a2f35" stroke-width="5"/><path d="M232 174 V205" stroke="#8a9099" stroke-width="1" opacity=".6"/>`
-      + CAP(110, 70, 96, 30) + `<rect x="110" y="70" width="96" height="9" rx="4" fill="#d6dbe1"/><text x="158" y="92" text-anchor="middle" font-size="10" fill="#fff">470µF deitado</text>`
-      + `<path d="M206 85 H222 Q230 86 231 97" stroke="#aab1ba" stroke-width="3" fill="none"/><circle cx="231" cy="98" r="9" fill="none" stroke="#ffb27a" stroke-width="2.5"/>`
-      + `<text x="246" y="76" font-size="11" fill="var(--fg)">solda</text><text x="246" y="89" font-size="11" fill="var(--fg)">aqui</text>`
-      + `<text x="250" y="160" font-size="11" fill="var(--fg)">jumper</text><text x="250" y="173" font-size="11" fill="var(--fg)">embaixo</text>`;
-    return `<div class="closes">
-      <figure><svg viewBox="0 0 300 205" role="img" aria-label="Capacitor deitado em cima do amplificador, visto de cima">${cima}</svg><figcaption><b>Visto de cima:</b> a perna da faixa clara (−) vai na bolinha de solda do <b>GND</b> e a outra (+) na do <b>VIN</b>. O capacitor fica deitado em cima da plaquinha.</figcaption></figure>
-      <figure><svg viewBox="92 60 206 150" role="img" aria-label="Capacitor deitado, visto de lado">${lado}</svg><figcaption><b>De lado:</b> as pernas são soldadas por cima, na mesma bolinha de solda do pino. Embaixo, o jumper continua encaixando normalmente.</figcaption></figure>
+  // close do C4 (470 uF) deitado na placa, ao lado do soquete do amplificador
+  const zoomCapA = vista => placa({ vista, tem: new Set(['b3', 's.amp', 'j.amp', 'aGND', 'aVIN', 'c.amp']), novo: new Set(), crop: [AC - 6, AC + 1, AR0 - 1, AR0 + 4] });   // AC + 1 deixa espaço para os nomes dos pinos, que ficam do lado de fora
+  function figCapDeitado() {
+    let s = `<rect x="20" y="120" width="300" height="12" fill="var(--pcb)" stroke="var(--pcb-borda)"/><text x="30" y="150" font-size="11" fill="var(--fg)">placa (de lado)</text>`
+      + `<rect x="262" y="94" width="18" height="26" fill="#1d2125" stroke="#000"/><rect x="263" y="40" width="16" height="54" rx="2" fill="#1b1b1b" stroke="#8a9099"/><path d="M271 40 V8" stroke="#e04848" stroke-width="5"/><text x="288" y="70" font-size="11" fill="var(--fg)">soquete</text><text x="288" y="84" font-size="11" fill="var(--fg)">e jumper</text>`
+      + `<rect x="120" y="84" width="104" height="34" rx="9" fill="#223a6a" stroke="#0b1530" stroke-width="1.5"/><rect x="120" y="84" width="104" height="9" rx="4" fill="#d6dbe1"/><text x="172" y="110" text-anchor="middle" font-size="11" fill="#fff">C4 · 470µF deitado</text>`
+      + `<path d="M224 104 H238 Q244 104 244 112 V142" stroke="#aab1ba" stroke-width="3" fill="none"/><ellipse cx="244" cy="144" rx="9" ry="5" fill="var(--solda)" stroke="var(--solda-borda)"/><path d="M244 144 H271" stroke="var(--solda)" stroke-width="8" stroke-linecap="round"/>`
+      + `<text x="236" y="168" text-anchor="end" font-size="11" fill="var(--fg)">gota no verso até o soquete →</text>`;
+    return `<svg viewBox="0 0 340 180" role="img" aria-label="Capacitor deitado na placa, visto de lado">${s}</svg>`;
+  }
+  const closeCapAmp = () => `<div class="closes">
+      <figure><div class="fig">${zoomCapA('frente')}</div><figcaption><b>FRENTE</b>, de perto: perna <b>−</b> (faixa clara) em <b>${nomeF(capA().neg)}</b>, perna <b>+</b> em <b>${nomeF(capA().pos)}</b>. O corpo deita para a esquerda, sobre a placa.</figcaption></figure>
+      <figure><div class="fig">${zoomCapA('verso')}</div><figcaption><b>VERSO</b>, de perto: uma gota liga ${nomeF(capA().neg)} ao ${nomeA('GND')} (GND) e outra liga ${nomeF(capA().pos)} ao ${nomeA('VIN')} (VIN). As duas gotas <b>não podem se encostar</b>.</figcaption></figure>
+      <figure><div class="fig">${figCapDeitado()}</div><figcaption><b>De lado:</b> dobre as pernas em L para o capacitor deitar. Assim ele não bate nos jumpers do soquete.</figcaption></figure>
     </div>`;
-  };
   const ampJumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta macho (furo da placa)</th><th>Ponta fêmea (no amplificador)</th></tr></thead><tbody>${AMP.map((p, i) => `<tr class="fio" data-fio="ampj.${p}"><td><input type="checkbox" data-chk="ampj.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${AJCORES[i]};color:${i === 1 ? '#111' : '#fff'}">${i + 1}</span>${AJNOMES[i]}</td><td class="num">${nomeA(p)}</td><td>pino <b>${p}</b></td></tr>`).join('')}
       <tr><td></td><td><span class="badge" style="background:var(--muted)">–</span>nenhum</td><td>–</td><td>pinos <b>GAIN</b> e <b>SD</b> ficam sem jumper</td></tr></tbody></table></div><p class="nota">Toque numa linha para destacar o jumper no desenho.</p>`;
 
@@ -1025,10 +1026,13 @@ void loop() {
     passo({ t: 'Ligue o amplificador com 5 jumpers', ampfig: true, html: () => `<p>Igual à tela: <b>5 jumpers macho-fêmea de 20 cm</b>, um por vez. A ponta <b>macho</b> vai no soquete da placa e a ponta <b>fêmea</b> no pino do amplificador. A ordem é a mesma dos dois lados, então os jumpers ficam lado a lado, sem cruzar.</p>${ampJumpTab()}
         <p class="dica">Use o <b>vermelho no VIN</b> e o <b>preto no GND</b>. Os outros 3 podem ser de qualquer cor, desde que siga a ordem.</p>
         <p class="nota">O amplificador pode ficar perto da placa, dentro da caixa. Se o alto-falante ficar longe, quem cresce é o fio do alto-falante: ele pode ser emendado sem problema.</p>` });
-    passo({ t: 'Alto-falante e teste final', ampfig: 'cap', html: () => `<ol><li>Fios do alto-falante nos parafusos do conector verde: + com + (se não tiver marca, tanto faz).</li><li>Encaixe o ESP32, a tela e o microfone, e ligue o USB.</li><li>Grave de novo o programa do teste (<code>extra_som</code>): os três sons tocam pelo alto-falante. A tela fica parada, porque esse programa só toca sons.</li><li><b>Capacitor de 470 µF:</b> ele vai <b>no próprio amplificador</b>, não na placa (veja o close abaixo). Se o som saiu limpo, ele é opcional. Se ouviu estalos, ou o som falha nos bipes mais fortes, desligue o USB e coloque.</li></ol>
-        <h3 style="margin:6px 0 0;font-size:16px">Close: onde soldar o capacitor de 470 µF</h3>${closeCapAmp()}
-        <ol><li>Ache a <b>faixa clara</b> no corpo do capacitor: a perna desse lado é a <b>−</b>.</li><li>Dobre as duas pernas para o capacitor <b>deitar em cima da plaquinha</b>, com as pernas encostando nas bolinhas de solda dos pinos <b>GND</b> (perna −) e <b>VIN</b> (perna +). Os dois pinos são vizinhos, e as pernas têm a mesma distância deles.</li><li>Encoste o ferro na perna e na bolinha ao mesmo tempo e ponha um pouquinho de estanho. Faça a outra perna e corte o que sobrar.</li><li>Os jumpers continuam encaixando nos pinos por baixo, como antes.</li></ol>
-        <div class="confere"><b>Confira (USB desligado):</b><span>Pino GND com pino VIN do amplificador → um bipe curtinho que para sozinho é normal (é o capacitor carregando). Se apitar sem parar, as pernas encostaram uma na outra.</span></div>
+    passo({ t: 'Alto-falante e teste final', vista: true, ampfig: true, novo: ['c.amp'], html: () => `<ol><li>Fios do alto-falante nos parafusos do conector verde: + com + (se não tiver marca, tanto faz).</li><li>Encaixe o ESP32, a tela e o microfone, e ligue o USB.</li><li>Grave de novo o programa do teste (<code>extra_som</code>): os três sons tocam pelo alto-falante. A tela fica parada, porque esse programa só toca sons.</li></ol>
+        <h3 style="margin:6px 0 0;font-size:16px">C4: capacitor de 470 µF ao lado do soquete</h3>
+        <p>Ele é uma reserva de energia para os picos do alto-falante. Se o som saiu limpo, é opcional; se ouviu estalos, ou o som falha nos bipes mais fortes, coloque. <b>Desligue o USB e tire o ESP32 antes.</b></p>
+        <ol><li>Ache a <b>faixa clara</b> no corpo: a perna desse lado é a <b>−</b>.</li><li>Pela frente, enfie a perna <b>−</b> no <b>${nomeF(capA().neg)}</b> e a perna <b>+</b> no <b>${nomeF(capA().pos)}</b>. Dobre as pernas em L para o capacitor <b>deitar</b> sobre a placa, apontando para a esquerda (para o lado da coluna 22).</li><li>No verso, faça as duas gotas de estanho, igual às do passo 25: <b>${nomeF(capA().neg)} → ${nomeA('GND')}</b> e <b>${nomeF(capA().pos)} → ${nomeA('VIN')}</b>. Corte o que sobrar das pernas.</li></ol>
+        ${closeCapAmp()}
+        <div class="confere"><b>Confira (USB desligado):</b><span>${nomeF(capA().neg)} com ${nomeA('GND')}, e ${nomeF(capA().pos)} com ${nomeA('VIN')} → <b>apitam</b>.</span><span>${nomeA('GND')} com ${nomeA('VIN')} → um bipe curtinho que para sozinho é normal (é o capacitor carregando). <b style="color:var(--ruim)">Se apitar sem parar, as duas gotas se encostaram.</b></span></div>
+        <p class="alerta">A faixa clara (−) fica no lado do GND. Ao contrário, o capacitor esquenta e pode estourar.</p>
         <details><summary>Se não funcionar</summary><ul><li><b>Mudo:</b> confira os jumpers pela tabela do passo anterior, e com o multímetro, de cada furo do soquete até o pino do ESP32.</li><li><b>Estalos:</b> confira o capacitor (a faixa clara no GND).</li><li><b>Som falhando com volume alto:</b> o USB do computador não dá conta; deixe o <code>VOLUME</code> em 0.25.</li></ul></details>
         <p class="nota">O programa do mascote ainda não toca som. Quando os bipes funcionarem aqui, me avise: o microfone e o amplificador dividem os fios 15 e 16, então eu ajusto o programa para usar os dois juntos.</p>` });
     return P;
@@ -1061,7 +1065,7 @@ void loop() {
     const o = { tem: p.tem, novo: p.novo, esp: p.esp, mic: p.mic, sondas: p.sondas, caps: p.caps, sel };
     ['frente', 'verso'].forEach(v => { const el = document.querySelector(`[data-fig="${p.n}-${v}"]`); if (el) el.innerHTML = placa(Object.assign({ vista: v }, o)); });
     const ej = document.querySelector(`[data-fig="${p.n}-jump"]`); if (ej) ej.innerHTML = figJumpers(sel, o);
-    const ea = document.querySelector(`[data-fig="${p.n}-amp"]`); if (ea) ea.innerHTML = figAmp(sel, p.ampfig === 'cap');
+    const ea = document.querySelector(`[data-fig="${p.n}-amp"]`); if (ea) ea.innerHTML = figAmp(sel);
   }
   function progresso() {
     const tot = passos.length, ok = passos.filter(p => mem['passo.' + p.n]).length;
