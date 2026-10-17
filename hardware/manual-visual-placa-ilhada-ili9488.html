@@ -397,7 +397,7 @@ void loop() {
       aLRC: FA('aLRC', 'Amplificador LRC → GPIO 16', furoA('LRC'), [gcol(16), J1R], 'i2s'),
       aBCLK: FA('aBCLK', 'Amplificador BCLK → GPIO 15', furoA('BCLK'), [gcol(15), J1R], 'i2s'),
       aDIN: FA('aDIN', 'Amplificador DIN → GPIO 18', furoA('DIN'), [gcol(18), J1R], 'i2s'),
-      aGND: FA('aGND', 'Amplificador GND → barramento GND', furoA('GND'), [tc('GND'), BG], 'gnd'),
+      aGND: FA('aGND', 'Amplificador GND → GND do ESP32', furoA('GND'), [jcol(0), J3R], 'gnd'),   // B23: GND do próprio ESP32, pela borda; a corrente do som não passa pelo barramento do microfone
       aVIN: FA('aVIN', 'Amplificador VIN → 5V', furoA('VIN'), [jcol(20), J1R], 'v33'),
     };
     const span = row => { const cs = Object.values(FIOS).filter(f => f.ate[1] === row).map(f => f.ate[0]); return [Math.min(...cs), Math.max(...cs)]; };
