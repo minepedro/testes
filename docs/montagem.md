@@ -231,6 +231,12 @@ Teste: `firmware/testes/extra_botao`. Está na Parte 2 do manual interativo (`ha
 Sem voz falada (decisão 16), mas com som se você quiser (decisão 18). Monte o MAX98357A com o
 alto-falante e o capacitor, conforme a tabela opcional acima.
 
+Na placa ilhada, o amplificador fica fora da placa (perto do alto-falante) e se liga por 5 jumpers
+macho-fêmea de 20 cm com a ponta macho soldada no verso: VIN em L3 (5V), GND em L2, DIN em L13,
+LRC em L15 e BCLK em L16 (os dois últimos na mesma solda dos fios do microfone). Passo a passo nos
+passos 29 a 32 do manual visual (`hardware/manual-visual-placa-ilhada-ili9488.html`). O programa do
+mascote ainda não toca som; por enquanto o teste é o `extra_som`.
+
 ## Programas de teste
 
 Ficam em `firmware/testes/`, um por etapa:
