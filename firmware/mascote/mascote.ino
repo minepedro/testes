@@ -300,6 +300,9 @@ void tarefaRede(void *) {
 
 // ---- microfone (INMP441, I2S) --------------------------------------------------------------
 constexpr int PIN_MIC_SCK = 15, PIN_MIC_WS = 16, PIN_MIC_SD = 17;
+// O amplificador (MAX98357A, opcional) divide o SCK e o WS com o microfone. Com o microfone ligado esses
+// relógios não param, e o DIN solto vira chiado no alto-falante; por isso o DIN fica em 0 (silêncio).
+constexpr int PIN_AMP_DIN = 18;
 constexpr int TAXA = 16000, MAX_SEG = 20, MAX_AMOSTRAS = TAXA * MAX_SEG;
 I2SClass mic;
 int16_t *audio = nullptr;          // PSRAM: ate 20 s de PCM 16 bits (640 KB)
@@ -1933,6 +1936,8 @@ void setup() {
   trava = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(tarefaRede, "rede", 12288, nullptr, 1, nullptr, 0);
 
+  pinMode(PIN_AMP_DIN, OUTPUT);
+  digitalWrite(PIN_AMP_DIN, LOW);
   audio = (int16_t *)ps_malloc(MAX_AMOSTRAS * sizeof(int16_t));
   mic.setPins(PIN_MIC_SCK, PIN_MIC_WS, -1, PIN_MIC_SD);
   micOk = audio && mic.begin(I2S_MODE_STD, TAXA, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT);
