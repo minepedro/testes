@@ -1060,7 +1060,7 @@ void loop() {
         <div class="confere"><b>Confira (USB desligado):</b><span>${nomeF(capA().neg)} com ${nomeA('GND')}, e ${nomeF(capA().pos)} com ${nomeA('VIN')} → <b>apitam</b>.</span><span>${nomeA('GND')} com ${nomeA('VIN')} → um bipe curtinho que para sozinho é normal (é o capacitor carregando). <b style="color:var(--ruim)">Se apitar sem parar, as duas gotas se encostaram.</b></span></div>
         <p class="alerta">A faixa clara (−) fica no lado do GND. Ao contrário, o capacitor esquenta e pode estourar.</p>
         <details><summary>Se não funcionar</summary><ul><li><b>Mudo:</b> confira os jumpers pela tabela do passo anterior, e com o multímetro, de cada furo do soquete até o pino do ESP32.</li><li><b>Estalos:</b> confira o capacitor (a faixa clara no GND).</li><li><b>Som falhando com volume alto:</b> o USB do computador não dá conta; deixe o <code>VOLUME</code> em 0.25.</li></ul></details>
-        <p class="nota">O programa do mascote ainda não toca som. Quando os bipes funcionarem aqui, me avise: o microfone e o amplificador dividem os fios 15 e 16, então eu ajusto o programa para usar os dois juntos.</p>` });
+        <p class="dica"><b>Depois do teste, grave o mascote de novo:</b> ele toca os sons sozinho (bipe ao gravar e ao enviar a voz, “plim” quando uma sessão termina, aviso quando pede aprovação, e outros). No Camarim, cada animação toca o seu som. No <code>config.h</code>, <code>#define SOM 0</code> desliga e <code>#define SOM_VOLUME 0.4f</code> ajusta o volume (0 a 1).</p>` });
     return P;
   }
 

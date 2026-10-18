@@ -243,8 +243,10 @@ e do 16 entram na mesma solda dos fios do microfone. Daí saem 5 jumpers macho-f
 amplificador (GAIN e SD sem ligar). O capacitor de 470 µF (C4) fica deitado na frente, com a perna
 − (faixa clara) em U26 e a + em V26, e uma gota de estanho no verso de U26 a U27 (GND) e de V26 a
 V27 (VIN). Passo a passo nos passos 29 a 33 do manual visual
-(`hardware/manual-visual-placa-ilhada-ili9488.html`). O programa do mascote ainda não toca som; por
-enquanto o teste é o `extra_som`.
+(`hardware/manual-visual-placa-ilhada-ili9488.html`). O mascote toca os sons (bipe ao
+gravar e ao enviar a voz, "plim" quando uma sessão termina, festa quando todas terminam, aviso quando
+uma sessão pede aprovação, aprovado/recusado, erro, cócegas e um clique nos toques). No `config.h`,
+`SOM 0` desliga e `SOM_VOLUME` (0 a 1) ajusta o volume; sem essas linhas vale som ligado e volume 0.4.
 
 ## Programas de teste
 

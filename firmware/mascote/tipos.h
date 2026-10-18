@@ -28,6 +28,8 @@ enum ItemFundo { FUN_LISO, FUN_ESTRELAS, FUN_PORSOL, FUN_GRAMA, FUN_NEVE };
 enum Anim { A_NENHUMA, A_COMEMORAR, A_APROVACAO, A_APROVADO, A_RECUSADO, A_TONTO, A_TRABALHANDO, A_OUVINDO,
             A_COCHILO, A_COCEGAS, A_DANCINHA, A_ARRUMAR, N_ANIMS };
 struct AnimInfo { const char *nome; float dur; };
+// sons do alto-falante (tocarSom)
+enum Som : uint8_t { S_CLIQUE, S_GRAVAR, S_ENVIAR, S_PLIM, S_FESTA, S_AVISO, S_APROVADO, S_RECUSADO, S_ERRO, S_COCEGAS };
 enum Olhar { O_NORMAL, O_FELIZ, O_FECHADO, O_X, O_RISO, O_PISCA };
 enum Emissor { E_SUOR, E_ZZZ, E_NOTA, E_HA, E_NEVE, E_FUMACA, E_VAPOR, E_N };   // ritmo de cada particula
 enum TipoParticula : uint8_t { P_LIVRE, P_CONFETE, P_GOTA, P_TEXTO, P_NOTA, P_NEVE, P_FUMACA, P_VAPOR };

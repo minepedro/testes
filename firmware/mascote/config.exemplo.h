@@ -13,3 +13,8 @@
 #define PONTE_HTTPS_OBRIGATORIO 1
 // O mesmo valor de PONTE_TOKEN usado para rodar a ponte
 #define PONTE_TOKEN "troque-por-uma-senha-longa"
+
+// Som pelo amplificador MAX98357A (DIN no GPIO 18). Sem amplificador, pode deixar como esta.
+// SOM 0 desliga os sons; SOM_VOLUME vai de 0 a 1.
+#define SOM 1
+#define SOM_VOLUME 0.4f

@@ -300,9 +300,16 @@ void tarefaRede(void *) {
 
 // ---- microfone (INMP441, I2S) --------------------------------------------------------------
 constexpr int PIN_MIC_SCK = 15, PIN_MIC_WS = 16, PIN_MIC_SD = 17;
-// O amplificador (MAX98357A, opcional) divide o SCK e o WS com o microfone. Com o microfone ligado esses
-// relógios não param, e o DIN solto vira chiado no alto-falante; por isso o DIN fica em 0 (silêncio).
+// O amplificador (MAX98357A, opcional) divide o SCK e o WS com o microfone. Com SOM 1 os dois usam o mesmo
+// I2S em full duplex (o som sai pelo 18) e, sem som tocando, o DMA manda zeros. Com SOM 0 o DIN fica em 0,
+// porque solto ele vira chiado no alto-falante enquanto os relógios do microfone rodam.
 constexpr int PIN_AMP_DIN = 18;
+#ifndef SOM
+#define SOM 1             // 0 = sem som (config.h pode mudar)
+#endif
+#ifndef SOM_VOLUME
+#define SOM_VOLUME 0.4f   // 0 a 1 (config.h pode mudar)
+#endif
 constexpr int TAXA = 16000, MAX_SEG = 20, MAX_AMOSTRAS = TAXA * MAX_SEG;
 I2SClass mic;
 int16_t *audio = nullptr;          // PSRAM: ate 20 s de PCM 16 bits (640 KB)
@@ -310,6 +317,7 @@ volatile bool gravando = false;
 volatile size_t nAmostras = 0;
 volatile float nivelMic = 0;       // volume atual (0..1), para as barras
 bool micOk = false;
+volatile bool somTocando = false;  // enquanto um som toca, a gravacao ignora o microfone (para nao gravar o bipe)
 
 // Le o microfone sem parar (o DMA nao pode encher) e guarda so enquanto "gravando".
 void tarefaAudio(void *) {
@@ -324,9 +332,58 @@ void tarefaAudio(void *) {
       dc += (x - dc) * 0.001f;             // tira o nivel continuo
       float y = x - dc;
       soma += fabsf(y);
-      if (gravando && nAmostras < (size_t)MAX_AMOSTRAS) audio[nAmostras++] = (int16_t)constrain((int)y, -32768, 32767);
+      if (gravando && !somTocando && nAmostras < (size_t)MAX_AMOSTRAS) audio[nAmostras++] = (int16_t)constrain((int)y, -32768, 32767);
     }
     nivelMic = soma / n / 32768.0f;
+  }
+}
+
+// ---- som (amplificador MAX98357A no DIN 18) ------------------------------------------------------
+// Cada som e uma sequencia curta de notas com ataque rapido e decaimento ("plim"). Uma tarefa propria
+// gera as amostras e escreve no I2S; tocarSom so enfileira, entao nunca trava a tela.
+struct Nota { uint16_t hz, ms; };
+const Nota N_CLIQUE[] = {{1800, 14}}, N_GRAVAR[] = {{880, 70}}, N_ENVIAR[] = {{1320, 60}, {990, 90}},
+           N_PLIM[] = {{988, 90}, {1319, 260}}, N_FESTA[] = {{1047, 80}, {1319, 80}, {1568, 80}, {2093, 300}},
+           N_AVISO[] = {{1319, 170}, {988, 240}}, N_APROVADO[] = {{880, 70}, {1320, 170}}, N_RECUSADO[] = {{660, 90}, {440, 190}},
+           N_ERRO[] = {{330, 160}, {247, 300}}, N_COCEGAS[] = {{1100, 45}, {1300, 45}, {1100, 45}, {1500, 80}};
+struct SomInfo { const Nota *notas; uint8_t qtd; float vol; };
+const SomInfo SONS[] = {{N_CLIQUE, 1, .4f}, {N_GRAVAR, 1, 1}, {N_ENVIAR, 2, 1}, {N_PLIM, 2, 1}, {N_FESTA, 4, 1}, {N_AVISO, 2, 1},
+                        {N_APROVADO, 2, 1}, {N_RECUSADO, 2, 1}, {N_ERRO, 2, 1}, {N_COCEGAS, 4, .8f}};
+QueueHandle_t filaSom = nullptr;   // so existe com SOM 1 e o I2S funcionando
+
+void tocarSom(Som s) {
+  if (!filaSom || gravando) return;   // gravando: o som entraria na gravacao
+  if (xQueueSend(filaSom, &s, 0) == pdTRUE) somTocando = true;
+}
+
+void tarefaSom(void *) {
+  static int32_t bloco[256];
+  Som s;
+  for (;;) {
+    if (xQueueReceive(filaSom, &s, portMAX_DELAY) != pdTRUE) continue;
+    somTocando = true;
+    const SomInfo &info = SONS[s];
+    const float amp = constrain((float)SOM_VOLUME, 0.0f, 1.0f) * info.vol * 2.1e9f;   // amostras de 32 bits
+    float fase = 0;
+    for (uint8_t k = 0; k < info.qtd; k++) {
+      const int total = TAXA * info.notas[k].ms / 1000, ataque = TAXA / 250, soltura = TAXA / 125;   // 4 ms e 8 ms
+      const float passoF = 2 * PI * info.notas[k].hz / TAXA, tau = total * 0.45f;
+      for (int i = 0; i < total;) {
+        int m = min(256, total - i);
+        for (int j = 0; j < m; j++, i++) {
+          float env = expf(-i / tau);
+          if (i < ataque) env *= (float)i / ataque;
+          if (total - i < soltura) env *= (float)(total - i) / soltura;
+          bloco[j] = (int32_t)((sinf(fase) + .25f * sinf(2 * fase)) * .8f * env * amp);   // um pouco de brilho, estilo 8 bits
+          fase += passoF;
+          if (fase > 2 * PI) fase -= 2 * PI;
+        }
+        mic.write(bloco, m * sizeof(int32_t));
+      }
+    }
+    memset(bloco, 0, sizeof(bloco));
+    for (int z = 0; z < 6; z++) mic.write(bloco, sizeof(bloco));   // silencio ate o DMA esvaziar (~100 ms)
+    if (!uxQueueMessagesWaiting(filaSom)) somTocando = false;
   }
 }
 
@@ -618,6 +675,16 @@ void limparParticulas(TipoParticula so = P_LIVRE) {   // P_LIVRE = todas
 void tocarAnim(Anim a, float agora) {
   animId = a; animT0 = agora; animFeito = false;
   for (auto &e : emitT) e = -1e9f;
+  switch (a) {   // o som acompanha a animacao (no Camarim tambem, para ouvir cada um)
+    case A_COMEMORAR: tocarSom(S_PLIM); break;
+    case A_DANCINHA: tocarSom(S_FESTA); break;
+    case A_APROVACAO: tocarSom(S_AVISO); break;
+    case A_APROVADO: tocarSom(S_APROVADO); break;
+    case A_RECUSADO: tocarSom(S_RECUSADO); break;
+    case A_TONTO: tocarSom(S_ERRO); break;
+    case A_COCEGAS: tocarSom(S_COCEGAS); break;
+    default: break;
+  }
 }
 void pararAnim() { animId = A_NENHUMA; }
 
@@ -1464,6 +1531,14 @@ void gatilhosSessoes(const std::vector<Sessao> &antes) {
   uint32_t h = 2166136261u;
   for (auto &n : sessoes) h = (h ^ hashTxt(n.id)) * 16777619u ^ hashTxt(n.status);
   if (h != assinaturaSessoes) { assinaturaSessoes = h; ultimaAtividade = millis(); }
+  bool novoPedido = false;   // alguma sessao acabou de pedir aprovacao: aviso sonoro
+  for (auto &n : sessoes) {
+    if (n.status != "waiting") continue;
+    bool ja = false;
+    for (auto &a : antes) if (a.id == n.id && a.status == "waiting") ja = true;
+    novoPedido |= !ja;
+  }
+  if (novoPedido) tocarSom(S_AVISO);
   if (!algumaTerminou || m.estado == OUVINDO || voz.fase == V_GRAVANDO) return;
   cochiloAuto = false;
   tocarAnim(haviaAtivas && !aindaAtivas ? A_DANCINHA : A_COMEMORAR, relogio());   // todas concluidas: dancinha
@@ -1579,6 +1654,7 @@ void terminarFala() {
     voz.fase = V_NADA; entrar(estadoDeRepouso()); avisar("aguarde: a ponte esta ocupada", C_DIM); return;
   }
   voz.fase = V_TRANSCREVENDO;
+  tocarSom(S_ENVIAR);
   entrar(PENSANDO);
   Serial.printf("voz: %.1f s gravados\n", n / (float)TAXA);
 }
@@ -1780,6 +1856,7 @@ int botaoEm(int x, int y) {
 }
 
 void tocou(int x, int y) {
+  tocarSom(S_CLIQUE);
   int b0 = botaoEm(x, y);
   if (b0 == 3) { voz.fase = V_NADA; avisar("descartado", C_DIM); entrar(estadoDeRepouso()); return; }
   if (b0 == 4) { confirmarFala(); return; }
@@ -1866,7 +1943,7 @@ void lerToque(uint32_t agora) {
     } else if (!toque.falando && agora - toque.desde > 250 && areaDeFala(toque.x0, toque.y0) && !botaoEm(toque.x0, toque.y0)) {
       toque.falando = true;
       if (!micOk) avisar("microfone nao iniciou: confira os fios", C_BAD);
-      else { nAmostras = 0; gravando = true; voz.fase = V_GRAVANDO; entrar(OUVINDO); }
+      else { tocarSom(S_GRAVAR); nAmostras = 0; gravando = true; voz.fase = V_GRAVANDO; entrar(OUVINDO); }
     }
   } else if (toque.ativo) {
     toque.ativo = false;
@@ -1936,12 +2013,22 @@ void setup() {
   trava = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(tarefaRede, "rede", 12288, nullptr, 1, nullptr, 0);
 
+  audio = (int16_t *)ps_malloc(MAX_AMOSTRAS * sizeof(int16_t));
+#if SOM
+  mic.setPins(PIN_MIC_SCK, PIN_MIC_WS, PIN_AMP_DIN, PIN_MIC_SD);   // full duplex: microfone no 17, som no 18
+#else
   pinMode(PIN_AMP_DIN, OUTPUT);
   digitalWrite(PIN_AMP_DIN, LOW);
-  audio = (int16_t *)ps_malloc(MAX_AMOSTRAS * sizeof(int16_t));
   mic.setPins(PIN_MIC_SCK, PIN_MIC_WS, -1, PIN_MIC_SD);
+#endif
   micOk = audio && mic.begin(I2S_MODE_STD, TAXA, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT);
   if (micOk) xTaskCreatePinnedToCore(tarefaAudio, "audio", 4096, nullptr, 2, nullptr, 1);
+#if SOM
+  if (micOk) {
+    filaSom = xQueueCreate(4, sizeof(Som));
+    xTaskCreatePinnedToCore(tarefaSom, "som", 4096, nullptr, 1, nullptr, 1);
+  }
+#endif
   else Serial.println("microfone: falhou ao iniciar o I2S (fios SCK 15, WS 16, SD 17?)");
 
   entrar(REPOUSO);
