@@ -105,6 +105,11 @@ Capacitor de 470 µF entre `VIN` e `GND` do amplificador, **com a perna do traç
    - USB CDC On Boot: **Disabled** (o Serial sai pela porta UART)
    - Partition Scheme: **16M Flash (3MB APP/9.9MB FATFS)**
 4. O ESP32-S3-DevKitC-1 tem **duas portas USB-C**. Use a marcada **UART** (ou COM) para gravar e ver o Serial.
+   - **Se a entrada COM parar de dar energia** (aconteceu na placa do Pedro depois de um curto no 5V: o
+     diodo dessa entrada abriu), use a entrada marcada **USB** para tudo. Em *Ferramentas*: USB Mode
+     **Hardware CDC and JTAG**, USB CDC On Boot **Enabled** (o Serial passa a sair por essa entrada) e
+     a porta COM nova que aparece. Se a gravação falhar, segure BOOT, aperte e solte RST, solte BOOT e
+     grave de novo. Por essa entrada o 5Vin fica perto de 4,6 V, o que serve para o amplificador.
 
 **Bancada:** protoboard, jumpers (macho-macho e macho-fêmea), multímetro, cabo USB-C **de dados**.
 Planeje uns 22 jumpers no total (tela 9, touch 4, microfone 6, mais alimentação).
