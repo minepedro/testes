@@ -340,6 +340,29 @@ void loop() {
   Serial.println("aviso de aprovação"); tom(880, 120); tom(0, 60); tom(1320, 180); tom(0, 800);
   Serial.println("erro");             tom(300, 400);  tom(0, 1200);
 }</script>
+<script type="text/plain" id="code-botao">// Extra: botão tátil entre o GPIO 21 e o GND.
+// Sem apertar, o pino lê 1 (o resistor interno puxa para 3V3). Apertando, lê 0.
+// Abra o Monitor Serial em 115200.
+
+constexpr int PIN_BOTAO = 21;
+
+bool anterior = true;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+  pinMode(PIN_BOTAO, INPUT_PULLUP);  // pull-up interno: sem botão apertado o pino fica em 1
+  Serial.println("Botão pronto. Aperte e solte o botão.");
+}
+
+void loop() {
+  bool agora = digitalRead(PIN_BOTAO);  // 1 = solto, 0 = apertado
+  if (agora != anterior) {
+    Serial.println(agora ? "solto  (leitura 1)" : "APERTADO (leitura 0)");
+    anterior = agora;
+    delay(20);  // espera o ruído do contato passar (debounce)
+  }
+}</script>
 
 <script>
 (() => {
@@ -376,6 +399,8 @@ void loop() {
     M.pos = {}; A.forEach((p, i) => M.pos[p] = [MC0, MR0 + i]); B.forEach((p, i) => M.pos[p] = [cB, MR0 + i]);
     const F = (id, nome, de, ate, cor) => ({ id, nome, de, ate, cor, mm: Math.round(Math.hypot(de[0] - ate[0], de[1] - ate[1]) * 2.54 + 12) });
     const FA = (...a) => Object.assign(F(...a), { amp: true });   // fios do som (opcional)
+    // fios do botao (opcional): da solda do pino do ESP32 ate a borda da linha A; o botao fica fora da placa
+    const FB = (id, nome, de, cor) => ({ id, nome, de, ate: [de[0], 0], cor, fora: 'botão', botao: true, mm: 200 });
     FIOS = {
       esp3: F('esp3', 'ESP32 3V3 → barramento 3V3', [jcol(0), J1R], [jcol(0), B3], 'v33'),
       espg: F('espg', 'ESP32 GND → barramento GND', [jcol(21), J1R], [jcol(21), BG], 'gnd'),
@@ -403,6 +428,8 @@ void loop() {
       aDIN: FA('aDIN', 'Amplificador DIN → GPIO 18', furoA('DIN'), [gcol(18), J1R], 'i2s'),
       aGND: FA('aGND', 'Amplificador GND → GND do ESP32', furoA('GND'), [jcol(0), J3R], 'gnd'),   // B23: GND do próprio ESP32, pela borda; a corrente do som não passa pelo barramento do microfone
       aVIN: FA('aVIN', 'Amplificador VIN → 5V', furoA('VIN'), [jcol(20), J1R], 'v33'),
+      bSIG: FB('bSIG', 'Botão → GPIO 21', [jcol(RIGHT.indexOf('21')), J3R], 'tch'),
+      bGND: FB('bGND', 'Botão → GND', [jcol(20), J3R], 'gnd'),
     };
     const span = row => { const cs = Object.values(FIOS).filter(f => f.ate[1] === row).map(f => f.ate[0]); return [Math.min(...cs), Math.max(...cs)]; };
     SP3 = span(B3); SPG = span(BG);
@@ -445,7 +472,8 @@ void loop() {
       const d = `M${x(f.de[0])} ${y(f.de[1])} L${x(f.ate[0])} ${y(f.ate[1])}`, cor = COR[f.cor][0];
       if (!verso) return `<path d="${d}" stroke="${cor}" stroke-width="2.2" stroke-dasharray="5 5" opacity=".45" fill="none"/>`;
       const dim = o.sel && o.sel !== f.id, cur = novo(f.id) || o.sel === f.id;
-      return `<g opacity="${dim ? .22 : 1}">${cur ? `<path d="${d}" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" opacity=".5" fill="none"/>` : ''}<path d="${d}" stroke="#0009" stroke-width="6.5" stroke-linecap="round" fill="none"/><path d="${d}" stroke="${cor}" stroke-width="4.2" stroke-linecap="round" fill="none"/>${blob(f.de[0], f.de[1], 6.8)}${blob(f.ate[0], f.ate[1], 6.8)}</g>`;
+      const ponta = f.fora ? `<path d="M${x(f.ate[0]) - 6} ${y(f.ate[1]) + 4} L${x(f.ate[0])} ${y(f.ate[1]) + 14} L${x(f.ate[0]) + 6} ${y(f.ate[1]) + 4}" stroke="${cor}" stroke-width="3" fill="none"/>` : blob(f.ate[0], f.ate[1], 6.8);
+      return `<g opacity="${dim ? .22 : 1}">${cur ? `<path d="${d}" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" opacity=".5" fill="none"/>` : ''}<path d="${d}" stroke="#0009" stroke-width="6.5" stroke-linecap="round" fill="none"/><path d="${d}" stroke="${cor}" stroke-width="4.2" stroke-linecap="round" fill="none"/>${blob(f.de[0], f.de[1], 6.8)}${ponta}</g>`;
     };
 
     // barramentos (fio nu no verso; na frente nao aparece)
@@ -478,6 +506,8 @@ void loop() {
 
     // fios por cima das soldas dos soquetes
     Object.values(FIOS).forEach(f => { if (tem(f.id)) s += fio(f); });
+    const fora = Object.values(FIOS).filter(f => f.fora && tem(f.id));
+    if (fora.length) s += T((Math.min(...fora.map(f => x(f.ate[0]))) + Math.max(...fora.map(f => x(f.ate[0])))) / 2, y(0) + 32, '↓ para o ' + fora[0].fora + ' (fora da placa)', { size: 11, w: 700, fill: 'var(--fg)', halo: 'var(--card)' });
 
     if (verso) [[SP3, B3, 'var(--v33)', '3V3'], [SPG, BG, '#cfe0ef', 'GND']].forEach(([sp, r, cor, nome], i) => { if (tem(i ? 'bg' : 'b3')) s += T(x(sp[1]) + (verso ? -1 : 1) * 0 + (verso ? -24 : 24), y(r) - 12, nome, { w: 700, fill: cor, size: 12 }); });
 
@@ -540,7 +570,7 @@ void loop() {
       if (novo('c.amp')) lado.forEach(([f]) => s += halo(f[0], f[1]));
     }
     (o.sondas || []).forEach(([c, r, t, cor]) => { s += `<circle cx="${x(c)}" cy="${y(r)}" r="11" fill="${cor || 'var(--ruim)'}" stroke="#fff" stroke-width="2"/>` + T(x(c), y(r) + 4, t, { size: 10, w: 700, fill: '#fff', halo: cor || 'var(--ruim)' }); });
-    let vb = `0 0 ${W} ${H}`;
+    let vb = `0 0 ${W} ${H + (fora.length ? 28 : 0)}`;
     if (o.crop) { const [c1, c2, r1, r2] = o.crop, xs = [x(c1), x(c2)], ys = [y(r1), y(r2)]; vb = `${Math.min(...xs) - 26} ${Math.min(...ys) - 26} ${Math.abs(xs[1] - xs[0]) + 52} ${Math.abs(ys[1] - ys[0]) + 52}`; }
     return `<svg viewBox="${vb}" role="img" aria-label="Placa vista ${verso ? 'pelo verso' : 'pela frente'}">${s}</svg>`;
   }
@@ -925,6 +955,19 @@ void loop() {
       + `<text x="290" y="56" text-anchor="middle" font-size="11" fill="var(--muted)">fios trançados</text>`;
     return `<svg viewBox="0 0 430 220" role="img" aria-label="Fios soldados no alto-falante e presos no conector verde">${s}</svg>`;
   }
+  // botao tatil visto de cima: as 4 perninhas e o par em diagonal que recebe os fios
+  function figBotao() {
+    let s = `<rect x="130" y="70" width="110" height="110" rx="6" fill="#2a2a2a" stroke="#111" stroke-width="2"/><circle cx="185" cy="125" r="32" fill="#151515" stroke="#3a3a3a" stroke-width="3"/>`
+      + `<text x="120" y="121" text-anchor="end" font-size="11" fill="var(--muted)">botão tátil</text><text x="120" y="135" text-anchor="end" font-size="11" fill="var(--muted)">(visto de cima)</text>`;
+    const pernas = [[146, 70, -1], [224, 70, -1], [146, 180, 1], [224, 180, 1]];
+    pernas.forEach(([px, py, dir]) => s += `<rect x="${px - 5}" y="${dir < 0 ? py - 26 : py}" width="10" height="26" fill="#c9ced3" stroke="#8a9099"/>`);
+    s += `<path d="M146 44 L224 206" stroke="#e8a33a" stroke-width="2" stroke-dasharray="5 4" opacity=".8"/>`
+      + `<path d="M146 42 C146 28 110 30 10 30" stroke="#4a8fe0" stroke-width="5" fill="none"/><ellipse cx="146" cy="44" rx="9" ry="6" fill="var(--solda)" stroke="var(--solda-borda)"/>`
+      + `<path d="M224 208 C224 222 260 220 350 220" stroke="#2a2f35" stroke-width="5" fill="none"/><path d="M224 208 C224 222 260 220 350 220" stroke="#8a9099" stroke-width="1" opacity=".6" fill="none"/><ellipse cx="224" cy="206" rx="9" ry="6" fill="var(--solda)" stroke="var(--solda-borda)"/>`
+      + `<text x="10" y="18" font-size="12" font-weight="700" fill="var(--fg)">fio azul → B6 (GPIO 21)</text><text x="350" y="242" text-anchor="end" font-size="12" font-weight="700" fill="var(--fg)">fio preto → B3 (GND)</text>`
+      + `<text x="252" y="121" font-size="11" fill="#c77d14">perninhas</text><text x="252" y="135" font-size="11" fill="#c77d14">em diagonal</text>`;
+    return `<svg viewBox="0 0 360 250" role="img" aria-label="Botão tátil com os fios nas perninhas em diagonal">${s}</svg>`;
+  }
   // close do C4 (470 uF) deitado na placa, ao lado do soquete do amplificador
   const zoomCapA = vista => placa({ vista, tem: new Set(['b3', 's.amp', 'j.amp', 'aGND', 'aVIN', 'c.amp']), novo: new Set(), crop: [AC - 6, AC + 1, AR0 - 1, AR0 + 4] });   // AC + 1 deixa espaço para os nomes dos pinos, que ficam do lado de fora
   function figCapDeitado() {
@@ -947,7 +990,7 @@ void loop() {
   const CODE = id => document.getElementById('code-' + id).textContent;
   const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const bloco = (id, nome) => `<div class="codigo"><div class="cap"><span>${nome}</span><button type="button" data-copiar="${id}">Copiar</button></div><pre><code>${esc(CODE(id))}</code></pre></div>`;
-  const fiosTab = ids => `<div class="tab"><table><thead><tr><th></th><th>Fio</th><th>Sai do furo</th><th>Chega no furo</th><th>Corte</th></tr></thead><tbody>${ids.map(id => { const f = FIOS[id]; return `<tr class="fio" data-fio="${id}"><td><input type="checkbox" data-chk="fio.${id}" aria-label="feito: ${f.nome}"></td><td><span class="cor" style="background:${COR[f.cor][0]}"></span>${f.nome}<br><small style="color:var(--muted)">fio ${COR[f.cor][1]}</small></td><td class="num">${LN(f.de[1])}${f.de[0]}</td><td class="num">${LN(f.ate[1])}${f.ate[0]}</td><td class="num">${f.mm} mm</td></tr>`; }).join('')}</tbody></table></div><p class="nota">Toque numa linha para destacar o fio nos desenhos.</p>`;
+  const fiosTab = ids => `<div class="tab"><table><thead><tr><th></th><th>Fio</th><th>Sai do furo</th><th>Chega no furo</th><th>Corte</th></tr></thead><tbody>${ids.map(id => { const f = FIOS[id]; return `<tr class="fio" data-fio="${id}"><td><input type="checkbox" data-chk="fio.${id}" aria-label="feito: ${f.nome}"></td><td><span class="cor" style="background:${COR[f.cor][0]}"></span>${f.nome}<br><small style="color:var(--muted)">fio ${COR[f.cor][1]}</small></td><td class="num">${LN(f.de[1])}${f.de[0]}</td>${f.fora ? `<td>${f.fora}<br><small style="color:var(--muted)">fora da placa</small></td><td>uns 20 cm</td>` : `<td class="num">${LN(f.ate[1])}${f.ate[0]}</td><td class="num">${f.mm} mm</td>`}</tr>`; }).join('')}</tbody></table></div><p class="nota">Toque numa linha para destacar o fio nos desenhos.</p>`;
   const jumpTab = () => `<div class="tab"><table><thead><tr><th></th><th>Jumper</th><th>Ponta fêmea (na tela)</th><th>Ponta macho (furo da placa)</th></tr></thead><tbody>${TELA.map((p, i) => `<tr class="fio" data-jump="${i}"><td><input type="checkbox" data-chk="jump.${i}" aria-label="feito: jumper ${i + 1}"></td><td><span class="badge" style="background:${JCORES[i]};color:${i === 9 || i === 4 ? '#111' : '#fff'}">${i + 1}</span>${JNOMES[i]}</td><td>pino <b>${p}</b></td><td class="num">${LN(TR)}${T0 + i}</td></tr>`).join('')}
       <tr><td></td><td><span class="badge" style="background:var(--muted)">14</span>nenhum</td><td>pino <b>T_IRQ</b></td><td>fica sem jumper</td></tr></tbody></table></div><p class="nota">Toque numa linha para destacar o jumper no desenho.</p>`;
   // fio nu curto: emendar pedaços em furos que já recebem solda (no máximo 7 furos por pedaço = uns 20 mm)
@@ -976,7 +1019,8 @@ void loop() {
         <li>Fio sem capa para os barramentos (sobra de perna de resistor ou um fiozinho de cabo de rede descascado).</li>
         <li><b>13 jumpers macho-fêmea</b> de 10 a 20 cm (para a tela).</li>
         <li>Ferro, estanho, pasta de fluxo, sugador ou malha, alicate de corte, descascador, multímetro, paquímetro ou régua, caneta permanente, fita crepe.</li>
-        <li><b>Som (opcional, no fim do manual):</b> amplificador MAX98357A, alto-falante de 4 ou 8 Ω, <b>5 jumpers macho-fêmea de 20 cm</b>, 1 pedaço de 5 da barra fêmea (sobra) e 1 capacitor eletrolítico de 470 µF.</li></ul>
+        <li><b>Som (opcional, no fim do manual):</b> amplificador MAX98357A, alto-falante de 4 ou 8 Ω, <b>5 jumpers macho-fêmea de 20 cm</b>, 1 pedaço de 5 da barra fêmea (sobra) e 1 capacitor eletrolítico de 470 µF.</li>
+        <li><b>Botão (opcional, no fim do manual):</b> 1 botão tátil e 2 fios de uns 20 cm (pode ser jumper cortado).</li></ul>
         <p class="alerta">Nunca solde com o cabo USB ligado. Ferro sempre no suporte.</p>` });
     passo({ t: 'Treine numa sobra de placa', html: () => `<ol><li>Limpe a ponta do ferro e molhe com um pouco de estanho.</li><li>Encoste a ponta na <b>ilha e na perna ao mesmo tempo</b>. Conte 2 segundos.</li><li>Encoste o estanho <b>na ilha e na perna</b> (não no ferro). Ele escorre sozinho.</li><li>Tire o estanho, depois o ferro. Não mexa por 3 segundos.</li></ol><div class="fig">${figSolda()}</div>` });
     passo({ t: 'Distância entre as fileiras do ESP32', html: () => `<div class="fig">${figMedir()}</div><p>No seu, as fileiras ficaram nas linhas <b>B</b> e <b>L</b>: <b>10 furos</b> de distância (25,4 mm). O manual já está ajustado para isso.</p>` });
@@ -1023,7 +1067,7 @@ void loop() {
         <p class="alerta">No eletrolítico a polaridade importa: a faixa clara (−) vai no GND. Guarde os de 470 µF para o amplificador de som.</p>
         <div class="confere"><b>Confira (USB desligado):</b> entre 3V3 e GND não pode ficar apitando. Com o eletrolítico, um bipe curtinho que para sozinho é normal (é ele carregando).</div>`; } });
     passo({ t: 'Limpe e inspecione', html: () => `<ul><li>USB desligado. Álcool isopropílico e escova de dentes velha no verso para tirar o fluxo.</li><li>Com lupa: bolinhas de estanho soltas, fios de cobre soltos, juntas opacas. Refaça o que estiver feio.</li></ul>` });
-    passo({ t: 'Confira tudo com o multímetro', vista: true, novo: [], html: () => `<p>USB desligado. Em continuidade, cada linha tem que <b>apitar</b>:</p>${fiosTab(Object.keys(FIOS).filter(k => !FIOS[k].amp))}` });
+    passo({ t: 'Confira tudo com o multímetro', vista: true, novo: [], html: () => `<p>USB desligado. Em continuidade, cada linha tem que <b>apitar</b>:</p>${fiosTab(Object.keys(FIOS).filter(k => !FIOS[k].amp && !FIOS[k].botao))}` });
     passo({ t: 'Grave o mascote', vista: true, novo: [], esp: true, mic: true, html: () => `<ol><li>Abra a pasta do mascote no Arduino IDE (com o seu <code>config.h</code>).</li><li>ESP32S3 Dev Module, PSRAM <b>OPI PSRAM</b>, porta COM5, Upload.</li><li>O mascote aparece e mostra as sessões, como na protoboard.</li></ol><p class="dica">Quando a ST7796 chegar, você só troca os jumpers da tela. A placa continua igual.</p>` });
     parte('Som (opcional)');
     passo({ t: 'Prepare o amplificador', html: () => `<p>O amplificador <b>MAX98357A</b> recebe o som do ESP32 por 3 fios de sinal e empurra o alto-falante. Confira os nomes impressos na sua plaquinha: <b>LRC, BCLK, DIN, GAIN, SD, GND e VIN</b>.</p><div class="fig">${figAmpPeca()}</div>
@@ -1061,6 +1105,14 @@ void loop() {
         <p class="alerta">A faixa clara (−) fica no lado do GND. Ao contrário, o capacitor esquenta e pode estourar.</p>
         <details><summary>Se não funcionar</summary><ul><li><b>Mudo:</b> confira os jumpers pela tabela do passo anterior, e com o multímetro, de cada furo do soquete até o pino do ESP32.</li><li><b>Estalos:</b> confira o capacitor (a faixa clara no GND).</li><li><b>Som falhando com volume alto:</b> o USB do computador não dá conta; deixe o <code>VOLUME</code> em 0.25.</li></ul></details>
         <p class="dica"><b>Depois do teste, grave o mascote de novo:</b> ele toca os sons sozinho (bipe ao gravar e ao enviar a voz, “plim” quando uma sessão termina, aviso quando pede aprovação, e outros). No Camarim, cada animação toca o seu som. No <code>config.h</code>, <code>#define SOM 0</code> desliga e <code>#define SOM_VOLUME 0.4f</code> ajusta o volume (0 a 1).</p>` });
+    parte('Botão (opcional)');
+    passo({ t: 'Fios do botão', vista: true, novo: ['bSIG', 'bGND'], fios: ['bSIG', 'bGND'], antes: 'Desligue o USB e tire o ESP32.', html: () => `<p>O botão fica <b>na frente da caixa</b>, à direita da grade do microfone, e se liga à placa por <b>2 fios de uns 20 cm</b> (pode ser jumper cortado). Com 20 cm sobra folga para a bandeja deslizar.</p><div class="fig" style="max-width:420px">${figBotao()}</div>
+        <ol><li>Corte 2 fios de uns 20 cm, um <b>azul</b> e um <b>preto</b>. Descasque 3 mm de cada ponta e estanhe.</li><li>No verso da placa, solde o <b>azul na solda do B6</b> (GPIO 21) e o <b>preto na solda do B3</b> (GND), do mesmo jeito dos outros fios. Leve os dois até a borda da linha A.</li><li>Na outra ponta, solde cada fio numa perninha do botão, <b>em diagonal</b>, como no desenho. Assim você sempre acerta os dois lados do botão, porque as perninhas são ligadas em pares por dentro.</li><li>Trance os dois fios: fica mais arrumado e não pega ruído.</li></ol>
+        <div class="confere"><b>Confira (USB desligado):</b><span>B6 com B3 → <b>apita só com o botão apertado</b>. Solto, não pode apitar.</span></div>` });
+    passo({ t: 'Teste do botão', html: () => `<ol><li>Encaixe o ESP32 e ligue o USB (entrada USB).</li><li>Grave o programa abaixo e abra o Monitor Serial (115200).</li><li>Aperte e solte o botão: aparece <b>APERTADO</b> e <b>solto</b>.</li></ol>
+        ${bloco('botao', 'extra_botao.ino')}
+        <p class="dica"><b>Depois grave o mascote de novo.</b> No mascote: <b>1 clique</b> acorda do cochilo; <b>segurar</b> grava a voz (com o bipe) e <b>soltar</b> envia, igual a segurar a tela.</p>
+        <details><summary>Se não funcionar</summary><ul><li><b>Sempre “solto”:</b> fio solto no B6 ou no botão, ou as duas perninhas do mesmo lado (troque para a diagonal).</li><li><b>Sempre “APERTADO”:</b> o fio azul encostou no GND, ou as perninhas usadas são as que já ficam ligadas por dentro.</li></ul></details>` });
     return P;
   }
 

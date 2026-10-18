@@ -1956,6 +1956,39 @@ void lerToque(uint32_t agora) {
   }
 }
 
+// ---- botao fisico (opcional): GPIO 21 ao GND, com o pull-up interno ----------------------------
+// 1 clique acorda o mascote do cochilo; segurar grava a voz e soltar envia, igual a segurar a tela.
+constexpr int PIN_BOTAO = 21;
+struct { bool apertado = false, falando = false; uint32_t desde = 0, mudou = 0; } botao;
+
+void lerBotao(uint32_t agora) {
+  bool apertado = digitalRead(PIN_BOTAO) == LOW;
+  if (apertado != botao.apertado) {
+    if (agora - botao.mudou < 30) return;   // ignora a trepidacao do contato
+    botao.mudou = agora;
+    botao.apertado = apertado;
+    if (apertado) {
+      botao.desde = agora;
+      ultimaAtividade = agora;
+      if (animId == A_COCHILO) {   // acorda; esse aperto nao grava nada
+        pararAnim(); cochiloAuto = false;
+        if (tela == T_CAMARIM) redesenharColuna();
+        botao.falando = true;
+      }
+      return;
+    }
+    if (botao.falando) { botao.falando = false; if (voz.fase == V_GRAVANDO) terminarFala(); }
+    else tocarSom(S_CLIQUE);
+    return;
+  }
+  bool podeFalar = (tela == T_MASCOTE || tela == T_SESSAO) && voz.fase == V_NADA && trabProposito == PR_NADA && !toque.ativo;
+  if (apertado && !botao.falando && agora - botao.desde > 300 && podeFalar) {
+    botao.falando = true;
+    if (!micOk) avisar("microfone nao iniciou: confira os fios", C_BAD);
+    else { tocarSom(S_GRAVAR); nAmostras = 0; gravando = true; voz.fase = V_GRAVANDO; entrar(OUVINDO); }
+  }
+}
+
 // ---- programa principal ---------------------------------------------------------------------
 uint32_t ultimoQuadro = 0;
 
@@ -2013,6 +2046,7 @@ void setup() {
   trava = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(tarefaRede, "rede", 12288, nullptr, 1, nullptr, 0);
 
+  pinMode(PIN_BOTAO, INPUT_PULLUP);   // sem botao ligado o pino fica em 1 (solto)
   audio = (int16_t *)ps_malloc(MAX_AMOSTRAS * sizeof(int16_t));
 #if SOM
   mic.setPins(PIN_MIC_SCK, PIN_MIC_WS, PIN_AMP_DIN, PIN_MIC_SD);   // full duplex: microfone no 17, som no 18
@@ -2045,6 +2079,7 @@ void loop() {
   if (redeVersao != versaoVista) dadosNovos();
   resultadoRede();
   lerToque(agora);
+  lerBotao(agora);
   // aviso que acabou de expirar na lista/menu: redesenha para apagar a faixa
   static bool avisoAtivo = false;
   bool av = millis() < voz.avisoAte;

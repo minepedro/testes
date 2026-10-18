@@ -229,7 +229,12 @@ Nada disto foi testado na placa ainda; me conte o que aparecer.
 ## Etapa opcional: botão físico
 
 Um botão tátil entre o **GPIO 21** e o **GND** (resistor pull-up interno do ESP32; sem apertar lê 1, apertado lê 0).
-Teste: `firmware/testes/extra_botao`. Está na Parte 2 do manual interativo (`hardware/manual-placa-ilhada.html`).
+Na placa ilhada são 2 fios de uns 20 cm soldados no verso: azul em **B6** (GPIO 21) e preto em **B3** (GND).
+No botão, use duas perninhas **em diagonal** (as perninhas são ligadas em pares por dentro).
+Teste: `firmware/testes/extra_botao`. Passos 34 e 35 do manual visual (`hardware/manual-visual-placa-ilhada-ili9488.html`).
+
+No mascote: **1 clique** acorda do cochilo; **segurar** (mais de 0,3 s) grava a voz com o bipe, como segurar a tela;
+**soltar** envia. Um clique fora do cochilo só faz o bipe curto.
 
 ## Etapa opcional: som
 
