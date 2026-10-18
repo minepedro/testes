@@ -84,7 +84,7 @@ O touch resistivo funciona **apertando** e precisa de calibração (x_min, x_max
 
 | Pino do amplificador | ESP32-S3 | Observação |
 |---|---|---|
-| VIN | 5V | Dá mais volume que 3,3 V |
+| VIN | 5V | Dá mais volume que 3,3 V. Na placa YD o pino se chama 5Vin e só entrega 5 V com a ponte IN-OUT fechada (gota de solda nos dois quadradinhos ao lado do LED RGB) |
 | GND | GND | |
 | BCLK | GPIO 15 | Compartilha com o microfone |
 | LRC | GPIO 16 | Compartilha com o microfone |
