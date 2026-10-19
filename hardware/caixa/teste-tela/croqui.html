@@ -11,7 +11,7 @@
   --bg: #E6E9ED; --folha: #FAFAF9; --tinta: #1B2130; --mudo: #586172; --linha: #CBD0D8;
   --cota: #1E5BB8; --novo: #D46F0B; --sup: #7A4ED0; --ok: #24804F; --erro: #BF3326; --grade: rgba(30, 91, 184, .07);
   --bege: #DCD5C3; --bege-borda: #A89F88; --chanfro: #C7BFA9; --tela: #23272F; --sobre-tela: #C9D1DC;
-  --pcb-tela: #B3322B; --vidro: #272C34; --contorno: rgba(0, 0, 0, .35);
+  --pcb-tela: #B3322B; --vidro: #272C34; --contorno: rgba(0, 0, 0, .35); --solda: #9AA3AD;
   --f-titulo: "Pixelify Sans", "Courier New", monospace;
   --f-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -21,7 +21,7 @@
     --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
     --cota: #78AAFF; --novo: #FF9B42; --sup: #B597FF; --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06);
     --bege: #BDB5A2; --bege-borda: #8C846F; --chanfro: #A39B87; --tela: #0B0D11; --sobre-tela: #8E97A5;
-    --pcb-tela: #A02D27; --vidro: #0B0D11; --contorno: rgba(255, 255, 255, .22);
+    --pcb-tela: #A02D27; --vidro: #0B0D11; --contorno: rgba(255, 255, 255, .22); --solda: #C3CAD2;
     color-scheme: dark;
   }
 }
@@ -29,7 +29,7 @@
   --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
   --cota: #78AAFF; --novo: #FF9B42; --sup: #B597FF; --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06);
   --bege: #BDB5A2; --bege-borda: #8C846F; --chanfro: #A39B87; --tela: #0B0D11; --sobre-tela: #8E97A5;
-  --pcb-tela: #A02D27; --vidro: #0B0D11; --contorno: rgba(255, 255, 255, .22);
+  --pcb-tela: #A02D27; --vidro: #0B0D11; --contorno: rgba(255, 255, 255, .22); --solda: #C3CAD2;
   color-scheme: dark;
 }
 body { background: var(--bg); color: var(--tinta); font: 16px/1.5 var(--f-texto); }
@@ -52,6 +52,7 @@ h2 { margin: 0; font: 500 22px/1.2 var(--f-titulo); }
   background-size: 16px 16px;
 }
 .desenho svg { display: block; width: 100%; height: auto; }
+#d-muda-corte svg { max-width: 660px; margin: 0 auto; }
 .desenho figcaption { padding: 6px 4px 2px; font-size: 13px; color: var(--mudo); }
 .detalhes, .duas { display: grid; gap: 14px; }
 @media (min-width: 760px) { .detalhes, .duas { grid-template-columns: 1fr 1fr; align-items: start; } }
@@ -87,30 +88,40 @@ svg .rot-forte { fill: var(--tinta); font-family: var(--f-texto); font-weight: 6
 svg .vazio { fill: var(--folha); stroke: var(--bege-borda); }
 svg .torre { fill: var(--chanfro); stroke: var(--bege-borda); }
 svg .oculto.inserto { stroke: var(--erro); }
+svg .apoio { fill: var(--chanfro); stroke: var(--bege-borda); }
+svg .solda { fill: var(--solda); stroke: var(--contorno); }
+svg .conector { fill: var(--tela); }
+svg .halo { paint-order: stroke; stroke: var(--folha); stroke-linejoin: round; }
 </style>
 
 <main class="pagina">
   <header>
     <p class="sobre">Mascote do Claude · caixa Mini Mac</p>
     <h1>Peça de teste da tela</h1>
-    <p class="lead">Antes da caixa inteira, duas peças pequenas para provar o encaixe e a fixação da tela: a moldura da frente, com a janela, o bolso do vidro, 4 pininhos nos furos da tela e 4 insertos M3 nos cantos; e a moldura de trás, que aperta a placa com 4 parafusos M3. Esta é a segunda versão do teste; os arquivos já foram gerados com estas medidas e conferidos.</p>
+    <p class="lead">Antes da caixa inteira, duas peças pequenas para provar o encaixe e a fixação da tela: a moldura da frente, com a janela, o bolso do vidro, 4 pininhos nos furos da tela e 4 insertos M3 nos cantos; e a moldura de trás, que aperta a placa com 4 parafusos M3. Esta é a terceira versão do teste: a placa apoia só nos 4 cantos e o encaixe dela tem 0,4 de folga de cada lado. Os arquivos já foram gerados com estas medidas e conferidos.</p>
   </header>
 
   <section class="prancha confirmar" aria-labelledby="h-muda">
-    <h2 id="h-muda">O que muda no segundo teste</h2>
-    <p>No primeiro teste o vidro entrou perfeito, os pininhos entraram e a janela mostrou a imagem inteira. O que não entrou foi a placa vermelha, no encaixe de trás. Então o encaixe da placa fica 1 mm maior de cada lado, à esquerda e à direita. O bolso do vidro não muda. Em laranja, o que entra; tracejado, como era. Os arquivos já foram gerados com estas medidas e conferidos.</p>
-    <figure class="desenho"><div id="d-muda"></div><figcaption>De frente, com a placa vermelha clarinha por cima. O topo e o fundo do encaixe continuam iguais; a profundidade continua 1,4.</figcaption></figure>
+    <h2 id="h-muda">O que muda no terceiro teste: apoio só nos 4 cantos</h2>
+    <p>Você descobriu por que a placa não assentava: do lado dos pinos, as soldas do conector saem na frente da placa e batiam na faixa onde ela apoia. A largura não era o problema. Então mudam duas coisas. A placa passa a apoiar só nos 4 cantos, onde estão os pininhos, com o meio das duas faixas 2 mm mais fundo. E o encaixe da placa volta a ter folga pequena: 0,4 de cada lado, 96,8 em vez de 98,6. Em laranja, o rebaixo. Os arquivos já foram gerados com estas medidas e conferidos.</p>
+    <figure class="desenho"><div id="d-muda"></div><figcaption>De frente, com a placa vermelha clarinha por cima e as soldas em cinza. O vidro, os pininhos e a janela continuam iguais.</figcaption></figure>
+    <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Cortada ao comprido pela fileira de soldas, a metade de cima (a de baixo é igual), com a frente para baixo, como sai da impressora. A posição e a altura das soldas são estimativa.</figcaption></figure>
     <div class="duas">
-      <figure class="desenho"><div id="d-muda-canto"></div><figcaption>O canto de cima à esquerda, de perto: tracejado, onde a parede do encaixe estava; em laranja, onde fica. A parede até o inserto, medida no arquivo, fica com 2,0.</figcaption></figure>
-      <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Em corte, na ponta esquerda: a faixa laranja é o 1 mm a mais do encaixe.</figcaption></figure>
-      <figure class="desenho"><div id="d-muda-corte-dir"></div><figcaption>Em corte, na ponta direita: o outro 1 mm.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-esq"></div><figcaption>Cortada atravessada na altura das soldas, ponta esquerda. O bolso do vidro continua com 2 mm de parede para segurar o vidro.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-dir"></div><figcaption>O mesmo corte na ponta direita. Aqui não tem solda, mas o rebaixo entra igual para os 4 cantos ficarem do mesmo jeito.</figcaption></figure>
     </div>
-    <p>A moldura de trás acompanha: o vão dela também cresce 1 mm à esquerda. A antiga ainda serve, então só a moldura da frente precisa ser impressa de novo.</p>
+    <ul>
+      <li><b>Encaixe da placa:</b> 96,8 de largura, com 0,4 de folga de cada lado. Em cima e embaixo continua 0,3.</li>
+      <li><b>Apoios:</b> 7 mm em cima e 7 mm embaixo, nos dois lados. Cobrem os apoios da moldura de trás (5,6), então o aperto passa reto pela placa.</li>
+      <li><b>Rebaixo:</b> 2 mm mais fundo, nos 40,8 mm do meio.</li>
+      <li><b>Para medir com o paquímetro:</b> quanto a solda mais alta sai da placa (estimei 1,5) e a distância da borda de cima da placa até a primeira solda (estimei uns 10). Se a primeira solda estiver a menos de 8 mm da borda, encurto os apoios.</li>
+      <li><b>A moldura de trás não muda:</b> qualquer uma das duas que você já imprimiu serve, porque ela aperta os cantos da placa e não depende da largura do encaixe. A caixa recebe as mesmas mudanças.</li>
+    </ul>
   </section>
 
   <section class="prancha" aria-labelledby="h-frente">
     <h2 id="h-frente">De frente</h2>
-    <p>Como você vai ver a peça, com o mascote em pé e os pinos da tela à esquerda. O tracejado é o que fica escondido atrás: os bolsos, os pininhos e, em vermelho, os furos dos insertos. Medidas em mm.</p>
+    <p>Como você vai ver a peça, com o mascote em pé e os pinos da tela à esquerda. O tracejado é o que fica escondido atrás: os bolsos, o rebaixo das soldas, os pininhos e, em vermelho, os furos dos insertos. Medidas em mm.</p>
     <figure class="desenho"><div id="d-frente"></div><figcaption>A janela é a parte que acende com 0,5 mm a mais de cada lado, com um chanfro de 1 mm em volta.</figcaption></figure>
   </section>
 
@@ -135,7 +146,8 @@ svg .oculto.inserto { stroke: var(--erro); }
       <thead><tr><th>O quê</th><th>Medida</th><th>Origem</th></tr></thead>
       <tbody>
         <tr><td>Placa vermelha</td><td class="num">96 × 54,8</td><td><span class="tag sua">sua</span> 54,8 = 0,3 + 54,2 + 0,3</td></tr>
-        <tr><td>Encaixe da placa (por trás)</td><td class="num">98,6 × 55,4 × 1,4</td><td><span class="tag sua">seu teste</span> 1 mm a mais de cada lado, porque a placa não entrou; 0,3 de folga nos outros lados; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
+        <tr><td>Encaixe da placa (por trás)</td><td class="num">96,8 × 55,4 × 1,4</td><td><span class="tag sua">sua</span> 0,4 de folga de cada lado na largura (a largura não era o problema) e 0,3 em cima e embaixo; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
+        <tr><td>Apoio da placa</td><td class="num">4 cantos de 7; o meio 2,0 mais fundo</td><td><span class="tag sua">seu teste</span> as soldas do conector batiam na faixa onde a placa apoiava</td></tr>
         <tr><td>Vidro: da borda da placa até o vidro</td><td class="num">6,1 esq. · 5,7 dir. · 0,3 cima e baixo</td><td><span class="tag sua">sua</span></td></tr>
         <tr><td>Vidro: largura</td><td class="num">84,2</td><td><span class="tag sua">sua</span> fecha: 6,1 + 84,2 + 5,7 = 96</td></tr>
         <tr><td>Bolso do vidro</td><td class="num">85,0 de largura, altura toda</td><td><span class="tag sua">seu teste</span> 0,4 de folga de cada lado: o vidro entrou perfeito</td></tr>
@@ -168,6 +180,7 @@ svg .oculto.inserto { stroke: var(--erro); }
     <ol class="conferir">
       <li><b>Os 4 pininhos entram nos furos</b> sem forçar. Se não entrarem, os furos não estão a 1 mm da borda (antes você tinha medido 89,5 × 50).</li>
       <li><b>O vidro assenta no bolso</b> e a placa fica um tiquinho para fora atrás.</li>
+      <li><b>A placa assenta firme nos 4 cantos</b>, sem balançar, e as soldas não encostam no fundo do rebaixo.</li>
       <li><b>De frente, toda a parte que acende aparece</b>, com uma bordinha escura igual em volta. Ligue o mascote para ver.</li>
       <li><b>Depois de parafusar, a tela fica firme</b>, a moldura de trás não entorta e nada racha em volta dos insertos.</li>
     </ol>
@@ -180,12 +193,17 @@ svg .oculto.inserto { stroke: var(--erro); }
   const PCB = [96, 54.8], FOLGA = .3, PAREDE = 7;
   const X0 = -FOLGA - PAREDE, X1 = PCB[0] + FOLGA + PAREDE, Y0 = -FOLGA - PAREDE, Y1 = PCB[1] + FOLGA + PAREDE;
   const BOLSO_V = [5.7, 90.7];                    // o vidro entrou perfeito no primeiro teste
-  const ENC_ESQ = -FOLGA - 1, ENC_DIR = PCB[0] + FOLGA + 1;   // encaixe da placa: 1 mm a mais de cada lado, a placa não entrou no primeiro teste                 // bolso do vidro, na largura (altura toda do encaixe da placa)
+  const FOLGA_LADO = .4, ENC_ESQ = -FOLGA_LADO, ENC_DIR = PCB[0] + FOLGA_LADO;   // encaixe da placa: 0,4 de folga na largura; o +1 mm do segundo teste sai (não era a largura)
+  const ENC_V2 = PCB[0] + 2 * (FOLGA + 1);                                         // largura do encaixe no segundo teste, só para a cota
   const VIDRO = [6.1, 90.3, .3, 54.5];          // onde o vidro está pelas bordas medidas
   const JANELA = [7.6, 83.8, 1.8, 53.0], CH = 1;
   const FUROS = [[2.8, 2.8], [93.2, 2.8], [2.8, 52], [93.2, 52]];       // furos da tela a 1 mm da borda
   const INSERTOS = [[-3.6, -3.6], [99.6, -3.6], [-3.6, 58.4], [99.6, 58.4]], INSERTO_R = 2, TORRE_R = 3.5, CANTO = [5.0, 5.6];
   const PELE = 1.6, Z_APOIO = 5.6, Z_TOTAL = 7.0, PINO_R = 1.4, PINO_H = 1.4;
+  // terceiro teste: a placa apoia só nos 4 cantos; o meio das faixas fica 2 mm mais fundo por causa das soldas do conector
+  const REB = 2.0, APOIO_V = 7.0, REB_V = [APOIO_V, PCB[1] - APOIO_V];
+  const SOLDA_U = 2.6, SOLDA_H = 1.5, SOLDA_R = .9;   // estimativa até medir: conector de 14 pinos no meio da borda
+  const SOLDAS = Array.from({ length: 14 }, (_, k) => PCB[1] / 2 + (k - 6.5) * 2.54);
 
   // ---------------- cotas ----------------
   const r2 = n => Math.round(n * 100) / 100;
@@ -217,6 +235,7 @@ svg .oculto.inserto { stroke: var(--erro); }
       : (lado === 'esq' ? t(x - 1.4 * U, m + FS() * .35, txt, 'end') : t(x + 1.4 * U, m + FS() * .35, txt, 'start'));
     return `<path class="cota-e" ${sw()} d="${ext(x1, y1)} ${ext(x2 ?? x1, y2)}"/><path class="cota-l" ${sw()} d="${lin}"/>${peq ? seta(x, y1, 'b') + seta(x, y2, 'c') : seta(x, y1, 'c') + seta(x, y2, 'b')}${tx}`;
   }
+  const halo = (x, y, s, anc = 'start', cls = 'rot-forte') => `<text class="${cls} halo" x="${r2(x)}" y="${r2(y)}" font-size="${r2(FS() * .95)}" stroke-width="${r2(.7 * U)}" text-anchor="${anc}">${s}</text>`;
   const chamada = (x, y, bx, by, txt, anc = 'start') => `<path class="cota-l" ${sw()} d="M${r2(x)} ${r2(y)} L${r2(bx)} ${r2(by)}"/><circle class="cota-s" cx="${r2(x)}" cy="${r2(y)}" r="${r2(.45 * U)}"/>${t(bx + (anc === 'start' ? .6 : -.6) * U, by + FS() * .35, txt, anc)}`;
   const svg = (x, y, w, h, rotulo, corpo) => `<svg viewBox="${r2(x)} ${r2(y)} ${r2(w)} ${r2(h)}" role="img" aria-label="${rotulo}">${corpo}</svg>`;
 
@@ -231,6 +250,7 @@ svg .oculto.inserto { stroke: var(--erro); }
       + t((JANELA[0] + JANELA[1]) / 2, (JANELA[2] + JANELA[3]) / 2 + 2.2 * U, `${fmt(JANELA[1] - JANELA[0])} × ${fmt(JANELA[3] - JANELA[2])}`, 'middle', 'rot-claro');
     const o = `stroke-width="${r2(.22 * U)}"`;
     s += rect(ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA, 'oculto', o) + rect(BOLSO_V[0], BOLSO_V[1], -FOLGA, PCB[1] + FOLGA, 'oculto', o);
+    [[ENC_ESQ, BOLSO_V[0]], [BOLSO_V[1], ENC_DIR]].forEach(([a, b]) => s += rect(a, b, REB_V[0], REB_V[1], 'oculto', o));
     FUROS.forEach(([x, y]) => s += `<circle class="oculto" ${o} cx="${x}" cy="${y}" r="${PINO_R}"/>`);
     INSERTOS.forEach(([x, y]) => s += `<circle class="oculto inserto" ${o} cx="${x}" cy="${y}" r="${INSERTO_R}"/>`);
     // marca do lado dos pinos
@@ -251,13 +271,13 @@ svg .oculto.inserto { stroke: var(--erro); }
   const Y = z => r2(Z_TOTAL - z);
   const poli = (pts, cls) => `<polygon class="${cls}" points="${pts.map(([x, z]) => `${r2(x)},${Y(z)}`).join(' ')}"/>`;
   function hachura() { return `<defs><pattern id="hachura" width="1.2" height="1.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.2" height="1.2" class="bege" stroke="none"/><path d="M0 0 V1.2" stroke="var(--bege-borda)" stroke-width=".25"/></pattern></defs>`; }
-  function fantasma(xa, xb) {
+  function fantasma(xa, xb, furos = true) {
     // placa vermelha apoiada em Z_APOIO, com os furos em volta dos pininhos; vidro e tela na frente dela
     let s = '';
     const pcb = [Math.max(xa, 0), Math.min(xb, PCB[0])];
     if (pcb[1] > pcb[0]) {
       let x = pcb[0];
-      FUROS.slice(0, 2).map(([fx]) => [fx - 1.8, fx + 1.8]).filter(([a, b]) => b > pcb[0] && a < pcb[1]).forEach(([a, b]) => {
+      (furos ? FUROS.slice(0, 2) : []).map(([fx]) => [fx - 1.8, fx + 1.8]).filter(([a, b]) => b > pcb[0] && a < pcb[1]).forEach(([a, b]) => {
         if (a > x) s += `<rect class="fantasma-pcb" x="${r2(x)}" y="${Y(Z_APOIO + 1.6)}" width="${r2(a - x)}" height="1.6"/>`;
         x = b;
       });
@@ -267,15 +287,32 @@ svg .oculto.inserto { stroke: var(--erro); }
     if (v[1] > v[0]) s += `<rect class="fantasma-vidro" x="${r2(v[0])}" y="${Y(Z_APOIO)}" width="${r2(v[1] - v[0])}" height="3.8"/>`;
     return s;
   }
-  function detalhe(lado, comAntes = false) {
+  function detalhe(lado, comAntes = false, soldas = false) {
     const esq = lado === 'esq', xa = esq ? X0 - .01 : 79.5, xb = esq ? 18 : X1 + .01;
     U = (xb - xa + 14) / 120;
-    const pts = esq
+    const ZR = Z_APOIO - REB;
+    const pts = soldas
+      ? (esq ? [[X0, 0], [JANELA[0] - CH, 0], [JANELA[0], CH], [JANELA[0], PELE], [BOLSO_V[0], PELE], [BOLSO_V[0], ZR], [ENC_ESQ, ZR], [ENC_ESQ, Z_TOTAL], [X0, Z_TOTAL]]
+             : [[JANELA[1], PELE], [JANELA[1], CH], [JANELA[1] + CH, 0], [X1, 0], [X1, Z_TOTAL], [ENC_DIR, Z_TOTAL], [ENC_DIR, ZR], [BOLSO_V[1], ZR], [BOLSO_V[1], PELE]])
+      : esq
       ? [[X0, 0], [JANELA[0] - CH, 0], [JANELA[0], CH], [JANELA[0], PELE], [BOLSO_V[0], PELE], [BOLSO_V[0], Z_APOIO], [FUROS[0][0] + PINO_R, Z_APOIO], [FUROS[0][0] + PINO_R, Z_APOIO + PINO_H], [FUROS[0][0] - PINO_R, Z_APOIO + PINO_H], [FUROS[0][0] - PINO_R, Z_APOIO], [ENC_ESQ, Z_APOIO], [ENC_ESQ, Z_TOTAL], [X0, Z_TOTAL]]
       : [[JANELA[1], PELE], [JANELA[1], CH], [JANELA[1] + CH, 0], [X1, 0], [X1, Z_TOTAL], [ENC_DIR, Z_TOTAL], [ENC_DIR, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO], [BOLSO_V[1], Z_APOIO], [BOLSO_V[1], PELE]];
     const corte = pts.map(([x, z]) => [Math.min(Math.max(x, xa), xb), z]);
-    let s = hachura() + `<g stroke-width="${r2(.25 * U)}">${poli(corte, 'corte hachura')}</g>` + fantasma(xa, xb);
+    let s = hachura() + `<g stroke-width="${r2(.25 * U)}">${poli(corte, 'corte hachura')}</g>` + fantasma(xa, xb, !soldas);
     const ext = esq ? X0 : X1, ladoTxt = esq ? 'esq' : 'dir', xc = esq ? X0 - 4 * U : X1 + 4 * U;
+    if (soldas) {
+      const a = esq ? ENC_ESQ : BOLSO_V[1], b = esq ? BOLSO_V[0] : ENC_DIR;
+      s += `<rect class="novo-faixa" x="${r2(a)}" y="${Y(Z_APOIO)}" width="${r2(b - a)}" height="${REB}"/>`
+        + `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${r2(a)} ${Y(Z_APOIO)} H${r2(b)}"/>`;
+      if (esq) s += `<path class="solda" stroke-width="${r2(.15 * U)}" d="M${r2(SOLDA_U - SOLDA_R)} ${Y(Z_APOIO)} Q${SOLDA_U} ${Y(Z_APOIO - 2 * SOLDA_H)} ${r2(SOLDA_U + SOLDA_R)} ${Y(Z_APOIO)} Z"/>`
+        + chamada(SOLDA_U, Y(Z_APOIO - SOLDA_H), SOLDA_U + 3, Y(Z_TOTAL) - 3.5 * U, 'solda do conector', 'start');
+      s += cV(Y(PELE), Y(0), xc, ext, ext, fmt(PELE), ladoTxt) + cV(Y(ZR), Y(PELE), xc, esq ? BOLSO_V[0] : BOLSO_V[1], ext, fmt(ZR - PELE), ladoTxt)
+        + cV(Y(Z_APOIO), Y(ZR), xc, ext, ext, fmt(REB), ladoTxt) + cV(Y(Z_TOTAL), Y(Z_APOIO), xc, ext, esq ? ENC_ESQ : ENC_DIR, fmt(Z_TOTAL - Z_APOIO), ladoTxt)
+        + cV(Y(Z_TOTAL), Y(0), esq ? X0 - 10 * U : X1 + 10 * U, ext, ext, fmt(Z_TOTAL), ladoTxt)
+        + (esq ? t(10.5, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro') : t(84, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro'))
+        + t((xa + xb) / 2, Y(0) + 7.5 * U, 'frente (fica na mesa da impressora)', 'middle', 'rot');
+      return svg(xa - (esq ? 14 : 2) * U, -6 * U, xb - xa + 16 * U, Z_TOTAL + 15 * U, esq ? 'Corte atravessado na altura das soldas, ponta esquerda' : 'Corte atravessado na altura das soldas, ponta direita', s);
+    }
     s += cV(Y(PELE), Y(0), xc, ext, ext, fmt(PELE), ladoTxt) + cV(Y(Z_APOIO), Y(PELE), xc, esq ? BOLSO_V[0] : BOLSO_V[1], ext, fmt(Z_APOIO - PELE), ladoTxt)
       + cV(Y(Z_TOTAL), Y(Z_APOIO), xc, ext, esq ? ENC_ESQ : ENC_DIR, fmt(Z_TOTAL - Z_APOIO), ladoTxt)
       + cV(Y(Z_TOTAL), Y(0), esq ? X0 - 10 * U : X1 + 10 * U, ext, ext, fmt(Z_TOTAL), ladoTxt);
@@ -296,43 +333,60 @@ svg .oculto.inserto { stroke: var(--erro); }
     return svg(xa - (esq ? 14 : 2) * U, -6 * U, xb - xa + 16 * U, Z_TOTAL + 15 * U, esq ? 'Corte da ponta esquerda' : 'Corte da ponta direita', s);
   }
 
-  function mudanca() {
+  function rebaixo() {
     U = (X1 - X0 + 34) / 120;
-    const o = `stroke-width="${r2(.22 * U)}"`, E = [ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA], D0 = PCB[0] + FOLGA;
+    const o = `stroke-width="${r2(.22 * U)}"`, E = [ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA];
     const rect = (x1, x2, y1, y2, cls, extra = '') => `<rect class="${cls}" x="${r2(x1)}" y="${r2(y1)}" width="${r2(x2 - x1)}" height="${r2(y2 - y1)}" ${extra}/>`;
+    const faixas = [[E[0], BOLSO_V[0]], [BOLSO_V[1], E[1]]];
     let s = rect(X0, X1, Y0, Y1, 'bege', `rx="3" stroke-width="${r2(.3 * U)}" opacity=".7"`)
       + rect(0, PCB[0], 0, PCB[1], 'fantasma-pcb', 'style="opacity:.16"')
-      + rect(BOLSO_V[0], BOLSO_V[1], E[2], E[3], 'oculto', o)
-      + rect(E[0], -FOLGA, E[2], E[3], 'novo-faixa') + rect(D0, E[1], E[2], E[3], 'novo-faixa')
-      + rect(-FOLGA, D0, E[2], E[3], 'antes', `stroke-width="${r2(.3 * U)}"`)
-      + rect(E[0], E[1], E[2], E[3], 'novo', `stroke-width="${r2(.45 * U)}"`);
+      + rect(BOLSO_V[0], BOLSO_V[1], E[2], E[3], 'oculto', o) + rect(E[0], E[1], E[2], E[3], 'oculto', o);
+    faixas.forEach(([a, b]) => {
+      s += rect(a, b, REB_V[0], REB_V[1], 'novo-faixa') + rect(a, b, REB_V[0], REB_V[1], 'novo', `stroke-width="${r2(.4 * U)}"`);
+      [[E[2], REB_V[0]], [REB_V[1], E[3]]].forEach(([c, d]) => s += rect(a, b, c, d, 'apoio', o));
+    });
     FUROS.forEach(([x, y]) => s += `<circle class="oculto" ${o} cx="${x}" cy="${y}" r="${PINO_R}"/>`);
-    s += t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 - 1.5 * U, 'bolso do vidro: 85,0', 'middle', 'rot-forte')
-      + t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 + 2.4 * U, '(não muda: o vidro entrou perfeito)', 'middle', 'rot');
-    s += cH(E[0], E[1], Y0 - 10 * U, E[2], E[2], `encaixe da placa: ${fmt(E[1] - E[0])} (era ${fmt(D0 + FOLGA)})`)
-      + cH(E[0], -FOLGA, Y0 - 4 * U, E[2], E[2], fmt(-FOLGA - E[0]), 'esq') + cH(D0, E[1], Y0 - 4 * U, E[2], E[2], fmt(E[1] - D0), 'dir')
-      + cH(FUROS[2][0], FUROS[3][0], Y1 + 5 * U, FUROS[2][1] + PINO_R, FUROS[3][1] + PINO_R, `pininhos ${fmt(FUROS[3][0] - FUROS[2][0])}: não mudam`);
-    return svg(X0 - 20 * U, Y0 - 15 * U, X1 - X0 + 31 * U, Y1 - Y0 + 26 * U, 'O que muda: o encaixe da placa fica 1 mm maior à esquerda', s);
+    SOLDAS.forEach(v => s += `<circle class="solda" stroke-width="${r2(.12 * U)}" cx="${SOLDA_U}" cy="${r2(v)}" r="${SOLDA_R}"/>`);
+    s += chamada(2.2, 1.2, 12, 7, 'apoio nos 4 cantos') + chamada(SOLDA_U + SOLDA_R, SOLDAS[8], 12, 31, 'soldas do conector')
+      + chamada(94, PCB[1] / 2, 84, 20, 'rebaixo de 2 mm', 'end')
+      + t((BOLSO_V[0] + BOLSO_V[1]) / 2, 44, 'bolso do vidro: não muda', 'middle', 'rot');
+    s += cV(0, REB_V[0], X0 - 4 * U, E[0], E[0], fmt(APOIO_V)) + cV(REB_V[0], REB_V[1], X0 - 4 * U, E[0], E[0], fmt(REB_V[1] - REB_V[0]))
+      + cV(REB_V[1], PCB[1], X0 - 4 * U, E[0], E[0], fmt(APOIO_V))
+      + cH(E[0], BOLSO_V[0], Y0 - 4 * U, E[2], E[2], fmt(BOLSO_V[0] - E[0]), 'esq') + cH(BOLSO_V[1], E[1], Y0 - 4 * U, E[2], E[2], fmt(E[1] - BOLSO_V[1]), 'dir')
+      + cH(E[0], E[1], Y0 - 10 * U, E[2], E[2], `encaixe da placa: ${fmt(E[1] - E[0])} (era ${fmt(ENC_V2)})`);
+    return svg(X0 - 18 * U, Y0 - 15 * U, X1 - X0 + 29 * U, Y1 - Y0 + 18 * U, 'Proposta: a placa apoia só nos 4 cantos e o meio das faixas fica 2 mm mais fundo', s);
   }
-  function canto() {
-    const xa = X0 - 1.5, xb = 13.5, ya = Y0 - 1.5, yb = 13.5;
-    U = (xb - xa + 10) / 120;
-    const sw2 = k => `stroke-width="${r2(k * U)}"`, L = -FOLGA, N = ENC_ESQ;
-    let s = `<rect class="bege" x="${X0}" y="${Y0}" width="${r2(X1 - X0)}" height="${r2(Y1 - Y0)}" rx="3" ${sw2(.3)}/>`
-      + `<rect class="fantasma-pcb" x="0" y="0" width="${PCB[0]}" height="${PCB[1]}" style="opacity:.22"/>`
-      + `<rect class="novo-faixa" x="${N}" y="${-FOLGA}" width="${r2(L - N)}" height="${r2(yb + 2)}"/>`
-      + `<path class="antes" ${sw2(.35)} d="M${L} ${yb + 2} V${-FOLGA} H${xb + 2}"/>`
-      + `<path class="novo" ${sw2(.55)} d="M${N} ${yb + 2} V${-FOLGA} H${xb + 2}"/>`
-      + `<path class="oculto" ${sw2(.25)} d="M${BOLSO_V[0]} ${yb + 2} V${-FOLGA}"/>`
-      + `<circle style="fill: var(--folha); stroke: var(--bege-borda)" ${sw2(.25)} cx="${FUROS[0][0]}" cy="${FUROS[0][1]}" r="1.8"/><circle class="oculto" ${sw2(.25)} cx="${FUROS[0][0]}" cy="${FUROS[0][1]}" r="${PINO_R}"/>`
-      + `<circle class="oculto" ${sw2(.3)} style="stroke: var(--erro)" cx="-3.6" cy="-3.6" r="2"/>`;
-    s += t(L + .8, 11.5, 'era', 'start', 'rot') + t(N - .8, 11.5, 'agora', 'end', 'rot-forte')
-      + t(BOLSO_V[0] + .8, 9.5, 'bolso do vidro', 'start', 'rot') + t(BOLSO_V[0] + .8, 11.2, '(não muda)', 'start', 'rot')
-      + t(FUROS[0][0] + 2.3, FUROS[0][1] + .6, 'pininho', 'start', 'rot') + t(-3.6, -6.4, 'inserto', 'middle', 'rot');
-    s += cH(N, L, 6.5, null, null, fmt(L - N), 'esq');
-    const d = Math.hypot(N + 3.6, -FOLGA + 3.6) - 2;
-    s += chamada(-3.6 + 2 * Math.cos(Math.atan2(3.3, N + 3.6)), -3.6 + 2 * Math.sin(Math.atan2(3.3, N + 3.6)), 4, -5.5, `parede de ${d.toFixed(1).replace('.', ',')}`, 'start');
-    return svg(xa, ya, xb - xa, yb - ya, 'O canto de cima à esquerda, de perto: o encaixe da placa recua 1 mm', s);
+  function corteComprido() {
+    // corte pela fileira de soldas (u = 2,6), da borda de cima até um pouco depois da metade da fileira; v vai para a direita
+    const va = Y0 - .01, vb = 27, ZR = Z_APOIO - REB, hw = Math.sqrt(PINO_R ** 2 - (SOLDA_U - FUROS[0][0]) ** 2), pv = FUROS[0][1];
+    U = (vb - va + 14) / 120;
+    const pts = [[va, 0], [vb, 0], [vb, ZR], [REB_V[0], ZR], [REB_V[0], Z_APOIO], [pv + hw, Z_APOIO], [pv + hw, Z_APOIO + PINO_H], [pv - hw, Z_APOIO + PINO_H], [pv - hw, Z_APOIO], [-FOLGA, Z_APOIO], [-FOLGA, Z_TOTAL], [va, Z_TOTAL]];
+    let s = hachura() + `<g stroke-width="${r2(.25 * U)}">${poli(pts, 'corte hachura')}</g>`;
+    s += `<rect class="novo-faixa" x="${REB_V[0]}" y="${Y(Z_APOIO)}" width="${r2(vb - REB_V[0])}" height="${REB}"/>`
+      + `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${REB_V[0]} ${Y(Z_APOIO)} H${vb}"/>`;
+    // placa vermelha com o furo do pininho, o conector atrás e as soldas na frente
+    const pcb = (a, b) => `<rect class="fantasma-pcb" x="${r2(a)}" y="${Y(Z_APOIO + 1.6)}" width="${r2(b - a)}" height="1.6"/>`;
+    s += pcb(0, pv - 1.8) + pcb(pv + 1.8, vb);
+    const c0 = SOLDAS[0] - 1.27;
+    s += `<rect class="conector" x="${r2(c0)}" y="${Y(Z_APOIO + 1.6 + 2.5)}" width="${r2(vb - c0)}" height="2.5"/>`;
+    SOLDAS.filter(v => v + SOLDA_R < vb).forEach(v => {
+      s += `<path class="solda" stroke-width="${r2(.12 * U)}" d="M${r2(v - SOLDA_R)} ${Y(Z_APOIO)} Q${r2(v)} ${Y(Z_APOIO - 2 * SOLDA_H)} ${r2(v + SOLDA_R)} ${Y(Z_APOIO)} Z"/>`
+        + `<rect class="solda" stroke-width="${r2(.1 * U)}" x="${r2(v - .32)}" y="${Y(Z_APOIO + 1.6 + 2.5 + 1.2)}" width=".64" height="1.2"/>`;
+    });
+    s += t((c0 + vb) / 2, Y(Z_APOIO + 1.6 + 1.25) + FS() * .35, 'conector (os pinos vão para trás)', 'middle', 'rot-claro')
+      + t(18, Y(Z_APOIO + .8) + FS() * .33, 'placa vermelha', 'middle', 'rot-claro');
+    // chamadas por cima do corte, com contorno claro para ler sobre a hachura
+    const leva = (x, y, bx, by, txt, anc) => `<path class="cota-l" ${sw()} d="M${r2(x)} ${r2(y)} L${r2(bx)} ${r2(by)}"/><circle class="cota-s" cx="${r2(x)}" cy="${r2(y)}" r="${r2(.45 * U)}"/>`
+      + halo(bx + (anc === 'start' ? .5 : -.5), by + FS() * .35, txt, anc);
+    const vs = SOLDAS[5];
+    s += leva(5.6, Y(Z_APOIO) + .2, 4.6, Y(1.0), 'apoio', 'end')
+      + leva(SOLDAS[1], Y(Z_APOIO - SOLDA_H), 14.5, Y(2.4), 'soldas', 'start')
+      + leva(vs, Y((Z_APOIO - SOLDA_H + ZR) / 2), 21.5, Y(1.0), `sobra ${fmt(REB - SOLDA_H)} até o fundo`, 'end');
+    s += cV(Y(Z_APOIO), Y(ZR), vb + 3 * U, vb, vb, fmt(REB), 'dir')
+      + cH(0, REB_V[0], Y(0) + 3.5 * U, null, null, `apoio ${fmt(APOIO_V)}`, 'esq')
+      + cH(REB_V[0], SOLDAS[0] - SOLDA_R, Y(0) + 3.5 * U, null, null, 'uns 3', 'dir');
+    s += t((va + vb) / 2, Y(0) + 8.5 * U, 'frente (fica na mesa da impressora)', 'middle', 'rot');
+    return svg(va - 2 * U, Y(Z_APOIO + 1.6 + 2.5 + 1.2) - 2 * U, vb - va + 12 * U, Z_APOIO + 5.3 + 11 * U, 'Corte ao comprido pela fileira de soldas, a metade de cima', s);
   }
   function tras() {
     U = (X1 - X0 + 34) / 120;
@@ -352,10 +406,10 @@ svg .oculto.inserto { stroke: var(--erro); }
     return svg(X0 - 10 * U, Y0 - 9 * U, X1 - X0 + 14 * U, Y1 - Y0 + 24 * U, 'A moldura de trás vista de cima, com as medidas', s);
   }
 
-  document.getElementById('d-muda').innerHTML = mudanca();
-  document.getElementById('d-muda-canto').innerHTML = canto();
-  document.getElementById('d-muda-corte').innerHTML = detalhe('esq', true);
-  document.getElementById('d-muda-corte-dir').innerHTML = detalhe('dir', true);
+  document.getElementById('d-muda').innerHTML = rebaixo();
+  document.getElementById('d-muda-corte').innerHTML = corteComprido();
+  document.getElementById('d-muda-esq').innerHTML = detalhe('esq', false, true);
+  document.getElementById('d-muda-dir').innerHTML = detalhe('dir', false, true);
   document.getElementById('d-frente').innerHTML = frente();
   document.getElementById('d-tras').innerHTML = tras();
   document.getElementById('d-esq').innerHTML = detalhe('esq');

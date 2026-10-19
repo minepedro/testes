@@ -1,6 +1,6 @@
 # Caixa Mini Mac
 
-**Onde está:** a caixa inteira está modelada (v1) e conferida no computador. Ainda não imprima: falta o resultado do segundo teste da tela e três medidas (plugue USB-C, J e amplificador), que hoje são chute.
+**Onde está:** a caixa inteira está modelada (v1) e conferida no computador. Ainda não imprima: falta o resultado do terceiro teste da tela e três medidas (plugue USB-C, J e amplificador), que hoje são chute.
 
 ## Arquivos
 
@@ -50,7 +50,7 @@ As medidas ficam no começo de `gerar_teste_tela.py` (tela) e de `gerar_caixa.py
 
 ## Pendências
 
-1. No primeiro teste da tela o vidro, os pininhos e a janela ficaram certos; a placa vermelha não entrou do lado esquerdo. Segunda versão: encaixe da placa 1 mm maior de cada lado (98,6 de largura, de −1,3 a 97,3); o bolso do vidro continua 85,0. Imprimir de novo a moldura da frente e conferir.
+1. Nos dois primeiros testes da tela o vidro, os pininhos e a janela ficaram certos, mas a placa vermelha não assentava: as soldas do conector, na frente da placa do lado dos pinos, batiam na faixa de apoio. A largura não era o problema. Terceira versão: a placa apoia só nos 4 cantos (7 mm em cima e embaixo), o meio das faixas fica 2 mm mais fundo, e o encaixe volta a ter 0,4 de folga de cada lado (96,8). A caixa já tem o mesmo. Imprimir a moldura da frente e conferir; a moldura de trás de qualquer teste serve. Falta medir a altura das soldas (estimei 1,5) e onde a primeira começa (estimei uns 10 mm da borda de cima).
 2. Confirmar o tamanho dos insertos. Supus os de 5,7 mm de comprimento e 4,6 por fora (furo de 4,0).
 3. Furos da tela: a 1 mm da borda dá 90,4 × 49,2 entre centros; a primeira medida tinha dado 89,5 × 50. O teste decide.
 4. Alto-falante: tem furos ou abas? Amplificador: medir (supus 18 × 19).

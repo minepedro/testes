@@ -9,6 +9,10 @@ Duas peças para provar o encaixe e a fixação antes da caixa inteira:
 - moldura de trás: um quadro que aperta os cantos da placa vermelha contra a
   frente, preso por 4 parafusos M3 nos insertos.
 
+A placa vermelha apoia na frente só nos 4 cantos: do lado dos pinos, as soldas
+do conector saem na frente da placa, e o meio das faixas de apoio é rebaixado
+para elas não baterem.
+
 Os parafusos não passam pelos furos da própria tela: do furo até o vidro sobram
 menos de 3 mm, pouco para a cabeça do M3 ou para a parede de um inserto. Os
 furos da tela ficam com os pininhos, que alinham a placa.
@@ -50,9 +54,11 @@ CHANFRO = 1.0                 # chanfro de 45° em volta da janela
 MARGEM_JANELA = 0.5           # a janela mostra 0,5 mm a mais da parte que acende
 PINO_D, PINO_H = 2.8, 1.4     # pininhos: 0,4 de folga no furo de 3,6; não passam da placa (1,6)
 FOLGA_VIDRO = 0.4             # em volta do vidro, na largura
-# o primeiro teste impresso: o vidro entrou perfeito; a placa vermelha não entrou do lado esquerdo (o dos pinos)
-ENCAIXE_ESQ = 1.0             # encaixe da placa: 1 mm a mais à esquerda
-ENCAIXE_DIR = 1.0             # e 1 mm a mais à direita
+# nos dois primeiros testes o vidro entrou perfeito, mas a placa vermelha não assentava: as soldas do
+# conector, na frente da placa do lado dos pinos, batiam na faixa de apoio. A largura não era o problema.
+FOLGA_LADO = 0.4              # folga do encaixe da placa na largura (no segundo teste era 1,3)
+APOIO_V = 7.0                 # a placa apoia só nos cantos: 7 mm em cima e 7 mm embaixo
+REBAIXO = 2.0                 # o meio das faixas de apoio fica 2 mm mais fundo, para as soldas
 
 c = FURO_BORDA + FURO_D / 2
 FUROS = [(c, c), (PCB[0] - c, c), (c, PCB[1] - c), (PCB[0] - c, PCB[1] - c)]
@@ -60,7 +66,8 @@ FUROS = [(c, c), (PCB[0] - c, c), (c, PCB[1] - c), (PCB[0] - c, PCB[1] - c)]
 v_esq = (VIDRO_BORDAS[0] + (PCB[0] - VIDRO_BORDAS[1] - VIDRO_L)) / 2
 VIDRO_U = (v_esq, v_esq + VIDRO_L)
 BOLSO_U = (VIDRO_U[0] - FOLGA_VIDRO, VIDRO_U[1] + FOLGA_VIDRO)
-ENC_U0, ENC_U1 = -FOLGA - ENCAIXE_ESQ, PCB[0] + FOLGA + ENCAIXE_DIR   # bordas do encaixe da placa
+ENC_U0, ENC_U1 = -FOLGA_LADO, PCB[0] + FOLGA_LADO   # bordas do encaixe da placa
+REB_V = (APOIO_V, PCB[1] - APOIO_V)                  # trecho rebaixado das faixas de apoio
 assert BOLSO_U[0] > FUROS[0][0] + PINO_D / 2 and BOLSO_U[1] < FUROS[1][0] - PINO_D / 2, 'o bolso do vidro come os pininhos'
 Z_APOIO = PELE + (ESP_TELA - 1.6) + 0.2          # onde a placa vermelha apoia (vidro + tela + 0,2)
 Z_PLACA = Z_APOIO + 1.6                          # costas da placa vermelha
@@ -106,6 +113,9 @@ def frente():
                .workplane(offset=CHANFRO + 0.5).rect(jw, jh).loft())
     reto = cq.Workplane('XY').workplane(offset=CHANFRO - 0.01).center(jx, jy).rect(jw, jh).extrude(PELE - CHANFRO + 0.2)
     p = p.cut(chanfro).cut(reto)
+    # rebaixo das soldas: o meio das duas faixas de apoio, dos lados do bolso do vidro (entra 0,1 nele)
+    for u1, u2 in ((ENC_U0, BOLSO_U[0] + 0.1), (BOLSO_U[1] - 0.1, ENC_U1)):
+        p = p.cut(bloco(u1, u2, REB_V[0], REB_V[1], Z_APOIO - REBAIXO, Z_APOIO + 0.1))
     # pininhos: nascem 0,1 dentro do apoio
     p = p.union(cilindros(FUROS, PINO_D, Z_APOIO - 0.1, Z_APOIO + PINO_H))
     # furos dos insertos, por trás
@@ -138,6 +148,7 @@ def resumo():
         'janela': '%s x %s' % (f(JANELA[1] - JANELA[0]), f(JANELA[3] - JANELA[2])),
         'bolso do vidro': '%s de largura, de %s a %s' % (f(BOLSO_U[1] - BOLSO_U[0]), f(BOLSO_U[0]), f(BOLSO_U[1])),
         'encaixe da placa': '%s x %s, de %s a %s' % (f(ENC_U1 - ENC_U0), f(PCB[1] + 2 * FOLGA), f(ENC_U0), f(ENC_U1)),
+        'apoio da placa': 'só nos cantos (%s em cima e embaixo); o meio %s mais fundo, de v = %s a %s' % (f(APOIO_V), f(REBAIXO), f(REB_V[0]), f(REB_V[1])),
         'furos da tela': 'centros a %s das bordas: %s x %s' % (f(c), f(FUROS[1][0] - FUROS[0][0]), f(FUROS[2][1] - FUROS[0][1])),
         'insertos': 'furo %s, fundo a %s da frente' % (f(INSERTO_FURO), f(Z_FUNDO_INSERTO)),
         'trás': '%s de quadro, torres até %s acima da placa' % (f(QUADRO_E), f(Z_CABECA - Z_PLACA)),

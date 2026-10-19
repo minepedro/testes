@@ -158,6 +158,8 @@ def corpo():
     c = c.cut(tronco(jx, jz, jw, jh, 0.5, RECUO + 0.99, jw, jh, 0.5, Y_VIDRO + 0.2))
     c = c.cut(caixa(tx(T.BOLSO_U[0]), tx(T.BOLSO_U[1]), Y_VIDRO, Y_APOIO + 0.1, tz(T.PCB[1] + T.FOLGA), tz(-T.FOLGA)))
     c = c.cut(caixa(tx(T.ENC_U0), tx(T.ENC_U1), Y_APOIO, Y_COSTAS + 1, tz(T.PCB[1] + T.FOLGA), tz(-T.FOLGA)))
+    for u1, u2 in ((T.ENC_U0, T.BOLSO_U[0] + 0.1), (T.BOLSO_U[1] - 0.1, T.ENC_U1)):   # rebaixo das soldas: a placa apoia só nos cantos
+        c = c.cut(caixa(tx(u1), tx(u2), Y_APOIO - T.REBAIXO, Y_APOIO + 0.1, tz(T.REB_V[1]), tz(T.REB_V[0])))
     for u, v in T.FUROS:
         c = c.union(cil('y', (tx(u), tz(v)), T.PINO_D, Y_APOIO - 0.1, Y_APOIO + T.PINO_H))
     for u, v in INSERTOS_TELA:
@@ -283,6 +285,8 @@ def fantasmas():
     for u, v in T.FUROS:
         f['tela: placa'] = f['tela: placa'].cut(cil('y', (tx(u), tz(v)), T.FURO_D, Y_APOIO - 1, Y_PLACA + 1))
     f['tela: jumpers'] = caixa(tx(1.3), tx(3.9), Y_PLACA, Y_PLACA + 2.5 + 14, tz(45.2), tz(9.6))
+    for k in range(14):        # soldas do conector na frente da placa (estimativa: 1,5 de altura, conector no meio da borda)
+        f['tela: jumpers'] = f['tela: jumpers'].union(cil('y', (tx(2.6), tz(T.PCB[1] / 2 + (k - 6.5) * 2.54)), 1.8, Y_APOIO - 1.5, Y_APOIO + 0.05))
     f['placa ilhada'] = caixa(BX0, BX1, BY0, BY1, BZ0, BZ1)
     for sx in (-1, 1):
         for sy in (-1, 1):
