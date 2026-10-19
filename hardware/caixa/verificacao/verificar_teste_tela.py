@@ -66,9 +66,11 @@ f4 = d.corte(ck.section(mf, 1, y), 310, 70, 7.6, jan2)
 d.corte(ck.section(mt, 1, y), 310, 70, 7.6, jan2, preenche=HexColor('#fde8c8'))
 d.titulo_bloco(310, 240, 'MONTADO, PELO INSERTO DE CIMA (FRENTE EMBAIXO)')
 d.balao(4, 310 + 140, 200, *f4(X(g.INSERTOS[0][0]), 14), cor=d.LARANJA)
-d.notas(600, 300, 210, [
+f = lambda n: ('%.2f' % n).rstrip('0').rstrip('.').replace('.', ',')
+d.notas(620, 490, 190, [
     (d.LARANJA, '1 e 4. Insertos e parafusos', 'Furo de 4,0 por 6,2 nos 4 cantos, por fora da placa, com 0,8 de frente embaixo. O M3 de 19 entra pela torre da moldura de trás: a cabeça apoia a 13 mm da placa e a ponta para 0,4 antes do fundo.'),
     (d.VERDE, '2. Pininhos', 'Quatro de 2,8, com os furos da tela a 1 mm da borda: 90,4 x 49,2 entre centros. Alinham a placa; não seguram.'),
+    (d.AZUL, 'Bolso do vidro', 'De %s a %s (%s de largura): 0,4 de folga à direita e %s à esquerda, o lado que o primeiro teste pediu mais largo.' % (f(g.BOLSO_U[0]), f(g.BOLSO_U[1]), f(g.BOLSO_U[1] - g.BOLSO_U[0]), f(g.FOLGA_VIDRO + g.EXTRA_ESQ))),
     (d.AZUL, '3. Moldura de trás', 'Aperta só os 4 cantos da placa, em cima dos furos; o meio fica livre para os componentes e o conector. Fica 0,2 acima da frente: o parafuso puxa e prende a placa.'),
     (d.CINZA, 'Sólidos', 'Os dois fechados, uma casca cada. Montados, não se invadem.'),
 ])

@@ -122,7 +122,7 @@ svg .oculto.inserto { stroke: var(--erro); }
         <tr><td>Encaixe da placa (por trás)</td><td class="num">96,6 × 55,4 × 1,4</td><td><span class="tag minha">escolha minha</span> 0,3 de folga; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
         <tr><td>Vidro: da borda da placa até o vidro</td><td class="num">6,1 esq. · 5,7 dir. · 0,3 cima e baixo</td><td><span class="tag sua">sua</span></td></tr>
         <tr><td>Vidro: largura</td><td class="num">84,2</td><td><span class="tag sua">sua</span> fecha: 6,1 + 84,2 + 5,7 = 96</td></tr>
-        <tr><td>Bolso do vidro</td><td class="num">85,0 de largura, altura toda</td><td><span class="tag minha">escolha minha</span> 0,4 de folga de cada lado</td></tr>
+        <tr><td>Bolso do vidro</td><td class="num">86,0 de largura, altura toda</td><td><span class="tag sua">seu teste</span> 1,4 de folga à esquerda (o primeiro teste pediu 1 mm a mais) e 0,4 à direita</td></tr>
         <tr><td>Profundidade do bolso do vidro</td><td class="num">4,0</td><td><span class="tag conta">conta</span> 5,4 − 1,6 da placa = 3,8, mais 0,2 de folga</td></tr>
         <tr><td>Furos da tela</td><td class="num">Ø 3,6, a 1 mm da borda: 90,4 × 49,2</td><td><span class="tag sua">sua</span> antes você tinha medido 89,5 × 50</td></tr>
         <tr><td>Pininhos</td><td class="num">Ø 2,8 × 1,4</td><td><span class="tag minha">escolha minha</span> 0,4 de folga no furo; não passam da placa</td></tr>
@@ -163,7 +163,7 @@ svg .oculto.inserto { stroke: var(--erro); }
   // ---------------- medidas (mm), com a origem na quina de cima à esquerda da placa vermelha, vista de frente ----------------
   const PCB = [96, 54.8], FOLGA = .3, PAREDE = 7;
   const X0 = -FOLGA - PAREDE, X1 = PCB[0] + FOLGA + PAREDE, Y0 = -FOLGA - PAREDE, Y1 = PCB[1] + FOLGA + PAREDE;
-  const BOLSO_V = [5.7, 90.7];                 // bolso do vidro, na largura (altura toda do encaixe da placa)
+  const BOLSO_V = [4.7, 90.7];                    // 1 mm a mais à esquerda: pedido do primeiro teste impresso                 // bolso do vidro, na largura (altura toda do encaixe da placa)
   const VIDRO = [6.1, 90.3, .3, 54.5];          // onde o vidro está pelas bordas medidas
   const JANELA = [7.6, 83.8, 1.8, 53.0], CH = 1;
   const FUROS = [[2.8, 2.8], [93.2, 2.8], [2.8, 52], [93.2, 52]];       // furos da tela a 1 mm da borda
@@ -266,7 +266,7 @@ svg .oculto.inserto { stroke: var(--erro); }
     s += chamada(fx, Y(Z_APOIO + PINO_H), fx + (esq ? 2 : -2), Y(Z_TOTAL) - 3.5 * U, `pininho Ø2,8 × ${fmt(PINO_H)}`, esq ? 'start' : 'end');
     if (esq) {
       s += chamada(JANELA[0] - CH / 2, Y(CH / 2), JANELA[0] + 2.5, Y(0) + 3.6 * U, 'chanfro 1 × 45°')
-        + cH(BOLSO_V[0], VIDRO[0], Y(PELE) + .1, Y(PELE), Y(PELE), 'folga 0,4', 'dir');
+        + cH(BOLSO_V[0], VIDRO[0], Y(PELE) + .1, Y(PELE), Y(PELE), 'folga 1,4', 'dir');
       s += t(10.5, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro');
     } else {
       s += chamada(BOLSO_V[1], Y(3.5), 86.5, Y(0) + 3.6 * U, 'folga 0,4', 'end')

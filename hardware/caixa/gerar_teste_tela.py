@@ -50,13 +50,14 @@ CHANFRO = 1.0                 # chanfro de 45° em volta da janela
 MARGEM_JANELA = 0.5           # a janela mostra 0,5 mm a mais da parte que acende
 PINO_D, PINO_H = 2.8, 1.4     # pininhos: 0,4 de folga no furo de 3,6; não passam da placa (1,6)
 FOLGA_VIDRO = 0.4             # em volta do vidro, na largura
+EXTRA_ESQ = 1.0               # o primeiro teste impresso pediu 1 mm a mais do lado esquerdo (lado dos pinos)
 
 c = FURO_BORDA + FURO_D / 2
 FUROS = [(c, c), (PCB[0] - c, c), (c, PCB[1] - c), (PCB[0] - c, PCB[1] - c)]
 # o vidro fica entre a estimativa pela borda esquerda e a pela direita (hoje as duas batem)
 v_esq = (VIDRO_BORDAS[0] + (PCB[0] - VIDRO_BORDAS[1] - VIDRO_L)) / 2
 VIDRO_U = (v_esq, v_esq + VIDRO_L)
-BOLSO_U = (VIDRO_U[0] - FOLGA_VIDRO, VIDRO_U[1] + FOLGA_VIDRO)
+BOLSO_U = (VIDRO_U[0] - FOLGA_VIDRO - EXTRA_ESQ, VIDRO_U[1] + FOLGA_VIDRO)
 assert BOLSO_U[0] > FUROS[0][0] + PINO_D / 2 and BOLSO_U[1] < FUROS[1][0] - PINO_D / 2, 'o bolso do vidro come os pininhos'
 Z_APOIO = PELE + (ESP_TELA - 1.6) + 0.2          # onde a placa vermelha apoia (vidro + tela + 0,2)
 Z_PLACA = Z_APOIO + 1.6                          # costas da placa vermelha

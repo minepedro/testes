@@ -42,8 +42,9 @@ As medidas ficam no começo de `gerar_teste_tela.py`. Mudou uma medida, muda lá
 
 ## Pendências
 
-1. Imprimir o teste da tela e conferir: pininhos nos furos, vidro no bolso, janela mostrando toda a parte que acende, tela firme depois de parafusar.
+1. O primeiro teste da tela ficou quase perfeito e pediu 1 mm a mais do lado esquerdo: o bolso do vidro agora vai de 4,7 a 90,7. Imprimir de novo a moldura da frente e conferir.
 2. Confirmar o tamanho dos insertos. Supus os de 5,7 mm de comprimento e 4,6 por fora (furo de 4,0).
 3. Furos da tela: a 1 mm da borda dá 90,4 × 49,2 entre centros; a primeira medida tinha dado 89,5 × 50. O teste decide.
 4. Alto-falante: tem furos ou abas? Amplificador: medir (supus 18 × 19).
+4b. Entrada do cabo embutida na lateral (o plugue entra na caixa): medir o plástico do plugue (largura, altura, comprimento) e a posição do USB na placa (medida J).
 5. Confirmar a planta (`planta-caixa.html`) e modelar a caixa inteira.

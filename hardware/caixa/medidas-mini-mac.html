@@ -353,7 +353,8 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
       + `<rect x="42" y="150" width="20" height="14" rx="3" class="metal"/><rect x="42" y="218" width="20" height="14" rx="3" class="metal"/>`
       + `<text x="65" y="31" text-anchor="middle" class="leg-p">1</text><text x="325" y="31" text-anchor="middle" class="leg-p">27</text>`
       + [['A', 254], ['B', 244], ['L', 144], ['V', 44]].map(([t, y]) => `<text x="337" y="${y}" class="leg-p">${t}</text>`).join('');
-    s += cH('p_larg', 'A', 60, 330, 14, 36) + cV('p_alt', 'B', 36, 256, 362, 330) + cH('p_usb', 'C', 42, 60, 280, 232, 256);
+    s += cH('p_larg', 'A', 60, 330, 14, 36) + cV('p_alt', 'B', 36, 256, 362, 330) + cH('p_usb', 'C', 42, 60, 280, 232, 256)
+      + cV('p_usb_a', 'J', 157, 256, 24, 42, 60);
     if (est.p_furos === 'sim') {
       [[69, 45], [321, 45], [69, 247], [321, 247]].forEach(([x, y]) => s += `<circle cx="${x}" cy="${y}" r="3.6" class="furo"/>`);
       s += cH('p_fh', 'D', 69, 321, 64, 49) + cV('p_fv', 'E', 45, 247, 308, 317) + cD('p_fd', 'F', 69, 247, 3.6, 92, 282);
@@ -413,6 +414,13 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
     s += `<text x="100" y="198" text-anchor="middle" class="leg">lado do furinho</text><text x="286" y="198" text-anchor="middle" class="leg">de lado</text>`
       + cH('m_d', 'A', 44, 156, 176, 96);
     return svg('0 0 372 206', 'O microfone de frente e de lado, com a cota A', s);
+  }
+  function dPlugue() {
+    let s = `<rect x="40" y="60" width="100" height="60" rx="22" class="preto"/><rect x="62" y="80" width="56" height="20" rx="10" class="metal"/><rect x="72" y="87" width="36" height="6" rx="3" class="preto"/>`
+      + `<rect x="200" y="82" width="36" height="16" rx="3" class="metal"/><rect x="236" y="60" width="84" height="60" rx="10" class="preto"/><rect x="320" y="80" width="40" height="20" rx="4" class="preto" opacity=".75"/>`
+      + `<text x="90" y="182" text-anchor="middle" class="leg">de frente</text><text x="280" y="182" text-anchor="middle" class="leg">de lado</text><text x="218" y="74" text-anchor="middle" class="leg">metal</text><text x="345" y="74" text-anchor="middle" class="leg">fio</text>`;
+    s += cH('c_larg', 'A', 40, 140, 146, 120) + cV('c_alt', 'B', 60, 120, 22, 40) + cH('c_comp', 'C', 236, 320, 40, 60);
+    return svg('0 0 372 192', 'O plugue do cabo USB-C de frente e de lado, com as cotas', s);
   }
   function dAmp() {
     let s = `<rect x="120" y="34" width="140" height="148" rx="4" class="pcb-amp"/>`;
@@ -609,7 +617,11 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
       + `<rect x="${r2(ex1)}" y="${r2(ey1)}" width="${r2(ex2 - ex1)}" height="${r2(ey2 - ey1)}" rx=".8" class="esp"/>`
       + `<rect x="${r2(ex2 - 25.5)}" y="${r2(em - 7.5)}" width="18" height="15" rx=".4" class="metal"/>`
       + rotulo('e-claro', (ex1 + ex2 - 25.5) / 2, em + .9 * U, 'ESP32-S3');
-    [['o do lado da linha L', em - 6.5], ['o do lado da linha B', em + 6.5]].forEach(([nome, y]) => {
+    // o meio do USB usado, medido da borda do lado da linha A (J); o outro fica 13 mm para o lado da linha B
+    const pa = num('p_usb_a'), usaB = est.p_porta === 'o do lado da linha B';
+    let yL = em - 6.5, yB = em + 6.5;
+    if (pa != null) { if (usaB) { yB = H - pa; yL = yB - 13; } else { yL = H - pa; yB = yL + 13; } }
+    [['o do lado da linha L', yL], ['o do lado da linha B', yB]].forEach(([nome, y]) => {
       const sel = est.p_porta === nome;
       s += `<rect x="${r2(face)}" y="${r2(y - 4.45)}" width="7.3" height="8.9" rx="1.2" class="metal${sel ? ' usb-sel' : ''}"/>`
         + rotulo(est.p_porta ? 'e-escuro' : 'e-sup', face + 3.65, y + .9 * U, sel ? 'USB' : est.p_porta ? 'COM' : '?');
@@ -626,11 +638,14 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
     }
     s += eH(0, W, -4 * U, 0, 0, fmt(W), 'p_larg', tipoDe('p_larg'))
       + eV(0, H, -4 * U, 0, 0, fmt(H), 'p_alt', tipoDe('p_alt'), 'esq');
-    if (usb != null) s += eH(Math.min(0, face), Math.max(0, face), H + 4 * U, H, em + 6.5 + 4.45, `${fmt(Math.abs(usb))} ${usb < 0 ? 'para dentro' : 'para fora'}`, 'p_usb');
+    if (usb != null) s += eH(Math.min(0, face), Math.max(0, face), H + 4 * U, H, yB + 4.45, `${fmt(Math.abs(usb))} ${usb < 0 ? 'para dentro' : 'para fora'}`, 'p_usb');
+    const yUsb = usaB ? yB : yL;
+    s += eV(yUsb, H, -10 * U, face, 0, pa != null ? fmt(pa) : fmt(H - yUsb) + '?', 'p_usb_a', tipoDe('p_usb_a'), 'esq');
+    if (pa == null) notas.push(['sup', 'Falta J: da borda do lado da linha A até o meio do USB. É o que deixa a entrada do cabo certinha na caixa.']);
     if (!est.p_porta) notas.push(['sup', 'Falta dizer qual USB-C você usa. A fenda do cabo fica na lateral, alinhada com ele.']);
     if (!est.p_furos) notas.push(['sup', 'Falta dizer se a placa tem furos nos cantos. Sem furos, ela entra deslizando num trilho da bandeja.']);
-    notas.push(['info', 'O ESP32 está nas colunas 2 a 23, entre as linhas B e L, como no manual. A posição dos dois USB-C é aproximada.']);
-    return { svg: esvg(-13 * U, -10 * U, W + 26 * U, H + 20 * U, 'A placa ilhada vista de cima, em escala', s), notas };
+    notas.push(['info', pa != null ? 'O ESP32 está nas colunas 2 a 23, entre as linhas B e L, como no manual.' : 'O ESP32 está nas colunas 2 a 23, entre as linhas B e L, como no manual. A posição dos dois USB-C é aproximada.']);
+    return { svg: esvg(-19 * U, -10 * U, W + 32 * U, H + 20 * U, 'A placa ilhada vista de cima, em escala', s), notas };
   }
   function ePlacaLado() {
     const W = num('p_larg') ?? 80, hT = num('p_h_tot') ?? 45, hE = num('p_h_esp') ?? 19, hU = num('p_h_usb') ?? 14, usb = num('p_usb') ?? 0;
@@ -709,6 +724,21 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
     if (!est.m_jump) notas.push(['sup', 'Falta dizer se você tem os 6 jumpers para levar o microfone até o queixo.']);
     return { svg: esvg(-6 * U, -13 * U, x0 + D + 14 * U, D + 27 * U, 'O microfone em escala', s), notas };
   }
+  function ePlugue() {
+    const A = num('c_larg') ?? 12, B = num('c_alt') ?? 6.5, C = num('c_comp') ?? 20, notas = [];
+    const x0 = A + 12, M = [8.3, 2.5, 6.6];   // a parte de metal do USB-C é padrão
+    U = (x0 + M[2] + C + 22) / 120;
+    const cy = B / 2;
+    let s = `<rect x="0" y="0" width="${r2(A)}" height="${r2(B)}" rx="${r2(Math.min(B / 2, 2.5))}" class="preto"/><rect x="${r2((A - M[0]) / 2)}" y="${r2(cy - M[1] / 2)}" width="${M[0]}" height="${M[1]}" rx="1.2" class="metal"/>`
+      + `<rect x="${r2(x0)}" y="${r2(cy - M[1] / 2)}" width="${M[2]}" height="${M[1]}" rx=".6" class="metal"/><rect x="${r2(x0 + M[2])}" y="0" width="${r2(C)}" height="${r2(B)}" rx="1.5" class="preto"/>`
+      + `<rect x="${r2(x0 + M[2] + C)}" y="${r2(cy - 1.8)}" width="10" height="3.6" rx="1" class="preto" opacity=".75"/>`
+      + rotulo('e-mudo', A / 2, B + 9 * U, 'de frente') + rotulo('e-mudo', x0 + (M[2] + C) / 2, B + 9 * U, 'de lado');
+    s += eH(0, A, B + 4 * U, B, B, fmt(A), 'c_larg', tipoDe('c_larg')) + eV(0, B, -4 * U, 0, 0, fmt(B), 'c_alt', tipoDe('c_alt'), 'esq')
+      + eH(x0 + M[2], x0 + M[2] + C, -4 * U, 0, 0, fmt(C), 'c_comp', tipoDe('c_comp'));
+    if (num('c_larg') == null || num('c_alt') == null) notas.push(['sup', 'Desenhei um plugue comum, de 12 × 6,5 mm: faltam as medidas do seu.']);
+    notas.push(['info', 'Na caixa, a entrada do cabo fica embutida na lateral: um buraco do tamanho do plástico do plugue, com chanfro, que guia o plugue até o USB do ESP32.']);
+    return { svg: esvg(-10 * U, -9 * U, x0 + M[2] + C + 22 * U, B + 22 * U, 'O plugue do cabo em escala', s), notas };
+  }
   function eAmp() {
     const L = num('amp_l') ?? 18, A = num('amp_a') ?? 19, notas = [];
     U = (L + 30) / 120;
@@ -754,6 +784,7 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
         { k: 'p_alt', L: 'B', rot: 'Altura', dica: 'Da borda do lado da linha A à borda do lado da linha V.' },
         { k: 'p_usb', L: 'C', rot: 'Quanto o USB passa da borda', neg: true, dica: 'Da borda da placa até a ponta do conector. Se ele ficar para dentro, escreva com menos (ex.: -2).' },
         { k: 'p_porta', tipo: 'op', rot: 'Qual USB-C você usa agora (o “USB”)?', ops: ['o do lado da linha B', 'o do lado da linha L'] },
+        { k: 'p_usb_a', L: 'J', rot: 'Da borda do lado da linha A até o meio do USB', dica: 'O meio do USB-C que você usa. Deixa a entrada do cabo certinha na caixa.' },
         { k: 'p_furos', tipo: 'op', rot: 'A placa tem furos nos cantos?', ops: SIM_NAO },
         { k: 'p_fh', L: 'D', rot: 'Furos: distância na horizontal', dica: 'Centro a centro.', se: () => est.p_furos === 'sim' },
         { k: 'p_fv', L: 'E', rot: 'Furos: distância na vertical', dica: 'Centro a centro.', se: () => est.p_furos === 'sim' },
@@ -785,6 +816,11 @@ svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weig
       { d: dAmp, e: eAmp, campos: [
         { k: 'amp_l', L: 'A', rot: 'Largura', opcional: true },
         { k: 'amp_a', L: 'B', rot: 'Altura', dica: 'Do lado dos pinos ao lado do borne verde.', opcional: true }] }] },
+    { id: 'cabo', nome: 'Cabo USB-C', peca: 'o plugue', intro: 'A entrada do cabo vai ficar embutida na lateral: o plugue entra na caixa até o USB do ESP32. Meça a parte de plástico do plugue do cabo que vai ficar no mascote.', blocos: [
+      { d: dPlugue, e: ePlugue, leg: 'A parte de plástico, sem contar o metal.', legE: 'O plugue em escala.', campos: [
+        { k: 'c_larg', L: 'A', rot: 'Largura do plástico do plugue' },
+        { k: 'c_alt', L: 'B', rot: 'Altura do plástico do plugue', dica: 'A espessura, na parte mais grossa.' },
+        { k: 'c_comp', L: 'C', rot: 'Comprimento do plástico', dica: 'Do fim do metal até onde o fio sai.' }] }] },
     { id: 'outros', nome: 'Parafusos, cor e cabo', peca: '', intro: 'Para escolher como as peças se prendem, a cor e a fenda do cabo.', blocos: [
       { campos: [
         { k: 'o_paraf', tipo: 'multi', rot: 'Que parafusos você tem? (pode marcar vários)', ops: ['M3', 'porcas M3', 'M2,5', 'M2', 'autoatarraxante pequeno', 'insertos de latão M3', 'nenhum ainda'] },
