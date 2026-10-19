@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Medidas do Mini Mac</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+/* Pranchas de desenho técnico empilhadas: cada peça tem o desenho com cotas em letra (A, B, C…) e, ao lado, os campos dessas letras */
+:root {
+  --bg: #E6E9ED; --folha: #FAFAF9; --tinta: #1B2130; --mudo: #586172; --linha: #CBD0D8;
+  --cota: #1E5BB8; --sup: #7A4ED0; --ativo: #D46F0B; --sobre-ativo: #FFFFFF; --realce: rgba(212, 111, 11, .10);
+  --ok: #24804F; --erro: #BF3326; --grade: rgba(30, 91, 184, .07); --contorno: rgba(0, 0, 0, .35);
+  --mac: #D9D4C5; --mac-sombra: #B9B3A2;
+  --pcb-tela: #B3322B; --sobre-pcb: #FFF1EE; --vidro: #272C34; --sobre-vidro: #9AA3B1; --luz: #F4C88E; --sobre-luz: #6A390B; --cinza: #6B717B;
+  --pcb: #2F6A46; --cobre: #CFA650; --solda: #B6BDC6; --esp: #23272F; --metal: #B3BAC3; --preto: #26292E;
+  --cone: #444A53; --pcb-mic: #25518F; --pcb-amp: #5B2E87; --borne: #2E8E4D; --haste: #5D6169; --capinha: #C9423A;
+  --f-titulo: "Pixelify Sans", "Courier New", monospace;
+  --f-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+    --cota: #78AAFF; --sup: #B597FF; --ativo: #FF9B42; --sobre-ativo: #1A1206; --realce: rgba(255, 155, 66, .12);
+    --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06); --contorno: rgba(255, 255, 255, .22);
+    --mac: #BDB7A7; --mac-sombra: #8F897A;
+    --pcb-tela: #A02D27; --vidro: #0B0D11; --sobre-vidro: #717A89; --cinza: #545A63;
+    --pcb: #275A3B; --esp: #0F1217; --metal: #8D96A3; --preto: #0E1013; --cone: #2E333A; --haste: #4A4E55;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+  --cota: #78AAFF; --sup: #B597FF; --ativo: #FF9B42; --sobre-ativo: #1A1206; --realce: rgba(255, 155, 66, .12);
+  --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06); --contorno: rgba(255, 255, 255, .22);
+  --mac: #BDB7A7; --mac-sombra: #8F897A;
+  --pcb-tela: #A02D27; --vidro: #0B0D11; --sobre-vidro: #717A89; --cinza: #545A63;
+  --pcb: #275A3B; --esp: #0F1217; --metal: #8D96A3; --preto: #0E1013; --cone: #2E333A; --haste: #4A4E55;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--tinta); font: 16px/1.5 var(--f-texto); }
+.pagina {
+  max-width: 1080px; margin: 0 auto; display: grid; gap: 28px;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* topo */
+.topo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 18px; align-items: center; }
+.topo .mac { grid-row: span 2; width: 56px; height: auto; }
+.sobre { margin: 0; font: 600 12px var(--f-texto); letter-spacing: .09em; text-transform: uppercase; color: var(--mudo); }
+h1 { margin: 0; font: 500 clamp(30px, 6vw, 46px)/1.05 var(--f-titulo); text-wrap: balance; }
+.lead { grid-column: 1 / -1; margin: 14px 0 0; max-width: 64ch; }
+.lead + .lead { margin-top: 6px; color: var(--mudo); font-size: 15px; }
+.painel { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; }
+.barra { flex: 1 1 220px; height: 8px; border-radius: 4px; background: var(--linha); overflow: hidden; }
+.barra span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+#progresso { margin: 0; font: 500 14px var(--f-num); font-variant-numeric: tabular-nums; }
+.status { margin: 0; flex-basis: 100%; font-size: 14px; color: var(--mudo); display: flex; align-items: center; gap: 8px; }
+.status::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--mudo); }
+.status[data-s="salvo"]::before { background: var(--ok); }
+.status[data-s="salvando"]::before { background: var(--cota); }
+.status[data-s="local"]::before { background: var(--ativo); }
+.status[data-s="erro"]::before, .status[data-s="semperm"]::before { background: var(--erro); }
+
+/* pranchas */
+.pranchas { display: grid; gap: 28px; }
+.prancha { background: var(--folha); border: 1px solid var(--linha); border-radius: 6px; padding-bottom: 20px; }
+.carimbo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 14px 20px; border-bottom: 1px solid var(--linha); }
+.carimbo h2 { margin: 0; font: 500 24px/1.15 var(--f-titulo); }
+.carimbo .peca { color: var(--mudo); font-size: 14px; }
+.carimbo .num { margin-left: auto; font: 500 12px var(--f-num); letter-spacing: .06em; text-transform: uppercase; color: var(--mudo); }
+.carimbo .conta { font: 500 13px var(--f-num); font-variant-numeric: tabular-nums; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--linha); }
+.prancha[data-completa] .conta { background: var(--ok); border-color: var(--ok); color: var(--folha); }
+.intro { margin: 0; padding: 14px 20px 0; max-width: 72ch; color: var(--mudo); }
+.bloco { display: grid; gap: 14px; padding: 16px 20px 0; }
+@media (min-width: 860px) {
+  .bloco { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); align-items: start; gap: 24px; }
+  .bloco.sem-desenho { grid-template-columns: minmax(0, 1fr); }
+  .desenho { position: sticky; top: 12px; }
+}
+.desenho {
+  margin: 0; padding: 8px; border: 1px solid var(--linha); border-radius: 4px;
+  background-color: var(--folha);
+  background-image: linear-gradient(var(--grade) 1px, transparent 1px), linear-gradient(90deg, var(--grade) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.desenho svg { display: block; width: 100%; height: auto; }
+.desenho figcaption { padding: 6px 4px 2px; font-size: 13px; color: var(--mudo); }
+
+/* campos */
+.campos { display: grid; gap: 2px; min-width: 0; }
+.bloco.sem-desenho .campos { max-width: 640px; }
+.campo { display: grid; gap: 8px; padding: 10px 8px; border-radius: 4px; transition: background-color .15s; }
+.campo.ativo { background: var(--realce); }
+.campo.mm { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; }
+.campo label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; min-width: 0; }
+.letra {
+  flex: none; width: 24px; height: 24px; margin-top: 1px; border-radius: 50%;
+  border: 1.5px solid var(--cota); color: var(--cota); font: 700 12px/21px var(--f-num); text-align: center;
+}
+.campo.feito .letra { border-color: var(--ok); color: var(--ok); }
+.campo.ativo .letra { background: var(--ativo); border-color: var(--ativo); color: var(--sobre-ativo); }
+.rot { display: block; font-weight: 600; font-size: 15px; line-height: 1.35; }
+.rot small { display: block; margin-top: 2px; font-weight: 400; font-size: 13px; color: var(--mudo); }
+.valor { display: flex; align-items: center; gap: 6px; }
+.valor input {
+  width: 5.6em; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 4px;
+  background: var(--bg); color: var(--tinta); font: 500 17px var(--f-num); text-align: right; font-variant-numeric: tabular-nums;
+}
+.un { font: 500 13px var(--f-num); color: var(--mudo); }
+.aviso { display: none; grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--erro); }
+.invalido .valor input { border-color: var(--erro); }
+.invalido .aviso { display: block; }
+.campo.texto input, .campo.texto textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--linha); border-radius: 4px;
+  background: var(--bg); color: var(--tinta); font: 16px/1.4 var(--f-texto); resize: vertical;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 40px; padding: 7px 14px; border: 1px solid var(--linha); border-radius: 999px;
+  background: var(--bg); color: var(--tinta); font: 500 14px var(--f-texto); cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--cota); border-color: var(--cota); color: var(--folha); }
+input:focus-visible, textarea:focus-visible, .chip:focus-visible, button:focus-visible { outline: 2px solid var(--ativo); outline-offset: 2px; }
+
+/* fim */
+.fim { display: grid; gap: 12px; padding: 20px; background: var(--folha); border: 1px solid var(--linha); border-radius: 6px; }
+.fim h2 { margin: 0; font: 500 22px var(--f-titulo); }
+.fim p { margin: 0; max-width: 64ch; }
+.acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.botao { padding: 10px 18px; border: 0; border-radius: 4px; background: var(--cota); color: var(--folha); font: 600 15px var(--f-texto); cursor: pointer; }
+#copiado { font-size: 14px; color: var(--ok); }
+details summary { cursor: pointer; color: var(--mudo); font-size: 14px; }
+.resumo { overflow-x: auto; margin: 10px 0 0; padding: 12px; border-radius: 4px; background: var(--bg); font: 500 13px/1.55 var(--f-num); white-space: pre; }
+
+/* desenhos */
+svg .cota { cursor: pointer; }
+svg .cota .ext { stroke: var(--cota); stroke-width: .8; fill: none; opacity: .75; }
+svg .cota .lin { stroke: var(--cota); stroke-width: 1.2; fill: none; }
+svg .cota polygon { fill: var(--cota); }
+svg .cota .bolha circle { fill: var(--folha); stroke: var(--cota); stroke-width: 1.4; }
+svg .cota .bolha text { fill: var(--cota); font: 700 11px var(--f-num); }
+svg .cota.feito .bolha circle { stroke: var(--ok); }
+svg .cota.feito .bolha text { fill: var(--ok); }
+svg .cota.ativo .ext, svg .cota.ativo .lin { stroke: var(--ativo); stroke-width: 2; opacity: 1; }
+svg .cota.ativo polygon { fill: var(--ativo); }
+svg .cota.ativo .bolha circle { fill: var(--ativo); stroke: var(--ativo); }
+svg .cota.ativo .bolha text { fill: var(--sobre-ativo); }
+svg .pcb-tela { fill: var(--pcb-tela); stroke: var(--contorno); }
+svg .vidro { fill: var(--vidro); }
+svg .luz { fill: var(--luz); }
+svg .cinza { fill: var(--cinza); }
+svg .preto { fill: var(--preto); stroke: var(--contorno); stroke-width: .8; }
+svg .metal { fill: var(--metal); stroke: var(--contorno); stroke-width: .6; }
+svg .furo { fill: var(--folha); stroke: var(--metal); stroke-width: 2; }
+svg .furo-dourado { fill: var(--folha); stroke: var(--cobre); stroke-width: 2; }
+svg .pcb { fill: var(--pcb); stroke: var(--contorno); }
+svg .cobre { fill: var(--cobre); }
+svg .solda { fill: var(--solda); }
+svg .esp { fill: var(--esp); stroke: var(--contorno); }
+svg .cone { fill: var(--cone); stroke: var(--contorno); }
+svg .pcb-mic { fill: var(--pcb-mic); stroke: var(--contorno); }
+svg .pcb-amp { fill: var(--pcb-amp); stroke: var(--contorno); }
+svg .borne { fill: var(--borne); stroke: var(--contorno); }
+svg .haste { fill: var(--haste); stroke: var(--contorno); }
+svg .capinha { fill: var(--capinha); stroke: var(--contorno); }
+svg .pino { stroke: var(--metal); stroke-width: 2; }
+svg .som { stroke: var(--ativo); stroke-width: 2; fill: none; }
+svg .t-vidro { font: 500 11px var(--f-texto); fill: var(--sobre-vidro); }
+svg .t-luz { font: 600 11px var(--f-texto); fill: var(--sobre-luz); }
+svg .t-pcb { font: 600 8.5px var(--f-texto); fill: var(--sobre-pcb); }
+svg .t-esp { font: 700 10px var(--f-num); fill: var(--sobre-pcb); }
+svg .t-mini { font: 700 6.6px var(--f-num); fill: var(--sobre-pcb); }
+svg .leg { font: 500 10.5px var(--f-texto); fill: var(--mudo); }
+svg .leg-p { font: 500 9px var(--f-num); fill: var(--mudo); }
+svg .mac-corpo { fill: var(--mac); stroke: var(--mac-sombra); stroke-width: 2; }
+svg .mac-tela { fill: var(--vidro); }
+svg .mac-fenda { fill: var(--mac-sombra); }
+svg .mascote { fill: var(--ativo); }
+
+/* modos dos desenhos e desenhos em escala */
+.modos { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin: 0 0 6px; }
+.modo { min-height: 32px; padding: 4px 12px; border: 1px solid var(--linha); border-radius: 999px; background: var(--folha); color: var(--mudo); font: 500 13px var(--f-texto); cursor: pointer; }
+.modo[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--folha); }
+.svgbox { overflow-x: auto; }
+.desenho { min-width: 0; }
+.svgbox svg.escala { min-width: 460px; max-height: 460px; }
+.desenho figcaption > span { display: block; }
+.notas { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.notas li { position: relative; padding-left: 15px; font-size: 13.5px; line-height: 1.45; color: var(--tinta); }
+.notas li::before { content: ""; position: absolute; left: 0; top: .5em; width: 7px; height: 7px; border-radius: 50%; background: var(--mudo); }
+.notas .n-aviso::before { background: var(--erro); }
+.notas .n-sup::before { background: var(--sup); }
+.legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; font-size: 12px; color: var(--mudo); }
+.lg::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; background: var(--cota); }
+.lg.calc::before { background: var(--mudo); }
+.lg.sup::before { background: var(--sup); }
+svg.escala [class] { stroke-width: calc(.18px * var(--u, 1)); }
+svg.escala .ecota .ext { stroke: var(--cota); stroke-width: calc(.16px * var(--u, 1)); fill: none; opacity: .75; }
+svg.escala .ecota .lin { stroke: var(--cota); stroke-width: calc(.26px * var(--u, 1)); fill: none; }
+svg.escala .ecota polygon { fill: var(--cota); stroke: none; }
+svg.escala .ecota text { fill: var(--cota); font-family: var(--f-num); font-weight: 700; }
+svg.escala .ecota[data-d] { cursor: pointer; }
+svg.escala .ecota.calc .ext, svg.escala .ecota.calc .lin { stroke: var(--mudo); }
+svg.escala .ecota.calc polygon { fill: var(--mudo); }
+svg.escala .ecota.calc text { fill: var(--mudo); font-weight: 500; }
+svg.escala .ecota.sup .ext, svg.escala .ecota.sup .lin { stroke: var(--sup); }
+svg.escala .ecota.sup polygon { fill: var(--sup); }
+svg.escala .ecota.sup text { fill: var(--sup); }
+svg.escala .ecota.conflito .ext, svg.escala .ecota.conflito .lin { stroke: var(--erro); }
+svg.escala .ecota.conflito polygon { fill: var(--erro); }
+svg.escala .ecota.conflito text { fill: var(--erro); }
+svg.escala .ecota.ativo .ext, svg.escala .ecota.ativo .lin { stroke: var(--ativo); stroke-width: calc(.45px * var(--u, 1)); opacity: 1; }
+svg.escala .ecota.ativo polygon { fill: var(--ativo); }
+svg.escala .ecota.ativo text { fill: var(--ativo); }
+svg.escala .furo { fill: var(--folha); stroke: var(--metal); stroke-width: calc(.35px * var(--u, 1)); }
+svg.escala .furo.bate { stroke: var(--erro); stroke-width: calc(.7px * var(--u, 1)); }
+svg.escala .furo-dourado { fill: var(--folha); stroke: var(--cobre); stroke-width: calc(.3px * var(--u, 1)); }
+svg.escala .pino { stroke-width: calc(.6px * var(--u, 1)); }
+svg.escala .som { stroke-width: calc(.5px * var(--u, 1)); }
+svg.escala .janela { fill: none; stroke: var(--tinta); stroke-width: calc(.3px * var(--u, 1)); stroke-dasharray: 1.4 .9; }
+svg.escala .usb-sel { stroke: var(--ok); stroke-width: calc(.7px * var(--u, 1)); }
+svg.escala .e-mudo text { fill: var(--mudo); font-family: var(--f-texto); font-weight: 500; }
+svg.escala .e-luz text { fill: var(--sobre-luz); font-family: var(--f-texto); font-weight: 600; }
+svg.escala .e-sup text { fill: var(--sup); font-family: var(--f-texto); font-weight: 600; }
+svg.escala .e-claro text { fill: var(--sobre-pcb); font-family: var(--f-num); font-weight: 700; }
+svg.escala .e-escuro text { fill: var(--preto); font-family: var(--f-num); font-weight: 700; }
+svg.escala .e-rot { fill: var(--sobre-pcb); font-family: var(--f-num); font-weight: 700; }
+
+@media (max-width: 560px) {
+  .carimbo { padding: 12px 14px; }
+  .intro { padding: 12px 14px 0; }
+  .bloco { padding: 12px 10px 0; }
+  .desenho { padding: 4px; }
+  .campo.mm { grid-template-columns: minmax(0, 1fr); }
+  .valor { padding-left: 34px; }
+  .fim { padding: 16px 14px; }
+  .svgbox svg.escala { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .barra span, .campo { transition: none; } }
+</style>
+
+<main class="pagina">
+  <header class="topo">
+    <svg class="mac" viewBox="0 0 56 64" aria-hidden="true">
+      <rect x="4" y="2" width="48" height="54" rx="5" class="mac-corpo"/>
+      <rect x="11" y="9" width="34" height="25" rx="2" class="mac-tela"/>
+      <rect x="22" y="16" width="12" height="9" rx="2" class="mascote"/><rect x="25" y="19" width="2" height="2" class="mac-tela"/><rect x="30" y="19" width="2" height="2" class="mac-tela"/>
+      <rect x="30" y="44" width="14" height="2.5" rx="1" class="mac-fenda"/>
+      <rect x="8" y="56" width="40" height="6" rx="2" class="mac-corpo"/>
+    </svg>
+    <p class="sobre">Mascote do Claude · caixa Mini Mac</p>
+    <h1>Medidas do Mini Mac</h1>
+    <p class="lead">Para eu desenhar a caixa no tamanho certo, meça cada peça com o paquímetro, em milímetros. Toque numa letra do desenho para ir direto ao campo dela. Tudo salva sozinho e eu leio daqui: quando terminar, é só me avisar no chat.</p>
+    <p class="lead">Pode usar vírgula (98,5). Sem paquímetro, uma régua serve: escreva o que der. Se não souber alguma, deixe em branco.</p>
+    <p class="lead">Os desenhos abrem em “Como eu entendi”: em escala, com as suas medidas. Azul é medida sua (toque no número para corrigir), cinza é conta minha e roxo é suposição. Em “Onde medir” estão as letras de cada medida.</p>
+    <div class="painel">
+      <div class="barra" role="progressbar" aria-label="Medidas preenchidas" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span></span></div>
+      <p id="progresso">0 de 0</p>
+      <p class="status" id="status" data-s="carregando">Abrindo o caderno de medidas…</p>
+    </div>
+  </header>
+
+  <div id="pranchas" class="pranchas"></div>
+
+  <section class="fim" aria-labelledby="h-fim">
+    <h2 id="h-fim">Terminou?</h2>
+    <p>Me avise no chat que as medidas estão prontas. Se aparecer “salvo só neste aparelho” lá em cima, copie o resumo e cole no chat.</p>
+    <div class="acoes"><button type="button" class="botao" id="copiar">Copiar resumo</button><span id="copiado" role="status"></span></div>
+    <details id="det-resumo"><summary>Ver o resumo</summary><pre class="resumo" id="resumo"></pre></details>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------------- estado ----------------
+  const LS = 'medidas-mini-mac-v1';
+  const est = {};
+  Object.assign(est, {"a_d": "40", "a_forma": "redondo", "a_furos": "", "a_prof": "21", "b_alt": "5", "b_cap": "não", "b_d": "3,5", "b_tam": "6 × 6 mm", "i_baixo": "2", "i_cima": "2", "i_dir": "7", "i_esq": "2", "m_d": "14", "m_furo": "do lado oposto aos pininhos", "m_jump": "sim", "o_ams": "sim", "o_cabo": "reto", "o_comp": "19", "o_cor": "bege branco", "o_paraf": ["M3"], "p_alt": "60", "p_fd": "2,2", "p_fh": "55,8", "p_furos": "sim", "p_fv": "75,6", "p_h_esp": "19,3", "p_h_tot": "48,5", "p_h_usb": "13,9", "p_larg": "80", "p_porta": "o do lado da linha L", "p_usb": "-8,3", "t_alt": "54,8", "t_esp": "5,4", "t_fd": "3,6", "t_fesq": "1", "t_fh": "90,4", "t_fv": "49,2", "t_larg": "96", "t_pinos": "esquerda", "t_prof": "35", "v_alt": "54,2", "v_cima": "0,3", "v_dir": "5,7", "v_esq": "6,1", "v_larg": "84,2"});   // medidas.json, de 19/out/2026
+  try { Object.assign(est, JSON.parse(localStorage.getItem(LS) || '{}')); } catch (e) { /* sem armazenamento local */ }
+  const temValor = k => { const v = est[k]; return Array.isArray(v) ? v.length > 0 : v != null && String(v).trim() !== ''; };
+  let ativo = null;
+
+  // ---------------- desenho: cotas ----------------
+  const seta = (x, y, d) => {
+    const a = 6, b = 2.6;
+    const p = { e: [[x + a, y - b], [x + a, y + b]], d: [[x - a, y - b], [x - a, y + b]], c: [[x - b, y + a], [x + b, y + a]], b: [[x - b, y - a], [x + b, y - a]] }[d];
+    return `<polygon points="${x},${y} ${p[0]} ${p[1]}"/>`;
+  };
+  const bolha = (x, y, L) => `<g class="bolha"><circle cx="${x}" cy="${y}" r="9"/><text x="${x}" y="${y + 3.9}" text-anchor="middle">${L}</text></g>`;
+  const grupo = (k, corpo) => `<g class="cota${temValor(k) ? ' feito' : ''}${ativo === k ? ' ativo' : ''}" data-d="${k}">${corpo}</g>`;
+  // horizontal: linha em y, de x1 a x2; as linhas de chamada saem de y1 (em x1) e de y2 (em x2)
+  function cH(k, L, x1, x2, y, y1, y2 = y1, bx = (x1 + x2) / 2) {
+    const ext = (x, yy) => { const s = y > yy ? 1 : -1; return `M${x} ${yy + s * 3} V${y + s * 4}`; };
+    return grupo(k, `<path class="ext" d="${ext(x1, y1)} ${ext(x2, y2)}"/><path class="lin" d="M${x1} ${y} H${x2}"/>${seta(x1, y, 'e')}${seta(x2, y, 'd')}${bolha(bx, y, L)}`);
+  }
+  // vertical: linha em x, de y1 a y2; as linhas de chamada saem de x1 (em y1) e de x2 (em y2)
+  function cV(k, L, y1, y2, x, x1, x2 = x1, by = (y1 + y2) / 2) {
+    const ext = (xx, yy) => { const s = x > xx ? 1 : -1; return `M${xx + s * 3} ${yy} H${x + s * 4}`; };
+    return grupo(k, `<path class="ext" d="${ext(x1, y1)} ${ext(x2, y2)}"/><path class="lin" d="M${x} ${y1} V${y2}"/>${seta(x, y1, 'c')}${seta(x, y2, 'b')}${bolha(x, by, L)}`);
+  }
+  // diâmetro: linha de chamada da borda do furo até a bolha
+  function cD(k, L, cx, cy, r, bx, by) {
+    const a = Math.atan2(by - cy, bx - cx);
+    return grupo(k, `<path class="lin" d="M${(cx + Math.cos(a) * r).toFixed(1)} ${(cy + Math.sin(a) * r).toFixed(1)} L${bx} ${by}"/>${bolha(bx, by, L)}`);
+  }
+  const svg = (vb, rotulo, corpo) => `<svg viewBox="${vb}" role="img" aria-label="${rotulo}">${corpo}</svg>`;
+  const fios = ['#D9453B', '#E8B52F', '#3D9B5B'];
+
+  // ---------------- desenhos das peças ----------------
+  function dTelaPlaca() {
+    let s = `<rect x="50" y="56" width="270" height="152" rx="4" class="pcb-tela"/>`
+      + `<rect x="74" y="64" width="206" height="136" rx="2" class="vidro"/><text x="177" y="136" text-anchor="middle" class="t-vidro">vidro</text>`
+      + `<rect x="288" y="82" width="12" height="100" rx="1.5" class="preto"/><text x="294" y="79" text-anchor="middle" class="t-pcb">pinos</text>`;
+    for (let i = 0; i < 14; i++) s += `<circle cx="294" cy="${86 + i * 7}" r="1.8" class="metal"/>`;
+    [[60, 66], [310, 66], [60, 198], [310, 198]].forEach(([x, y]) => s += `<circle cx="${x}" cy="${y}" r="4.5" class="furo"/>`);
+    s += cH('t_larg', 'A', 50, 320, 34, 56) + cV('t_alt', 'B', 56, 208, 26, 50)
+      + cH('t_fh', 'C', 60, 310, 232, 203) + cV('t_fv', 'D', 66, 198, 346, 315)
+      + cD('t_fd', 'E', 60, 198, 4.5, 30, 244) + cH('t_fesq', 'P', 50, 55.5, 46, 56, 66, 38);
+    return svg('0 0 372 256', 'A tela de frente, com as cotas A a E', s);
+  }
+  function dTelaVidro() {
+    let s = `<rect x="50" y="50" width="270" height="172" rx="4" class="pcb-tela"/>`
+      + `<rect x="74" y="70" width="214" height="136" rx="2" class="vidro"/>`
+      + `<rect x="94" y="92" width="176" height="104" class="luz"/><text x="182" y="148" text-anchor="middle" class="t-luz">a parte que acende</text>`
+      + `<rect x="296" y="86" width="12" height="104" rx="1.5" class="preto"/>`;
+    for (let i = 0; i < 14; i++) s += `<circle cx="302" cy="${(90 + i * 7.4).toFixed(1)}" r="1.8" class="metal"/>`;
+    s += cH('v_larg', 'F', 74, 288, 34, 70) + cV('v_alt', 'G', 70, 206, 346, 288)
+      + cH('v_esq', 'H', 50, 74, 244, 222, 206) + cH('i_esq', 'J', 74, 94, 244, 206, 196)
+      + cV('v_cima', 'I', 50, 70, 26, 50, 74) + cV('i_cima', 'K', 70, 92, 26, 74, 94)
+      + cH('i_dir', 'N', 270, 288, 244, 196, 206) + cV('i_baixo', 'O', 196, 206, 26, 94, 74) + cH('v_dir', 'Q', 288, 320, 34, 70, 50);
+    return svg('0 0 372 262', 'O vidro e a parte que acende, com as cotas F a K', s);
+  }
+  function dTelaLado() {
+    let s = `<rect x="40" y="40" width="7" height="100" class="vidro"/><rect x="47" y="44" width="5" height="92" class="cinza"/>`
+      + `<rect x="52" y="34" width="4" height="112" class="pcb-tela"/><rect x="56" y="110" width="8" height="28" class="preto"/>`;
+    [116, 124, 132].forEach(y => s += `<path d="M64 ${y} H84" class="pino"/>`);
+    [111, 120, 129].forEach((y, i) => s += `<rect x="82" y="${y}" width="22" height="8" rx="1" class="preto"/><path d="M104 ${y + 4} C${130 + i * 6} ${y + 4} ${142 + i * 3} ${y + 12} ${142 + i * 3} 150" stroke="${fios[i]}" stroke-width="3" fill="none"/>`);
+    s += `<text x="34" y="94" text-anchor="end" class="leg">vidro</text><text x="162" y="104" class="leg">pinos e jumpers</text>`
+      + cH('t_esp', 'L', 40, 56, 18, 40, 34, 74) + cH('t_prof', 'M', 40, 148, 164, 140, 150);
+    return svg('0 0 372 178', 'A tela de lado, com as cotas L e M', s);
+  }
+  function dPlacaTopo() {
+    let pads = '';
+    for (let c = 0; c < 27; c++) for (let r = 0; r < 22; r++) pads += `M${67.2 + c * 10} ${41 + r * 10}a2.2 2.2 0 1 0 -4.4 0a2.2 2.2 0 1 0 4.4 0`;
+    let s = `<rect x="60" y="36" width="270" height="220" rx="3" class="pcb"/><path d="${pads}" class="cobre"/>`
+      + `<rect x="56" y="134" width="242" height="114" rx="3" class="esp"/><rect x="214" y="148" width="76" height="86" rx="2" class="metal"/>`
+      + `<text x="135" y="195" text-anchor="middle" class="t-esp">ESP32-S3</text>`
+      + `<rect x="42" y="150" width="20" height="14" rx="3" class="metal"/><rect x="42" y="218" width="20" height="14" rx="3" class="metal"/>`
+      + `<text x="65" y="31" text-anchor="middle" class="leg-p">1</text><text x="325" y="31" text-anchor="middle" class="leg-p">27</text>`
+      + [['A', 254], ['B', 244], ['L', 144], ['V', 44]].map(([t, y]) => `<text x="337" y="${y}" class="leg-p">${t}</text>`).join('');
+    s += cH('p_larg', 'A', 60, 330, 14, 36) + cV('p_alt', 'B', 36, 256, 362, 330) + cH('p_usb', 'C', 42, 60, 280, 232, 256);
+    if (est.p_furos === 'sim') {
+      [[69, 45], [321, 45], [69, 247], [321, 247]].forEach(([x, y]) => s += `<circle cx="${x}" cy="${y}" r="3.6" class="furo"/>`);
+      s += cH('p_fh', 'D', 69, 321, 64, 49) + cV('p_fv', 'E', 45, 247, 308, 317) + cD('p_fd', 'F', 69, 247, 3.6, 92, 282);
+    }
+    return svg('0 0 376 296', 'A placa ilhada vista de cima, com o ESP32 e as cotas', s);
+  }
+  function dPlacaLado() {
+    let s = '';
+    for (let x = 45; x <= 325; x += 10) s += `<ellipse cx="${x}" cy="158" rx="3.2" ry="2.4" class="solda"/>`;
+    s += `<rect x="40" y="150" width="290" height="6" class="pcb"/><rect x="66" y="126" width="228" height="24" class="preto"/>`
+      + `<rect x="50" y="120" width="248" height="6" class="esp"/><rect x="210" y="111" width="80" height="9" class="metal"/>`
+      + `<rect x="40" y="111" width="18" height="9" rx="2" class="metal"/>`
+      + `<rect x="302" y="98" width="8" height="52" class="preto"/><rect x="314" y="98" width="8" height="52" class="preto"/>`
+      + `<path d="M306 98 C306 72 318 62 342 60" stroke="${fios[0]}" stroke-width="3" fill="none"/><path d="M318 98 C318 78 326 70 342 68" stroke="${fios[2]}" stroke-width="3" fill="none"/>`
+      + `<text x="49" y="105" text-anchor="middle" class="leg">USB</text><text x="250" y="104" text-anchor="middle" class="leg">ESP32</text>`
+      + `<text x="185" y="178" text-anchor="middle" class="leg">placa ilhada</text><text x="298" y="56" text-anchor="end" class="leg">jumpers</text>`;
+    s += cV('p_h_usb', 'I', 115.5, 150, 30, 40, 40, 140) + cV('p_h_esp', 'G', 111, 160, 12, 40, 42, 124) + cV('p_h_tot', 'H', 60, 160, 362, 342, 328);
+    return svg('0 0 376 186', 'A placa montada de lado, com as cotas G, H e I', s);
+  }
+  function dFalante() {
+    const ret = est.a_forma === 'retangular', furos = est.a_furos === 'sim';
+    let s = '';
+    if (furos) s += `<rect x="14" y="92" width="172" height="16" rx="8" class="metal"/>`;
+    s += ret
+      ? `<rect x="34" y="56" width="132" height="88" rx="10" class="metal"/><ellipse cx="100" cy="100" rx="54" ry="34" class="cone"/><ellipse cx="100" cy="100" rx="16" ry="12" class="preto"/>`
+      : `<circle cx="100" cy="100" r="66" class="metal"/><circle cx="100" cy="100" r="54" class="cone"/><circle cx="100" cy="100" r="18" class="preto"/>`;
+    if (furos) s += `<circle cx="24" cy="100" r="3.5" class="furo"/><circle cx="176" cy="100" r="3.5" class="furo"/>`;
+    s += `<rect x="240" y="${ret ? 56 : 34}" width="6" height="${ret ? 88 : 132}" class="metal"/>`
+      + `<polygon points="246,${ret ? 62 : 42} 290,80 290,120 246,${ret ? 138 : 158}" class="cone"/><rect x="290" y="76" width="40" height="48" rx="3" class="preto"/>`
+      + `<text x="100" y="208" text-anchor="middle" class="leg">de frente</text><text x="285" y="208" text-anchor="middle" class="leg">de lado</text>`;
+    s += cH('a_d', 'A', 34, 166, 186, ret ? 144 : 100) + cH('a_prof', 'C', 240, 330, 186, ret ? 144 : 166, 124);
+    if (ret) s += cV('a_l', 'B', 56, 144, 206, 166);
+    if (furos) s += cH('a_fdist', 'D', 24, 176, 16, 96);
+    return svg('0 0 372 216', 'O alto-falante de frente e de lado, com as cotas', s);
+  }
+  function dBotao() {
+    const cap = est.b_cap === 'sim', r = cap ? 22 : 14, topo = cap ? 84 : 96;
+    let s = '';
+    [[58, 76], [58, 118], [130, 76], [130, 118]].forEach(([x, y]) => s += `<rect x="${x}" y="${y}" width="12" height="6" class="metal"/>`);
+    s += `<rect x="70" y="70" width="60" height="60" rx="3" class="preto"/>` + (cap ? `<circle cx="100" cy="100" r="22" class="capinha"/>` : '') + `<circle cx="100" cy="100" r="14" class="haste"/>`;
+    s += `<path d="M258 150 V172 M302 150 V172" class="pino"/><rect x="250" y="120" width="60" height="30" rx="3" class="preto"/><rect x="273" y="96" width="14" height="24" class="haste"/>`
+      + (cap ? `<rect x="262" y="84" width="36" height="22" rx="4" class="capinha"/>` : '')
+      + `<text x="100" y="194" text-anchor="middle" class="leg">de cima</text><text x="280" y="194" text-anchor="middle" class="leg">de lado</text>`;
+    s += cH('b_d', 'B', 100 - r, 100 + r, 50, 100) + cV('b_alt', 'A', topo, 150, 338, cap ? 298 : 287, 310);
+    return svg('0 0 372 202', 'O botão de cima e de lado, com as cotas A e B', s);
+  }
+  function dMic() {
+    const mesmo = est.m_furo === 'do mesmo lado dos pininhos';
+    let s = `<circle cx="100" cy="96" r="56" class="pcb-mic"/>`;
+    for (let i = 0; i < 6; i++) s += `<circle cx="${70 + i * 12}" cy="134" r="3" class="furo-dourado"/>`;
+    s += `<circle cx="100" cy="88" r="4" class="furo"/><text x="100" y="74" text-anchor="middle" class="t-pcb">furinho do som</text>`;
+    s += `<rect x="230" y="96" width="112" height="6" class="pcb-mic"/>`;
+    for (let i = 0; i < 6; i++) s += `<path d="M${250 + i * 12} 102 V136" class="pino"/>`;
+    s += mesmo
+      ? `<path d="M332 156 V112 M327 118 L332 110 L337 118" class="som"/><text x="332" y="170" text-anchor="middle" class="leg">som</text>`
+      : `<path d="M286 52 V88 M281 82 L286 90 L291 82" class="som"/><text x="286" y="46" text-anchor="middle" class="leg">som</text>`;
+    s += `<text x="100" y="198" text-anchor="middle" class="leg">lado do furinho</text><text x="286" y="198" text-anchor="middle" class="leg">de lado</text>`
+      + cH('m_d', 'A', 44, 156, 176, 96);
+    return svg('0 0 372 206', 'O microfone de frente e de lado, com a cota A', s);
+  }
+  function dAmp() {
+    let s = `<rect x="120" y="34" width="140" height="148" rx="4" class="pcb-amp"/>`;
+    ['LRC', 'BCLK', 'DIN', 'GAIN', 'SD', 'GND', 'VIN'].forEach((p, i) => { const x = (132 + i * 19.3).toFixed(1); s += `<circle cx="${x}" cy="46" r="3.6" class="furo-dourado"/><text x="${x}" y="62" text-anchor="middle" class="t-mini">${p}</text>`; });
+    s += `<rect x="172" y="88" width="36" height="36" rx="2" class="preto"/><rect x="158" y="146" width="64" height="30" rx="2" class="borne"/><circle cx="174" cy="161" r="7" class="metal"/><circle cx="206" cy="161" r="7" class="metal"/>`
+      + `<text x="300" y="164" class="leg">borne verde</text>`;
+    s += cH('amp_l', 'A', 120, 260, 202, 182) + cV('amp_a', 'B', 34, 182, 290, 260);
+    return svg('0 0 372 216', 'O amplificador visto de cima, com as cotas A e B', s);
+  }
+
+  // ---------------- desenhos em escala (em mm, com as medidas digitadas) ----------------
+  const num = k => { const v = est[k]; if (v == null || String(v).trim() === '') return null; const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) ? n : null; };
+  const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
+  const r2 = n => Math.round(n * 100) / 100;
+  const tipoDe = k => num(k) != null ? 'med' : 'sup';
+  let U = 1;     // tamanho do texto e das setas: 1 num desenho de uns 120 mm de largura
+  let TXT = 1;   // no celular o texto cresce para continuar legível
+  const FS = () => 2.6 * U * TXT;
+  const eg = (k, tipo, corpo) => `<g class="ecota ${tipo}${k && ativo === k ? ' ativo' : ''}"${k ? ` data-d="${k}"` : ''}>${corpo}</g>`;
+  function eseta(x, y, d) {
+    const a = 1.5 * U, b = .55 * U;
+    const p = { e: [[x + a, y - b], [x + a, y + b]], d: [[x - a, y - b], [x - a, y + b]], c: [[x - b, y + a], [x + b, y + a]], b: [[x - b, y - a], [x + b, y - a]] }[d];
+    return `<polygon points="${r2(x)},${r2(y)} ${p[0].map(r2)} ${p[1].map(r2)}"/>`;
+  }
+  const etx = (x, y, t, anc = 'middle', gira = false) => `<text x="${r2(x)}" y="${r2(y)}" font-size="${r2(FS())}" text-anchor="${anc}"${gira ? ` transform="rotate(-90 ${r2(x)} ${r2(y)})"` : ''}>${t}</text>`;
+  // cota horizontal de x1 a x2 na altura y; as linhas de chamada saem de y1 (em x1) e de y2 (em x2); null = sem chamada
+  function eH(x1, x2, y, y1, y2, txt, k, tipo = 'med', fora = 'dir') {
+    const ext = (x, yy) => yy == null ? '' : `M${r2(x)} ${r2(yy + (y > yy ? .8 : -.8) * U)} V${r2(y + (y > yy ? 1 : -1) * U)}`;
+    const vao = x2 - x1, peq = vao < 3.6 * U, cabe = vao >= txt.length * .6 * FS() + 1.2 * U;
+    const lin = peq ? `M${r2(x1 - 3 * U)} ${r2(y)} H${r2(x2 + 3 * U)}` : `M${r2(x1)} ${r2(y)} H${r2(x2)}`;
+    const setas = peq ? eseta(x1, y, 'd') + eseta(x2, y, 'e') : eseta(x1, y, 'e') + eseta(x2, y, 'd');
+    const off = (peq ? 3.8 : 1.2) * U;
+    const t = cabe ? etx((x1 + x2) / 2, y - .8 * U, txt) : fora === 'dir' ? etx(x2 + off, y + FS() * .35, txt, 'start') : etx(x1 - off, y + FS() * .35, txt, 'end');
+    return eg(k, tipo, `<path class="ext" d="${ext(x1, y1)} ${ext(x2, y2)}"/><path class="lin" d="${lin}"/>${setas}${t}`);
+  }
+  // cota vertical de y1 a y2 na coluna x; as linhas de chamada saem de x1 (em y1) e de x2 (em y2); lado = de que lado fica o texto
+  function eV(y1, y2, x, x1, x2, txt, k, tipo = 'med', lado = 'esq') {
+    const ext = (xx, yy) => xx == null ? '' : `M${r2(xx + (x > xx ? .8 : -.8) * U)} ${r2(yy)} H${r2(x + (x > xx ? 1 : -1) * U)}`;
+    const vao = y2 - y1, peq = vao < 3.6 * U, cabe = vao >= txt.length * .6 * FS() + 1.2 * U;
+    const lin = peq ? `M${r2(x)} ${r2(y1 - 3 * U)} V${r2(y2 + 3 * U)}` : `M${r2(x)} ${r2(y1)} V${r2(y2)}`;
+    const setas = peq ? eseta(x, y1, 'b') + eseta(x, y2, 'c') : eseta(x, y1, 'c') + eseta(x, y2, 'b');
+    const meio = (y1 + y2) / 2;
+    const t = cabe
+      ? (lado === 'esq' ? etx(x - .8 * U, meio, txt, 'middle', true) : etx(x + .8 * U + FS() * .75, meio, txt, 'middle', true))
+      : (lado === 'esq' ? etx(x - 1.4 * U, meio + FS() * .35, txt, 'end') : etx(x + 1.4 * U, meio + FS() * .35, txt, 'start'));
+    return eg(k, tipo, `<path class="ext" d="${ext(x1, y1)} ${ext(x2, y2)}"/><path class="lin" d="${lin}"/>${setas}${t}`);
+  }
+  function eDiam(cx, cy, r, bx, by, txt, k, tipo = 'med') {
+    const a = Math.atan2(by - cy, bx - cx), dir = bx >= cx ? 1 : -1, w = txt.length * .6 * FS() + U;
+    return eg(k, tipo, `<path class="lin" d="M${r2(cx + Math.cos(a) * r)} ${r2(cy + Math.sin(a) * r)} L${r2(bx)} ${r2(by)} h${r2(dir * w)}"/>${etx(bx + dir * .5 * U, by - .7 * U, txt, dir > 0 ? 'start' : 'end')}`);
+  }
+  function esvg(x, y, w, h, rotulo, corpo) {
+    const m = (TXT - 1) * 8 * U;   // folga a mais quando o texto cresce
+    return `<svg class="escala" viewBox="${r2(x - m)} ${r2(y - m)} ${r2(w + 2 * m)} ${r2(h + 2 * m)}" style="--u:${r2(U)}" role="img" aria-label="${rotulo}">${corpo}</svg>`;
+  }
+  const rotulo = (cls, x, y, t, anc, gira) => `<g class="${cls}">${etx(x, y, t, anc, gira)}</g>`;
+
+  const AA = [73.44, 48.96];   // área de imagem da ficha da tela, em mm
+  function geoTela() {
+    const a = num('t_larg'), b = num('t_alt');
+    const vLmed = num('v_larg') ?? 85, vA = num('v_alt') ?? 54, vE = num('v_esq') ?? 5, vC = num('v_cima') ?? 1, vD = num('v_dir');
+    let vL = vLmed;
+    // o lado comprido fica na horizontal (mascote em pé); o curto só vale se couber o vidro
+    let kL = 't_larg', kS = 't_alt', L = a, S = b;
+    if ((b ?? -1) > (a ?? -1)) { kL = 't_alt'; kS = 't_larg'; L = b; S = a; }
+    const Lok = L != null && L >= vE + vL, Sok = S != null && S >= vC + vA;
+    if (!Lok) L = vE + vL + 5;
+    if (!Sok) S = vC + vA + 1.5;
+    // com as duas bordas medidas, o vidro fica entre elas; se não fechar com a largura medida, avisa
+    let confL = null;
+    if (Lok && vD != null && num('v_esq') != null) { const w = L - vE - vD; if (Math.abs(w - vLmed) > .3) confL = w - vLmed; vL = w; }
+    const fa = num('t_fh'), fb = num('t_fv');
+    let kHl = 't_fh', kHs = 't_fv', hl = fa, hs = fb;
+    if ((fb ?? -1) > (fa ?? -1)) { kHl = 't_fv'; kHs = 't_fh'; hl = fb; hs = fa; }
+    const d = num('t_fd') ?? 3.2, fe = num('t_fesq');
+    const hx = hl != null ? (fe != null ? fe + d / 2 : (L - hl) / 2) : null, hy = hs != null ? (S - hs) / 2 : null;
+    const iE = num('i_esq'), iD = num('i_dir'), iC = num('i_cima'), iB = num('i_baixo');
+    let ix, iw, iy, ih;
+    if (iE != null && iD != null) { ix = vE + iE; iw = vL - iE - iD; }
+    else if (iE != null) { ix = vE + iE; iw = AA[0]; }
+    else if (iD != null) { iw = AA[0]; ix = vE + vL - iD - iw; }
+    else { iw = AA[0]; ix = vE + (vL - iw) / 2; }
+    if (iC != null && iB != null) { iy = vC + iC; ih = vA - iC - iB; }
+    else if (iC != null) { iy = vC + iC; ih = AA[1]; }
+    else if (iB != null) { ih = AA[1]; iy = vC + vA - iB - ih; }
+    else { ih = AA[1]; iy = vC + (vA - ih) / 2; }
+    return { L, S, Lok, Sok, kL, kS, vL, vLmed, vD, confL, vA, vE, vC, hl, hs, kHl, kHs, d, fe, hx, hy, iE, iD, iC, iB, ix, iw, iy, ih };
+  }
+  function pinosTela(g) {
+    const lado = est.t_pinos, n = 14, p = 2.54, comp = n * p;
+    let s = '';
+    if (lado === 'direita' || lado === 'esquerda') {
+      const x = lado === 'direita' ? g.L - 2.6 : 2.6, y0 = g.S / 2 - comp / 2;
+      s += `<rect x="${r2(x - 1.27)}" y="${r2(y0)}" width="2.54" height="${r2(comp)}" class="preto"/>`;
+      for (let i = 0; i < n; i++) s += `<circle cx="${r2(x)}" cy="${r2(y0 + p / 2 + i * p)}" r=".45" class="metal"/>`;
+    } else if (lado === 'em cima' || lado === 'embaixo') {
+      const y = lado === 'embaixo' ? g.S - 2.6 : 2.6, x0 = g.L / 2 - comp / 2;
+      s += `<rect x="${r2(x0)}" y="${r2(y - 1.27)}" width="${r2(comp)}" height="2.54" class="preto"/>`;
+      for (let i = 0; i < n; i++) s += `<circle cx="${r2(x0 + p / 2 + i * p)}" cy="${r2(y)}" r=".45" class="metal"/>`;
+    } else {
+      s += rotulo('e-sup', g.vE / 2 + FS() * .35, g.S / 2, 'pinos?', 'middle', true) + rotulo('e-sup', (g.vE + g.vL + g.L) / 2 + FS() * .35, g.S / 2, 'pinos?', 'middle', true);
+    }
+    return s;
+  }
+  function eTelaPlaca() {
+    const notas = [];
+    let g = geoTela();
+    U = (g.L + 26) / 120;
+    let s = `<rect x="0" y="0" width="${r2(g.L)}" height="${r2(g.S)}" rx=".8" class="pcb-tela"/><rect x="${r2(g.vE)}" y="${r2(g.vC)}" width="${r2(g.vL)}" height="${r2(g.vA)}" class="vidro"/>`
+      + pinosTela(g);
+    s += eH(0, g.L, -4 * U, 0, 0, g.Lok ? fmt(g.L) : '?', g.kL, g.Lok ? 'med' : 'sup')
+      + eV(0, g.S, -4 * U, 0, 0, g.Sok ? fmt(g.S) : `? (uns ${fmt(g.S)})`, g.kS, g.Sok ? 'med' : 'sup', 'esq');
+    if (!g.Sok) notas.push(['aviso', `O lado curto da placa está como “${esc(est[g.kS] || 'vazio')}” (${g.kS === 't_larg' ? 'A' : 'B'}). Deve ser erro de digitação: desenhei com uns ${fmt(g.S)} mm até você corrigir.`]);
+    else if (g.kL === 't_alt') notas.push(['info', 'Você mediu a placa em pé. Aqui ela está deitada, como fica com o mascote em pé.']);
+    if (g.hl != null && g.hs != null) {
+      let pior = Infinity;
+      const batem = [];
+      const nomes = ['de cima à esquerda', 'de cima à direita', 'de baixo à esquerda', 'de baixo à direita'];
+      [[g.hx, g.hy], [g.hx + g.hl, g.hy], [g.hx, g.hy + g.hs], [g.hx + g.hl, g.hy + g.hs]].forEach(([x, y], i) => {
+        const dx = Math.max(g.vE - x, 0, x - (g.vE + g.vL)), dy = Math.max(g.vC - y, 0, y - (g.vC + g.vA));
+        const folga = Math.hypot(dx, dy) - g.d / 2;
+        pior = Math.min(pior, folga);
+        if (folga < 0) batem.push(i);
+        s += `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(g.d / 2)}" class="furo${folga < 0 ? ' bate' : ''}"/>`;
+      });
+      const yb = g.hy + g.hs;
+      s += eH(g.hx, g.hx + g.hl, g.S + 5 * U, yb + g.d / 2, yb + g.d / 2, fmt(g.hl), g.kHl)
+        + eV(g.hy, g.hy + g.hs, g.L + 5 * U, g.hx + g.hl + g.d / 2, g.hx + g.hl + g.d / 2, fmt(g.hs), g.kHs, 'med', 'dir')
+        + eDiam(g.hx, yb, g.d / 2, g.hx + 7 * U, g.S + 10 * U, 'Ø' + fmt(g.d), 't_fd', tipoDe('t_fd'));
+      if (g.fe != null) s += eH(0, g.hx - g.d / 2, -9 * U, 0, g.hy, fmt(g.fe), 't_fesq');
+      const quais = batem.join() === '1,3' ? 'Os dois furos da direita invadem' : batem.join() === '0,2' ? 'Os dois furos da esquerda invadem' : batem.length > 1 ? `Os furos ${batem.map(i => nomes[i]).join(' e ')} invadem` : `O furo ${nomes[batem[0]]} invade`;
+      if (pior < 0) notas.push(['aviso', `${quais} o vidro em ${fmt(-pior)} mm (em vermelho), e isso não pode ser. Alguma medida está um pouco diferente: confira H (${fmt(g.vE)}) e a distância dos furos (${fmt(g.hl)}). A medida P ajuda a tirar a dúvida.`]);
+      if (g.fe == null) notas.push(['sup', 'Supus os furos no meio da placa. A medida P confirma.']);
+    } else notas.push(['sup', 'Faltam as distâncias entre os furos.']);
+    if (!est.t_pinos) notas.push(['sup', 'Falta dizer de que lado ficam os pinos.']);
+    return { svg: esvg(-13 * U, (g.fe != null ? -15 : -11) * U, g.L + 26 * U, g.S + (g.fe != null ? 29 : 25) * U, 'A tela de frente, em escala', s), notas };
+  }
+  function eTelaVidro() {
+    const g = geoTela(), notas = [];
+    U = (g.L + 26) / 120;
+    const gx2 = g.vE + g.vL, gy2 = g.vC + g.vA, ix2 = g.ix + g.iw, iy2 = g.iy + g.ih;
+    let s = `<rect x="0" y="0" width="${r2(g.L)}" height="${r2(g.S)}" rx=".8" class="pcb-tela" opacity=".45"/>`
+      + `<rect x="${r2(g.vE)}" y="${r2(g.vC)}" width="${r2(g.vL)}" height="${r2(g.vA)}" class="vidro"/>`
+      + `<rect x="${r2(g.ix)}" y="${r2(g.iy)}" width="${r2(g.iw)}" height="${r2(g.ih)}" class="luz"/>`
+      + `<rect x="${r2(g.ix - .5)}" y="${r2(g.iy - .5)}" width="${r2(g.iw + 1)}" height="${r2(g.ih + 1)}" class="janela"/>`
+      + rotulo('e-luz', g.ix + g.iw / 2, g.iy + g.ih / 2 - .6 * U, 'parte que acende') + rotulo('e-luz', g.ix + g.iw / 2, g.iy + g.ih / 2 + 3 * U, `${fmt(g.iw)} × ${fmt(g.ih)}`);
+    const q = (v, n) => fmt(n) + (v == null ? '?' : '');
+    s += eH(0, g.vE, -4 * U, 0, g.vC, fmt(g.vE), 'v_esq', tipoDe('v_esq'), 'esq')
+      + eH(g.vE, gx2, -4 * U, g.vC, g.vC, g.confL != null ? `${fmt(g.vL)} (você: ${fmt(g.vLmed)})` : fmt(g.vL), 'v_larg', g.confL != null ? 'conflito' : tipoDe('v_larg'))
+      + (g.vD != null ? eH(gx2, g.L, -4 * U, g.vC, 0, fmt(g.vD), 'v_dir') : eH(gx2, g.L, -4 * U, g.vC, 0, fmt(g.L - gx2), null, g.Lok ? 'calc' : 'sup'))
+      + eV(0, g.vC, -4 * U, 0, g.vE, fmt(g.vC), 'v_cima', tipoDe('v_cima'), 'esq')
+      + eV(g.vC, gy2, -4 * U, g.vE, g.vE, fmt(g.vA), 'v_alt', tipoDe('v_alt'), 'esq')
+      + eV(gy2, g.S, -4 * U, g.vE, 0, fmt(g.S - gy2), null, g.Sok ? 'calc' : 'sup', 'esq')
+      + eH(g.vE, g.ix, g.S + 4 * U, gy2, iy2, q(g.iE, g.ix - g.vE), 'i_esq', tipoDe('i_esq'), 'esq')
+      + eH(g.ix, ix2, g.S + 4 * U, iy2, iy2, fmt(g.iw), null, g.iE != null && g.iD != null ? 'calc' : 'sup')
+      + eH(ix2, gx2, g.S + 4 * U, iy2, gy2, q(g.iD, gx2 - ix2), 'i_dir', tipoDe('i_dir'), 'dir')
+      + eV(g.vC, g.iy, g.L + 4 * U, gx2, ix2, q(g.iC, g.iy - g.vC), 'i_cima', tipoDe('i_cima'), 'dir')
+      + eV(g.iy, iy2, g.L + 4 * U, ix2, ix2, fmt(g.ih), null, g.iC != null && g.iB != null ? 'calc' : 'sup', 'dir')
+      + eV(iy2, gy2, g.L + 4 * U, ix2, gx2, q(g.iB, gy2 - iy2), 'i_baixo', tipoDe('i_baixo'), 'dir');
+    if (g.iE != null && g.iD != null && Math.abs(g.iw - AA[0]) > 1) notas.push(['info', `Pela ficha desta tela, a imagem tem ${fmt(AA[0])} × ${fmt(AA[1])} mm. Pelas suas medidas a largura dá ${fmt(g.iw)}. Confira com o mascote ligado: a moldura vai mostrar só a parte que acende.`]);
+    if (g.iB == null) notas.push(['sup', `Falta O: da borda de baixo do vidro até a imagem. Usei a altura da ficha, ${fmt(AA[1])} mm.`]);
+    if (g.confL != null) notas.unshift(['aviso', `Na largura, ${fmt(g.vE)} + ${fmt(g.vLmed)} + ${fmt(g.vD)} = ${fmt(g.vE + g.vLmed + g.vD)}, mas a placa tem ${fmt(g.L)}: alguma medida está ${fmt(Math.abs(g.confL))} mm diferente. Desenhei o vidro entre as duas bordas (H e Q), por isso ele ficou com ${fmt(g.vL)}. A peça de teste tira a dúvida.`]);
+    notas.push(['info', 'O tracejado é a janela da moldura: a parte que acende, com 0,5 mm a mais de cada lado.']);
+    return { svg: esvg(-13 * U, -11 * U, g.L + 26 * U, g.S + 24 * U, 'O vidro e a parte que acende, em escala', s), notas };
+  }
+  function eTelaLado() {
+    const g = geoTela(), notas = [], S = g.S;
+    const esp = num('t_esp') ?? 5.4, prof = num('t_prof') ?? 35;
+    U = (prof + 30) / 120;
+    const mod = Math.max(esp - 1.6, 1), y0 = S / 2 - 17.78, xj = esp + 2.5;
+    let s = `<rect x="0" y="${r2(g.vC)}" width="${r2(mod)}" height="${r2(g.vA)}" class="vidro"/><rect x="${r2(mod)}" y="0" width="1.6" height="${r2(S)}" class="pcb-tela"/>`
+      + `<rect x="${r2(esp)}" y="${r2(y0)}" width="2.5" height="35.56" class="preto"/>`;
+    const cores = ['#D9453B', '#E8B52F', '#3D9B5B', '#3B7DD8'];
+    let yfim = 0;
+    cores.forEach((cor, i) => {
+      const y = y0 + 3 + i * 9.5; yfim = y + 10;
+      s += `<rect x="${r2(xj)}" y="${r2(y - 1.27)}" width="14" height="2.54" class="preto"/><path d="M${r2(xj + 14)} ${r2(y)} C${r2(prof - 3)} ${r2(y)} ${r2(prof)} ${r2(y + 4)} ${r2(prof)} ${r2(y + 10)}" stroke="${cor}" stroke-width=".9" fill="none"/>`;
+    });
+    s += rotulo('e-mudo', (xj + prof) / 2, y0 - 2.5 * U, 'pinos e jumpers') + rotulo('e-mudo', -1.4 * U, S / 2, 'frente', 'middle', true);
+    s += eH(0, esp, -4 * U, g.vC, 0, fmt(esp), 't_esp', tipoDe('t_esp'), 'dir')
+      + eH(0, prof, S + 4 * U, g.vC + g.vA, yfim, fmt(prof), 't_prof', tipoDe('t_prof'));
+    return { svg: esvg(-6 * U, -10 * U, prof + 14 * U, S + 22 * U, 'A tela de lado, em escala', s), notas };
+  }
+  function ePlacaTopo() {
+    const W = num('p_larg') ?? 80, H = num('p_alt') ?? 60, usb = num('p_usb'), notas = [];
+    U = (W + 26) / 120;
+    const x0 = (W - 26 * 2.54) / 2, y0 = (H - 21 * 2.54) / 2;
+    const cx = c => x0 + (c - 1) * 2.54, ry = r => H - y0 - r * 2.54;   // r: 0 = linha A
+    let pads = '';
+    for (let c = 1; c <= 27; c++) for (let r = 0; r < 22; r++) pads += `M${r2(cx(c) + .55)} ${r2(ry(r))}a.55 .55 0 1 0 -1.1 0a.55 .55 0 1 0 1.1 0`;
+    const face = usb != null ? -usb : 0;
+    const ex1 = Math.min(face + .8, cx(2) - 1.4), ex2 = cx(23) + 7.5, ey1 = ry(11) - 1.6, ey2 = ry(1) + 1.6, em = (ey1 + ey2) / 2;
+    let s = `<rect x="0" y="0" width="${r2(W)}" height="${r2(H)}" rx=".8" class="pcb"/><path d="${pads}" class="cobre"/>`
+      + `<rect x="${r2(ex1)}" y="${r2(ey1)}" width="${r2(ex2 - ex1)}" height="${r2(ey2 - ey1)}" rx=".8" class="esp"/>`
+      + `<rect x="${r2(ex2 - 25.5)}" y="${r2(em - 7.5)}" width="18" height="15" rx=".4" class="metal"/>`
+      + rotulo('e-claro', (ex1 + ex2 - 25.5) / 2, em + .9 * U, 'ESP32-S3');
+    [['o do lado da linha L', em - 6.5], ['o do lado da linha B', em + 6.5]].forEach(([nome, y]) => {
+      const sel = est.p_porta === nome;
+      s += `<rect x="${r2(face)}" y="${r2(y - 4.45)}" width="7.3" height="8.9" rx="1.2" class="metal${sel ? ' usb-sel' : ''}"/>`
+        + rotulo(est.p_porta ? 'e-escuro' : 'e-sup', face + 3.65, y + .9 * U, sel ? 'USB' : est.p_porta ? 'COM' : '?');
+    });
+    s += rotulo('e-mudo', cx(1), -1 * U, '1') + rotulo('e-mudo', cx(27), -1 * U, '27')
+      + [['A', 0], ['B', 1], ['L', 11], ['V', 21]].map(([t, r]) => rotulo('e-mudo', W + 1.4 * U, ry(r) + .9 * U, t, 'start')).join('');
+    if (est.p_furos === 'sim' && num('p_fh') && num('p_fv')) {
+      let fh = num('p_fh'), fv = num('p_fv');
+      const rd = (num('p_fd') ?? 3) / 2;
+      if ((fh > fv) !== (W > H)) { [fh, fv] = [fv, fh]; notas.push(['info', `Os furos estão com a distância maior (${fmt(fh)}) na largura: D e E estavam trocados.`]); }
+      if (rd * 2 < 3.2) notas.push(['info', `Os furos dos cantos têm ${fmt(rd * 2)} mm e o M3 não passa. A placa vai encaixada em pininhos impressos, sem parafuso.`]);
+      [[(W - fh) / 2, (H - fv) / 2], [(W + fh) / 2, (H - fv) / 2], [(W - fh) / 2, (H + fv) / 2], [(W + fh) / 2, (H + fv) / 2]].forEach(([x, y]) => s += `<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(rd)}" class="furo"/>`);
+      notas.push(['sup', 'Supus os furos dos cantos no meio da placa.']);
+    }
+    s += eH(0, W, -4 * U, 0, 0, fmt(W), 'p_larg', tipoDe('p_larg'))
+      + eV(0, H, -4 * U, 0, 0, fmt(H), 'p_alt', tipoDe('p_alt'), 'esq');
+    if (usb != null) s += eH(Math.min(0, face), Math.max(0, face), H + 4 * U, H, em + 6.5 + 4.45, `${fmt(Math.abs(usb))} ${usb < 0 ? 'para dentro' : 'para fora'}`, 'p_usb');
+    if (!est.p_porta) notas.push(['sup', 'Falta dizer qual USB-C você usa. A fenda do cabo fica na lateral, alinhada com ele.']);
+    if (!est.p_furos) notas.push(['sup', 'Falta dizer se a placa tem furos nos cantos. Sem furos, ela entra deslizando num trilho da bandeja.']);
+    notas.push(['info', 'O ESP32 está nas colunas 2 a 23, entre as linhas B e L, como no manual. A posição dos dois USB-C é aproximada.']);
+    return { svg: esvg(-13 * U, -10 * U, W + 26 * U, H + 20 * U, 'A placa ilhada vista de cima, em escala', s), notas };
+  }
+  function ePlacaLado() {
+    const W = num('p_larg') ?? 80, hT = num('p_h_tot') ?? 45, hE = num('p_h_esp') ?? 19, hU = num('p_h_usb') ?? 14, usb = num('p_usb') ?? 0;
+    const notas = [['sup', 'Supus a placa ilhada com 1,6 mm e as soldas com 1 mm de altura.']];
+    U = (W + 32) / 120;
+    const x0 = (W - 26 * 2.54) / 2, cx = c => x0 + (c - 1) * 2.54;
+    const chao = hT, pCima = chao - 2.6, uY = pCima - hU, eTopo = chao - hE, face = -usb;
+    const ePcbCima = uY + 1.6, ePcbBaixo = ePcbCima + 1.6, ex1 = Math.min(face + .8, cx(2) - 1.4), ex2 = cx(23) + 7.5;
+    let s = '';
+    for (let c = 1; c <= 27; c++) s += `<ellipse cx="${r2(cx(c))}" cy="${r2(chao - .5)}" rx=".9" ry=".5" class="solda"/>`;
+    s += `<rect x="0" y="${r2(pCima)}" width="${r2(W)}" height="1.6" class="pcb"/>`;
+    if (ePcbBaixo < pCima) s += `<rect x="${r2(cx(2) - 1.27)}" y="${r2(ePcbBaixo)}" width="${r2(cx(23) - cx(2) + 2.54)}" height="${r2(pCima - ePcbBaixo)}" class="preto"/>`;
+    s += `<rect x="${r2(ex1)}" y="${r2(ePcbCima)}" width="${r2(ex2 - ex1)}" height="1.6" class="esp"/>`;
+    if (eTopo < ePcbCima) s += `<rect x="${r2(ex2 - 25.5)}" y="${r2(eTopo)}" width="18" height="${r2(ePcbCima - eTopo)}" class="metal"/>`;
+    s += `<rect x="${r2(face)}" y="${r2(uY - 1.6)}" width="7.3" height="3.2" rx=".8" class="metal"/>`;
+    // jumpers da tela e do amplificador: soquete de 8,5 mm, corpo de 14 mm e o fio dobrando até o ponto mais alto
+    [[25, 3, '#3D9B5B'], [27, 0, '#D9453B']].forEach(([c, topo, cor]) => {
+      const x = cx(c);
+      s += `<rect x="${r2(x - 1.27)}" y="${r2(pCima - 8.5)}" width="2.54" height="8.5" class="preto"/><rect x="${r2(x - 1.27)}" y="${r2(pCima - 22.5)}" width="2.54" height="14" class="preto"/>`
+        + `<path d="M${r2(x)} ${r2(pCima - 22.5)} C${r2(x)} ${r2(topo + 4)} ${r2(x - 3)} ${r2(topo)} ${r2(x - 10)} ${r2(topo)}" stroke="${cor}" stroke-width=".9" fill="none"/>`;
+    });
+    s += rotulo('e-mudo', face + 3.65, uY - 2.8 * U, 'USB') + rotulo('e-mudo', W / 2, chao + 4 * U, 'placa ilhada') + rotulo('e-mudo', cx(26) - 6, -2 * U, 'jumpers');
+    s += eV(uY, pCima, -4 * U, face, 0, fmt(hU), 'p_h_usb', tipoDe('p_h_usb'), 'esq')
+      + eV(eTopo, chao, W + 4 * U, ex2 - 7.5, W - 1, fmt(hE), 'p_h_esp', tipoDe('p_h_esp'), 'dir')
+      + eV(0, chao, W + 11 * U, cx(27) - 10, W - 1, fmt(hT), 'p_h_tot', tipoDe('p_h_tot'), 'dir');
+    return { svg: esvg(-11 * U, -6 * U, W + 29 * U, chao + 13 * U, 'A placa montada de lado, em escala', s), notas };
+  }
+  function eFalante() {
+    const ret = est.a_forma === 'retangular', D = num('a_d') ?? 40, P = num('a_prof') ?? 20, notas = [];
+    const B = ret ? (num('a_l') ?? D * .7) : D, x0 = D + 14, m = B * .2;
+    U = (x0 + P + 16) / 120;
+    let s = ret
+      ? `<rect x="0" y="0" width="${r2(D)}" height="${r2(B)}" rx="2" class="metal"/><ellipse cx="${r2(D / 2)}" cy="${r2(B / 2)}" rx="${r2(D / 2 - 3)}" ry="${r2(B / 2 - 3)}" class="cone"/>`
+      : `<circle cx="${r2(D / 2)}" cy="${r2(D / 2)}" r="${r2(D / 2)}" class="metal"/><circle cx="${r2(D / 2)}" cy="${r2(D / 2)}" r="${r2(D / 2 - 2.5)}" class="cone"/><circle cx="${r2(D / 2)}" cy="${r2(D / 2)}" r="${r2(D * .16)}" class="preto"/>`;
+    s += `<rect x="${r2(x0)}" y="0" width="1" height="${r2(B)}" class="metal"/><polygon points="${r2(x0 + 1)},${r2(B * .08)} ${r2(x0 + P * .45)},${r2(B / 2 - m)} ${r2(x0 + P * .45)},${r2(B / 2 + m)} ${r2(x0 + 1)},${r2(B * .92)}" class="cone"/><rect x="${r2(x0 + P * .45)}" y="${r2(B / 2 - m)}" width="${r2(P * .55)}" height="${r2(2 * m)}" rx=".8" class="preto"/>`
+      + rotulo('e-mudo', D / 2, B + 11 * U, 'de frente') + rotulo('e-mudo', x0 + P / 2, B + 11 * U, 'de lado');
+    s += eH(0, D, B + 4 * U, ret ? B : B / 2, ret ? B : B / 2, fmt(D), 'a_d', tipoDe('a_d'))
+      + eH(x0, x0 + P, B + 4 * U, B, B / 2 + m, fmt(P), 'a_prof', tipoDe('a_prof'));
+    if (ret) s += eV(0, B, D + 4 * U, D, D, fmt(B), 'a_l', tipoDe('a_l'), 'dir');
+    if (!est.a_forma) notas.push(['sup', 'Desenhei redondo: confirme o formato.']);
+    if (!est.a_furos) notas.push(['sup', 'Falta dizer se tem furos ou abas. Sem furos, ele fica preso por um anel impresso embaixo da grade.']);
+    return { svg: esvg(-8 * U, -6 * U, x0 + P + 16 * U, B + 20 * U, 'O alto-falante em escala', s), notas };
+  }
+  function eBotao() {
+    const notas = [], tam = est.b_tam === '12 × 12 mm' ? 12 : 6, cap = est.b_cap === 'sim';
+    const alt = num('b_alt') ?? (tam === 12 ? 7.3 : 5), d = num('b_d') ?? (cap ? (tam === 12 ? 11.5 : 5.5) : (tam === 12 ? 6.5 : 3.5));
+    const corpo = tam === 12 ? 3.6 : 3.4, x0 = tam + 12, c = tam / 2, base = alt;
+    U = (x0 + Math.max(tam, d) + 14) / 120;
+    let s = '';
+    [[-1.5, tam * .2], [-1.5, tam * .8], [tam, tam * .2], [tam, tam * .8]].forEach(([x, y]) => s += `<rect x="${r2(x)}" y="${r2(y - .35)}" width="1.5" height=".7" class="metal"/>`);
+    s += `<rect x="0" y="0" width="${tam}" height="${tam}" rx=".3" class="preto"/><circle cx="${r2(c)}" cy="${r2(c)}" r="${r2(d / 2)}" class="${cap ? 'capinha' : 'haste'}"/>`;
+    const hx = x0 + tam / 2;
+    s += `<path d="M${r2(x0 + tam * .2)} ${r2(base)} v3 M${r2(x0 + tam * .8)} ${r2(base)} v3" class="pino"/><rect x="${r2(x0)}" y="${r2(base - corpo)}" width="${tam}" height="${r2(corpo)}" rx=".3" class="preto"/>`
+      + (cap ? `<rect x="${r2(hx - d / 2)}" y="0" width="${r2(d)}" height="${r2(Math.max(alt - corpo, .5))}" rx=".6" class="capinha"/>` : `<rect x="${r2(hx - d / 2)}" y="0" width="${r2(d)}" height="${r2(Math.max(alt - corpo, .3))}" class="haste"/>`)
+      + rotulo('e-mudo', c, tam + 9 * U, 'de cima') + rotulo('e-mudo', hx, base + 9 * U, 'de lado');
+    s += eH(c - d / 2, c + d / 2, -4 * U, c, c, fmt(d), 'b_d', tipoDe('b_d'))
+      + eV(0, base, x0 + Math.max(tam, d) + 3 * U, hx + d / 2, x0 + tam, fmt(alt), 'b_alt', tipoDe('b_alt'), 'dir');
+    if (!est.b_tam || num('b_alt') == null || num('b_d') == null) notas.push(['sup', `Desenhei um botão comum de ${tam} × ${tam} mm: faltam as medidas do seu.`]);
+    return { svg: esvg(-6 * U, -9 * U, x0 + Math.max(tam, d) + 14 * U, Math.max(tam, base + 3) + 22 * U, 'O botão em escala', s), notas };
+  }
+  function eMic() {
+    const D = num('m_d') ?? 14, notas = [], mesmo = est.m_furo === 'do mesmo lado dos pininhos', r = D / 2, x0 = D + 12;
+    U = (x0 + D + 14) / 120;
+    let s = `<circle cx="${r2(r)}" cy="${r2(r)}" r="${r2(r)}" class="pcb-mic"/><circle cx="${r2(r)}" cy="${r2(r - 2.5)}" r=".6" class="furo"/>`;
+    for (let i = 0; i < 6; i++) s += `<circle cx="${r2(r + (i - 2.5) * 2.54)}" cy="${r2(r + 2.5)}" r=".5" class="furo-dourado"/>`;
+    s += `<rect x="${r2(x0)}" y="${r2(r - .6)}" width="${r2(D)}" height="1.2" class="pcb-mic"/>`;
+    for (let i = 0; i < 6; i++) s += `<path d="M${r2(x0 + r + (i - 2.5) * 2.54)} ${r2(r + .6)} v8.5" class="pino"/>`;
+    const ax = x0 + r;
+    s += mesmo
+      ? `<path d="M${r2(ax)} ${r2(r + 12)} V${r2(r + 1.4)} M${r2(ax - .8)} ${r2(r + 2.6)} L${r2(ax)} ${r2(r + 1.2)} L${r2(ax + .8)} ${r2(r + 2.6)}" class="som"/>`
+      : `<path d="M${r2(ax)} ${r2(r - 9)} V${r2(r - 1.4)} M${r2(ax - .8)} ${r2(r - 2.6)} L${r2(ax)} ${r2(r - 1.2)} L${r2(ax + .8)} ${r2(r - 2.6)}" class="som"/>`;
+    s += rotulo('e-mudo', ax, mesmo ? r + 14.5 : r - 10, est.m_furo ? 'som' : 'som?')
+      + rotulo('e-mudo', r, D + 10 * U, 'lado do furinho') + rotulo('e-mudo', ax, D + 10 * U, 'de lado');
+    s += eH(0, D, D + 4 * U, r, r, fmt(D), 'm_d', tipoDe('m_d'));
+    if (!est.m_furo) notas.push(['sup', 'Falta dizer de que lado fica o furinho do som. Ele fica virado para a grade do queixo.']);
+    if (!est.m_jump) notas.push(['sup', 'Falta dizer se você tem os 6 jumpers para levar o microfone até o queixo.']);
+    return { svg: esvg(-6 * U, -13 * U, x0 + D + 14 * U, D + 27 * U, 'O microfone em escala', s), notas };
+  }
+  function eAmp() {
+    const L = num('amp_l') ?? 18, A = num('amp_a') ?? 19, notas = [];
+    U = (L + 30) / 120;
+    let s = `<rect x="0" y="0" width="${r2(L)}" height="${r2(A)}" rx=".8" class="pcb-amp"/>`;
+    ['LRC', 'BCLK', 'DIN', 'GAIN', 'SD', 'GND', 'VIN'].forEach((p, i) => {
+      const x = L / 2 + (i - 3) * 2.54;
+      s += `<circle cx="${r2(x)}" cy="1.6" r=".55" class="furo-dourado"/><text x="${r2(x)}" y="3.9" font-size=".75" text-anchor="middle" class="e-rot">${p}</text>`;
+    });
+    s += `<rect x="${r2(L / 2 - 2.5)}" y="${r2(A * .4)}" width="5" height="5" rx=".3" class="preto"/><rect x="${r2(L / 2 - 5)}" y="${r2(A - 7.5)}" width="10" height="7" rx=".4" class="borne"/>`;
+    s += eH(0, L, A + 4 * U, A, A, fmt(L), 'amp_l', tipoDe('amp_l')) + eV(0, A, L + 4 * U, L, L, fmt(A), 'amp_a', tipoDe('amp_a'), 'dir');
+    if (num('amp_l') == null || num('amp_a') == null) notas.push(['sup', 'Usei 18 × 19 mm, o tamanho mais comum desta plaquinha.']);
+    return { svg: esvg(-10 * U, -5 * U, L + 26 * U, A + 15 * U, 'O amplificador em escala', s), notas };
+  }
+
+  // ---------------- peças e campos ----------------
+  const SIM_NAO = ['sim', 'não'];
+  const PARTES = [
+    { id: 'tela', nome: 'Tela 3,5″', peca: 'ILI9488 com touch', intro: 'Ligue o mascote e segure a tela de frente, com ele em pé, do jeito que vai ficar na caixa. “Esquerda” e “em cima” são de quem olha a tela assim.', blocos: [
+      { d: dTelaPlaca, e: eTelaPlaca, leg: 'De frente. No desenho os pinos estão à direita; na sua pode ser outro lado.', legE: 'De frente, em escala, com o mascote em pé.', campos: [
+        { k: 't_pinos', tipo: 'op', rot: 'De que lado ficam os pinos?', ops: ['direita', 'esquerda', 'em cima', 'embaixo'] },
+        { k: 't_larg', L: 'A', rot: 'Largura da placa vermelha', dica: 'Com o mascote em pé a tela fica deitada: a largura é o lado comprido.' },
+        { k: 't_alt', L: 'B', rot: 'Altura da placa vermelha', dica: 'O lado curto.' },
+        { k: 't_fh', L: 'C', rot: 'Furos: distância na horizontal', dica: 'Centro a centro. Truque: meça da borda esquerda de um furo até a borda esquerda do outro.' },
+        { k: 't_fv', L: 'D', rot: 'Furos: distância na vertical', dica: 'Centro a centro, com o mesmo truque.' },
+        { k: 't_fd', L: 'E', rot: 'Diâmetro do furo' },
+        { k: 't_fesq', L: 'P', rot: 'Da borda esquerda da placa até o furo', dica: 'Até a beirada do furo da esquerda. Mostra se os furos estão no meio.', opcional: true }] },
+      { d: dTelaVidro, e: eTelaVidro, leg: 'O vidro e a parte que acende. Meça com a tela ligada.', legE: 'O vidro e a parte que acende, em escala.', campos: [
+        { k: 'v_larg', L: 'F', rot: 'Largura do vidro' },
+        { k: 'v_alt', L: 'G', rot: 'Altura do vidro' },
+        { k: 'v_esq', L: 'H', rot: 'Da borda esquerda da placa até o vidro' },
+        { k: 'v_dir', L: 'Q', rot: 'Da borda direita da placa até o vidro' },
+        { k: 'v_cima', L: 'I', rot: 'Da borda de cima da placa até o vidro' },
+        { k: 'i_esq', L: 'J', rot: 'Da borda esquerda do vidro até a imagem', dica: 'Até onde começa a parte que acende.' },
+        { k: 'i_cima', L: 'K', rot: 'Da borda de cima do vidro até a imagem' },
+        { k: 'i_dir', L: 'N', rot: 'Da borda direita do vidro até a imagem' },
+        { k: 'i_baixo', L: 'O', rot: 'Da borda de baixo do vidro até a imagem' }] },
+      { d: dTelaLado, e: eTelaLado, leg: 'Vista de cima: a frente da tela fica à esquerda.', legE: 'De lado, em escala: a frente da tela fica à esquerda.', campos: [
+        { k: 't_esp', L: 'L', rot: 'Espessura', dica: 'Da frente do vidro até as costas da placa vermelha, sem contar os pinos.' },
+        { k: 't_prof', L: 'M', rot: 'Profundidade com os jumpers', dica: 'Da frente do vidro até a curva dos fios, com os jumpers encaixados e dobrados como vão ficar.' }] }] },
+    { id: 'placa', nome: 'Placa ilhada', peca: 'com o ESP32 encaixado', intro: 'Olhe pelo lado das peças, com a coluna 1 à esquerda e a linha A embaixo, como no manual.', blocos: [
+      { d: dPlacaTopo, e: ePlacaTopo, leg: 'Vista de cima. O USB do ESP32 fica do lado da coluna 1.', legE: 'Vista de cima, em escala.', campos: [
+        { k: 'p_larg', L: 'A', rot: 'Largura', dica: 'Da borda do lado da coluna 1 à borda do lado da coluna 27.' },
+        { k: 'p_alt', L: 'B', rot: 'Altura', dica: 'Da borda do lado da linha A à borda do lado da linha V.' },
+        { k: 'p_usb', L: 'C', rot: 'Quanto o USB passa da borda', neg: true, dica: 'Da borda da placa até a ponta do conector. Se ele ficar para dentro, escreva com menos (ex.: -2).' },
+        { k: 'p_porta', tipo: 'op', rot: 'Qual USB-C você usa agora (o “USB”)?', ops: ['o do lado da linha B', 'o do lado da linha L'] },
+        { k: 'p_furos', tipo: 'op', rot: 'A placa tem furos nos cantos?', ops: SIM_NAO },
+        { k: 'p_fh', L: 'D', rot: 'Furos: distância na horizontal', dica: 'Centro a centro.', se: () => est.p_furos === 'sim' },
+        { k: 'p_fv', L: 'E', rot: 'Furos: distância na vertical', dica: 'Centro a centro.', se: () => est.p_furos === 'sim' },
+        { k: 'p_fd', L: 'F', rot: 'Diâmetro do furo', se: () => est.p_furos === 'sim' }] },
+      { d: dPlacaLado, e: ePlacaLado, leg: 'De lado, olhando pela linha A.', legE: 'De lado, em escala, olhando pela linha A.', campos: [
+        { k: 'p_h_esp', L: 'G', rot: 'Altura até o topo do ESP32', dica: 'Da ponta das soldas, embaixo, até o topo do ESP32.' },
+        { k: 'p_h_tot', L: 'H', rot: 'Altura até o ponto mais alto', dica: 'Com os jumpers da tela e do amplificador encaixados.' },
+        { k: 'p_h_usb', L: 'I', rot: 'Altura do meio do USB', dica: 'Da face de cima da placa ilhada até o meio do conector.' }] }] },
+    { id: 'falante', nome: 'Alto-falante', peca: '4 ou 8 Ω', intro: 'Ele vai embaixo da grade redonda do topo, virado para cima.', blocos: [
+      { d: dFalante, e: eFalante, campos: [
+        { k: 'a_forma', tipo: 'op', rot: 'Formato', ops: ['redondo', 'retangular'] },
+        { k: 'a_d', L: 'A', rot: 'Diâmetro (ou lado maior)', dica: 'Pela borda de fora da armação de metal.' },
+        { k: 'a_l', L: 'B', rot: 'Lado menor', se: () => est.a_forma === 'retangular' },
+        { k: 'a_prof', L: 'C', rot: 'Profundidade', dica: 'Da frente da armação até o fundo do ímã.' },
+        { k: 'a_furos', tipo: 'op', rot: 'Tem furos ou abas para parafuso?', ops: SIM_NAO },
+        { k: 'a_fdist', L: 'D', rot: 'Distância entre dois furos', dica: 'Centro a centro, dos dois mais afastados.', se: () => est.a_furos === 'sim' }] }] },
+    { id: 'botao', nome: 'Botão', peca: 'tátil', intro: 'Ele vai na frente, à direita da grade do microfone.', blocos: [
+      { d: dBotao, e: eBotao, campos: [
+        { k: 'b_tam', tipo: 'op', rot: 'Tamanho do corpo', ops: ['6 × 6 mm', '12 × 12 mm', 'outro'] },
+        { k: 'b_cap', tipo: 'op', rot: 'Tem capinha colorida?', ops: SIM_NAO },
+        { k: 'b_alt', L: 'A', rot: 'Altura total', dica: 'Da base do corpo (sem as perninhas) até o topo do que você aperta.' },
+        { k: 'b_d', L: 'B', rot: 'Diâmetro do que você aperta', dica: 'A haste redonda, ou a capinha se tiver.' }] }] },
+    { id: 'mic', nome: 'Microfone', peca: 'INMP441', intro: 'Ele sai da placa por 6 jumpers e fica atrás da gradezinha do queixo, virado para quem fala.', blocos: [
+      { d: dMic, e: eMic, campos: [
+        { k: 'm_d', L: 'A', rot: 'Diâmetro da plaquinha' },
+        { k: 'm_furo', tipo: 'op', rot: 'O furinho do som fica', ops: ['do lado oposto aos pininhos', 'do mesmo lado dos pininhos'] },
+        { k: 'm_jump', tipo: 'op', rot: 'Tem 6 jumpers macho-fêmea sobrando (uns 10 cm)?', ops: SIM_NAO }] }] },
+    { id: 'amp', nome: 'Amplificador', peca: 'MAX98357A', intro: 'Ele fica solto dentro da caixa, preso pelos jumpers. Se não quiser medir, eu uso 18 × 19 mm.', blocos: [
+      { d: dAmp, e: eAmp, campos: [
+        { k: 'amp_l', L: 'A', rot: 'Largura', opcional: true },
+        { k: 'amp_a', L: 'B', rot: 'Altura', dica: 'Do lado dos pinos ao lado do borne verde.', opcional: true }] }] },
+    { id: 'outros', nome: 'Parafusos, cor e cabo', peca: '', intro: 'Para escolher como as peças se prendem, a cor e a fenda do cabo.', blocos: [
+      { campos: [
+        { k: 'o_paraf', tipo: 'multi', rot: 'Que parafusos você tem? (pode marcar vários)', ops: ['M3', 'porcas M3', 'M2,5', 'M2', 'autoatarraxante pequeno', 'insertos de latão M3', 'nenhum ainda'] },
+        { k: 'o_comp', tipo: 'texto', rot: 'Comprimentos dos parafusos M3', dica: 'Sem contar a cabeça. Ex.: 6, 8, 10, 12 e 16 mm.' },
+        { k: 'o_cabo', tipo: 'op', rot: 'O cabo USB-C é', ops: ['reto', 'em L (90°)'] },
+        { k: 'o_cor', tipo: 'texto', rot: 'Cores de filamento que você tem', dica: 'Todas que podem ir no AMS. Ex.: bege, branco, preto, laranja.' },
+        { k: 'o_ams', tipo: 'op', rot: 'Tem AMS lite (troca de cor sozinha)?', ops: SIM_NAO },
+        { k: 'o_obs', tipo: 'nota', rot: 'Mais alguma coisa?', dica: 'Qualquer detalhe que eu deva saber.', opcional: true }] }] },
+  ];
+  const CAMPOS = PARTES.flatMap(p => p.blocos.flatMap(b => b.campos));
+  const MAPA = Object.fromEntries(CAMPOS.map(c => [c.k, c]));
+  const DESENHOS = [];
+  PARTES.forEach(p => p.blocos.forEach((b, j) => { if (b.d) DESENHOS.push([`${p.id}-${j}`, b]); }));
+  let modo = 'escala';
+  try { modo = localStorage.getItem(LS + '-modo') || 'escala'; } catch (e) { /* sem armazenamento local */ }
+
+  // ---------------- HTML ----------------
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function htmlCampo(c) {
+    const id = 'f-' + c.k, dica = c.dica ? `<small>${c.dica}</small>` : '';
+    if (c.tipo === 'op' || c.tipo === 'multi')
+      return `<div class="campo escolha" data-campo="${c.k}"><div class="rot" id="r-${c.k}">${c.rot}</div><div class="chips" role="group" aria-labelledby="r-${c.k}">${c.ops.map(o => `<button type="button" class="chip" aria-pressed="false" data-k="${c.k}" data-v="${esc(o)}">${o}</button>`).join('')}</div></div>`;
+    if (c.tipo === 'texto' || c.tipo === 'nota')
+      return `<div class="campo texto" data-campo="${c.k}"><label for="${id}"><span class="rot">${c.rot}${dica}</span></label>${c.tipo === 'nota' ? `<textarea id="${id}" data-k="${c.k}" rows="3"></textarea>` : `<input id="${id}" data-k="${c.k}" type="text" autocomplete="off">`}</div>`;
+    return `<div class="campo mm" data-campo="${c.k}"><label for="${id}"><span class="letra" aria-hidden="true">${c.L}</span><span class="rot">${c.rot}${dica}</span></label><span class="valor"><input id="${id}" data-k="${c.k}" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="—"><span class="un">mm</span></span><p class="aviso">Use só o número, por exemplo 98,5.</p></div>`;
+  }
+  document.getElementById('pranchas').innerHTML = PARTES.map((p, i) => `
+    <section class="prancha" id="${p.id}" aria-labelledby="h-${p.id}">
+      <header class="carimbo"><h2 id="h-${p.id}">${p.nome}</h2>${p.peca ? `<span class="peca">${p.peca}</span>` : ''}<span class="num">prancha ${i + 1}/${PARTES.length}</span><span class="conta" data-conta="${p.id}"></span></header>
+      <p class="intro">${p.intro}</p>
+      ${p.blocos.map((b, j) => `<div class="bloco${b.d ? '' : ' sem-desenho'}">${b.d ? `<figure class="desenho">${b.e ? `<div class="modos" role="group" aria-label="Tipo de desenho"><button type="button" class="modo" data-modo="escala" aria-pressed="false">Como eu entendi</button><button type="button" class="modo" data-modo="medir" aria-pressed="false">Onde medir</button></div>` : ''}<div class="svgbox" data-desenho="${p.id}-${j}"></div><figcaption data-leg="${p.id}-${j}"></figcaption></figure>` : ''}<div class="campos">${b.campos.map(htmlCampo).join('')}</div></div>`).join('')}
+    </section>`).join('');
+
+  // ---------------- pintar o estado na tela ----------------
+  const numOk = (c, v) => !v || (c.neg ? /^-?\d+([.,]\d+)?$/ : /^\d+([.,]\d+)?$/).test(v);
+  function marcarAtivo() {
+    document.querySelectorAll('svg .cota, svg .ecota[data-d]').forEach(g => g.classList.toggle('ativo', g.dataset.d === ativo));
+    document.querySelectorAll('.campo').forEach(el => el.classList.toggle('ativo', el.dataset.campo === ativo));
+  }
+  function pintar() {
+    document.querySelectorAll('input[data-k], textarea[data-k]').forEach(el => {
+      if (el !== document.activeElement) el.value = est[el.dataset.k] ?? '';
+      const c = MAPA[el.dataset.k];
+      if (!c.tipo) el.closest('.campo').classList.toggle('invalido', !numOk(c, el.value.trim()));
+    });
+    document.querySelectorAll('.chip').forEach(b => {
+      const v = est[b.dataset.k];
+      b.setAttribute('aria-pressed', String(Array.isArray(v) ? v.includes(b.dataset.v) : v === b.dataset.v));
+    });
+    CAMPOS.forEach(c => {
+      const el = document.querySelector(`[data-campo="${c.k}"]`);
+      if (c.se) el.hidden = !c.se();
+      el.classList.toggle('feito', temValor(c.k));
+    });
+    TXT = matchMedia('(max-width: 560px)').matches ? 1.45 : 1;
+    const legenda = '<p class="legenda"><span class="lg">sua medida (toque para corrigir)</span><span class="lg calc">conta minha</span><span class="lg sup">suposição</span></p>';
+    DESENHOS.forEach(([key, b]) => {
+      const box = document.querySelector(`[data-desenho="${key}"]`), cap = document.querySelector(`[data-leg="${key}"]`);
+      if (modo === 'escala' && b.e) {
+        const r = b.e();
+        box.innerHTML = r.svg;
+        cap.innerHTML = (b.legE ? `<span>${b.legE}</span>` : '') + (r.notas.length ? `<ul class="notas">${r.notas.map(([t, txt]) => `<li class="n-${t}">${txt}</li>`).join('')}</ul>` : '') + legenda;
+      } else { box.innerHTML = b.d(); cap.innerHTML = b.leg ? `<span>${b.leg}</span>` : ''; }
+    });
+    document.querySelectorAll('.modo').forEach(bt => bt.setAttribute('aria-pressed', String(bt.dataset.modo === modo)));
+    marcarAtivo();
+    contar();
+    document.getElementById('resumo').textContent = textoResumo();
+  }
+  function contar() {
+    let tot = 0, ok = 0;
+    PARTES.forEach(p => {
+      let t = 0, f = 0;
+      p.blocos.forEach(b => b.campos.forEach(c => { if (c.opcional || (c.se && !c.se())) return; t++; if (temValor(c.k)) f++; }));
+      tot += t; ok += f;
+      const sec = document.getElementById(p.id);
+      sec.querySelector('[data-conta]').textContent = t ? `${f}/${t}` : 'opcional';
+      sec.toggleAttribute('data-completa', t > 0 && f === t);
+    });
+    document.getElementById('progresso').textContent = `${ok} de ${tot} medidas`;
+    const barra = document.querySelector('.barra');
+    barra.setAttribute('aria-valuemax', tot); barra.setAttribute('aria-valuenow', ok);
+    barra.firstElementChild.style.width = (tot ? ok / tot * 100 : 0) + '%';
+  }
+  function textoResumo() {
+    const linhas = ['Medidas do Mini Mac (em mm)'];
+    PARTES.forEach(p => {
+      linhas.push('', p.nome.toUpperCase());
+      p.blocos.forEach(b => b.campos.forEach(c => {
+        if (c.se && !c.se()) return;
+        const v = est[c.k], vazio = !temValor(c.k);
+        const txt = vazio ? '—' : Array.isArray(v) ? v.join(', ') : String(v).trim() + (c.tipo ? '' : ' mm');
+        linhas.push(`${c.L ? c.L + ') ' : '- '}${c.rot}: ${txt}`);
+      }));
+    });
+    return linhas.join('\n');
+  }
+
+  // ---------------- salvar ----------------
+  const STATUS = {
+    carregando: 'Abrindo o caderno de medidas…',
+    salvo: 'Salvo. Eu leio as medidas daqui.',
+    salvando: 'Salvando…',
+    local: 'Salvo só neste aparelho. No fim, toque em “Copiar resumo” e cole no chat.',
+    erro: 'Não deu para salvar agora. As medidas continuam neste aparelho; tente de novo daqui a pouco.',
+    semperm: 'Este acesso é só de leitura. Copie o resumo e cole no chat.',
+  };
+  const elStatus = document.getElementById('status');
+  const status = s => { elStatus.dataset.s = s; elStatus.textContent = STATUS[s]; };
+  // grava só os campos mexidos aqui: a página pode estar aberta no celular e no computador ao mesmo tempo
+  let ref = null, existe = false, salvando = false, denovo = false, timer = null;
+  const sujos = new Set();
+  const corpo = () => Object.fromEntries(CAMPOS.filter(c => est[c.k] !== undefined).map(c => [c.k, est[c.k]]));
+  function agendar(ms) { clearTimeout(timer); timer = setTimeout(salvar, ms); }
+  async function salvar() {
+    try { localStorage.setItem(LS, JSON.stringify(est)); } catch (e) { /* sem armazenamento local */ }
+    if (!ref) { if (elStatus.dataset.s !== 'carregando') status('local'); return; }
+    if (salvando) { denovo = true; return; }
+    if (!sujos.size) { status('salvo'); return; }
+    salvando = true; status('salvando');
+    const chaves = [...sujos]; sujos.clear();
+    const agora = new Date().toISOString();
+    try {
+      if (existe) await ref.update({ ...Object.fromEntries(chaves.map(k => [k, est[k] ?? ''])), _atualizado: agora });
+      else { await ref.set({ ...corpo(), _atualizado: agora }); existe = true; }
+      status('salvo');
+    } catch (e) {
+      chaves.forEach(k => sujos.add(k));
+      if (e && e.code === 'invalid_argument' && existe) { existe = false; denovo = true; }   // o documento sumiu: cria de novo
+      else if (e && e.code === 'invalid_argument') { status('semperm'); ref = null; }
+      else if (e && e.code === 'unavailable' && !denovo) { denovo = true; await new Promise(r => setTimeout(r, 800 + Math.random() * 800)); }
+      else status('erro');
+    }
+    salvando = false;
+    if (denovo) { denovo = false; salvar(); }
+  }
+
+  // ---------------- eventos ----------------
+  const pagina = document.getElementById('pranchas');
+  pagina.addEventListener('input', e => {
+    const el = e.target.closest('[data-k]');
+    if (!el || el.classList.contains('chip')) return;
+    est[el.dataset.k] = el.value; sujos.add(el.dataset.k);
+    pintar(); agendar(700);
+  });
+  pagina.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (chip) {
+      const { k, v } = chip.dataset, c = MAPA[k];
+      if (c.tipo === 'multi') {
+        let lista = Array.isArray(est[k]) ? est[k].slice() : [];
+        lista = lista.includes(v) ? lista.filter(x => x !== v) : (v === 'nenhum ainda' ? [v] : lista.filter(x => x !== 'nenhum ainda').concat(v));
+        est[k] = lista;
+      } else est[k] = est[k] === v ? '' : v;
+      sujos.add(k);
+      pintar(); agendar(250);
+      return;
+    }
+    const bt = e.target.closest('.modo');
+    if (bt) {
+      modo = bt.dataset.modo;
+      try { localStorage.setItem(LS + '-modo', modo); } catch (err) { /* sem armazenamento local */ }
+      pintar();
+      return;
+    }
+    const cota = e.target.closest('svg .cota, svg .ecota[data-d]');
+    if (cota) {
+      const campo = document.getElementById('f-' + cota.dataset.d);
+      if (!campo) return;
+      campo.focus({ preventScroll: true });
+      const reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      campo.closest('.campo').scrollIntoView({ block: 'center', behavior: reduzir ? 'auto' : 'smooth' });
+    }
+  });
+  pagina.addEventListener('focusin', e => { const el = e.target.closest('[data-k]'); ativo = el ? el.dataset.k : null; marcarAtivo(); });
+  pagina.addEventListener('focusout', () => setTimeout(() => {
+    const el = document.activeElement && document.activeElement.closest && document.activeElement.closest('[data-k]');
+    ativo = el ? el.dataset.k : null; marcarAtivo();
+  }, 0));
+  pagina.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || !e.target.matches('.mm input, .texto input')) return;
+    e.preventDefault();
+    const todos = [...pagina.querySelectorAll('.mm input, .texto input, .texto textarea')].filter(el => !el.closest('[hidden]'));
+    const prox = todos[todos.indexOf(e.target) + 1];
+    if (prox) { prox.focus({ preventScroll: true }); prox.closest('.campo').scrollIntoView({ block: 'center' }); } else e.target.blur();
+  });
+
+  // copiar resumo
+  const copiado = document.getElementById('copiado');
+  function selecionarResumo() {
+    const det = document.getElementById('det-resumo'); det.open = true;
+    const r = document.createRange(); r.selectNodeContents(document.getElementById('resumo'));
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    copiado.textContent = 'Texto selecionado: copie e cole no chat.';
+  }
+  document.getElementById('copiar').addEventListener('click', () => {
+    const t = textoResumo();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => { copiado.textContent = 'Copiado. Cole no chat.'; }, selecionarResumo);
+    else selecionarResumo();
+  });
+
+  pintar();
+  try { matchMedia('(max-width: 560px)').addEventListener('change', pintar); } catch (e) { /* navegador antigo */ }
+
+  // ---------------- banco da página ----------------
+  (async () => {
+    let db = null;
+    try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    if (!db) { status('local'); return; }
+    ref = db.doc('medidas/caixa');
+    let primeiro = true;
+    ref.onSnapshot(snap => {
+      const eraPrimeiro = primeiro; primeiro = false;
+      existe = snap.exists;
+      if (!snap.exists) { status('salvo'); if (eraPrimeiro && Object.keys(corpo()).length) agendar(300); return; }
+      if (snap.metadata.hasPendingWrites) return;
+      const d = snap.data() || {};
+      let mudou = false;
+      for (const [k, v] of Object.entries(d)) {
+        if (!MAPA[k] || k === ativo || sujos.has(k)) continue;   // o que ainda não foi gravado daqui vale mais
+        if (JSON.stringify(est[k]) !== JSON.stringify(v)) { est[k] = v; mudou = true; }
+      }
+      if (eraPrimeiro) {   // o que foi digitado antes de conectar e não está no banco
+        CAMPOS.forEach(c => { if (d[c.k] === undefined && temValor(c.k)) sujos.add(c.k); });
+        if (sujos.size) agendar(300);
+      }
+      try { localStorage.setItem(LS, JSON.stringify(est)); } catch (e) { /* sem armazenamento local */ }
+      if (mudou) pintar();
+      if (elStatus.dataset.s === 'carregando') status('salvo');
+    }, () => status('erro'));
+  })();
+})();
+</script>
+
+</body></html>

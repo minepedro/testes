@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Caixas Retrô do Mascote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: duas "fotos de produto" lado a lado sobre uma mesa; embaixo de cada uma, o que cada detalhe faz e as cores de filamento. */
+:root {
+  --bg: #e9e5df; --mesa: #d8d1c6; --fg: #1f1b17; --muted: #625a51; --card: #f6f3ee; --line: #d3ccc2;
+  --accent: #c2602e;
+  --f-display: "Silkscreen", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #16130f; --mesa: #221d18; --fg: #ece5da; --muted: #a59a8c; --card: #1d1915; --line: #332c25; --accent: #e3864f; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #16130f; --mesa: #221d18; --fg: #ece5da; --muted: #a59a8c; --card: #1d1915; --line: #332c25; --accent: #e3864f; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 22px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 5vw, 42px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); margin: 8px 0 0; max-width: 62ch; }
+.duas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 820px) { .duas { grid-template-columns: minmax(0, 1fr); } }
+.produto { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; min-width: 0; }
+.palco { background: radial-gradient(120% 80% at 50% 20%, var(--card), var(--mesa)); padding: 10px 10px 0; }
+.palco svg { display: block; width: 100%; height: auto; }
+.info { padding: 16px 18px 20px; display: grid; gap: 10px; }
+.info h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 20px; letter-spacing: .02em; }
+.info ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 60ch; }
+.medida { font-size: 14px; color: var(--muted); }
+.cores { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cores span { font-size: 13px; color: var(--muted); margin-right: 2px; }
+.chip { font: inherit; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px 5px 6px; cursor: pointer; }
+.chip i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #0003; display: inline-block; }
+.chip[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vistas2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+@media (max-width: 820px) { .vistas2 { grid-template-columns: minmax(0, 1fr); } }
+.vistas2 figure { margin: 0; display: grid; min-width: 0; }
+.vistas2 figcaption { font-size: 13.5px; color: var(--muted); padding: 8px 16px 12px; background: var(--card); }
+.nota { font-size: 14px; color: var(--muted); max-width: 70ch; margin: 0; }
+.extras { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); border-top: 1px solid var(--line); }
+@media (max-width: 820px) { .extras { grid-template-columns: minmax(0, 1fr); } }
+.legenda { margin: 0; padding: 18px; list-style: none; display: grid; gap: 12px; align-content: start; }
+.legenda li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; align-items: start; }
+.num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; margin-top: 2px; }
+.agora { font-size: 14px; color: var(--muted); }
+.estados { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+.estados > span { font-size: 13px; color: var(--muted); }
+.botoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.bt { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; background: var(--bg); }
+.bt svg { width: 100%; height: 84px; }
+.bt b { font-size: 15px; }
+.bt p { margin: 0; font-size: 14px; color: var(--muted); }
+.tab { border-collapse: collapse; font-size: 14.5px; width: 100%; max-width: 680px; }
+.tab th, .tab td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tab th { color: var(--muted); font-weight: 400; font-size: 13px; }
+@keyframes respirar { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@keyframes piscarLed { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .08; } }
+@keyframes onda { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+.led-resp { animation: respirar 2.6s ease-in-out infinite; }
+.led-pisca { animation: piscarLed .8s steps(1) infinite; }
+.onda { transform-box: fill-box; transform-origin: center bottom; animation: onda .7s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .led-resp, .led-pisca, .onda { animation: none; } }
+@keyframes piscar { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes quicar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+@keyframes tremer { 0%, 100% { opacity: .16; } 50% { opacity: .24; } }
+.olho { transform-box: fill-box; transform-origin: center; animation: piscar 4.2s infinite; }
+.corpo { animation: quicar 1.6s ease-in-out infinite; }
+.scan { animation: tremer 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .olho, .corpo, .scan { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Caixas retrô do mascote</h1>
+    <p class="lead">Dois estilos para imprimir na Bambu Lab A1, com a tela de 3,5" na frente e a placa escondida atrás. Só o visual, para escolher. As medidas são aproximadas e a gente acerta com as peças na mão.</p>
+  </header>
+
+  <section class="produto" id="extras" aria-labelledby="t-extras">
+    <div class="info">
+      <h2 id="t-extras">Mini Mac com LED, botão e extras</h2>
+      <p class="nota" style="color:var(--fg)">Os fios ficam todos por dentro e a tela fica presa atrás da moldura pelos 4 furos dela, com parafusos M3. Toque nos estados embaixo do desenho, ou use o botão laranja do próprio desenho: segure para falar e solte para mandar. Se ele estiver cochilando, 1 clique acorda.</p>
+    </div>
+    <div class="extras">
+      <div class="palco" id="palco-extras"></div>
+      <ol class="legenda">
+        <li><span class="num">1</span><div><b>LED de status</b>, embaixo à esquerda, com uma tampinha de PLA branco que espalha a luz.<div class="agora" id="agora-led"></div></div></li>
+        <li><span class="num">2</span><div><b>Botão</b>, na frente, à direita da grade. <b>1 clique</b> acorda o mascote quando ele está cochilando. <b>Segure</b>, fale e solte para mandar. Os pezinhos de borracha seguram a caixa quando você aperta, e o programa corta o primeiro pedacinho do áudio para não gravar o clique.</div></li>
+        <li><span class="num">3</span><div><b>Alto-falante</b>, embaixo da grade redonda do topo: um “plim” quando o Claude termina.</div></li>
+      </ol>
+    </div>
+    <div class="estados" role="group" aria-label="Estado do mascote"><span>Ver o LED:</span></div>
+    <div class="info" style="border-top:1px solid var(--line)">
+      <h2 style="font-size:16px">Os botões que você comprou servem?</h2>
+      <p class="nota" style="color:var(--fg)">A foto ou o link do anúncio não chegaram aqui, então desenhei os tipos mais comuns. <b>Qualquer um serve se for de pulso</b> (solta sozinho quando você tira o dedo; no anúncio aparece como “momentâneo” ou “NA”). Botão com trava não serve. Todos ligam com 2 fios: um no GPIO 21 e outro no GND.</p>
+      <div class="botoes" id="botoes"></div>
+    </div>
+    <div class="info" style="border-top:1px solid var(--line)">
+      <h2 style="font-size:16px">Onde liga cada extra</h2>
+      <table class="tab">
+        <thead><tr><th>Extra</th><th>Pino do ESP32</th><th>Furo na placa</th><th>Mais</th></tr></thead>
+        <tbody>
+          <tr><td>LED RGB (WS2812)</td><td>GPIO 47</td><td>B7</td><td>3V3 e GND</td></tr>
+          <tr><td>Botão (acordar e falar)</td><td>GPIO 21</td><td>B6</td><td>GND</td></tr>
+          <tr><td>Alto-falante (MAX98357A)</td><td>GPIO 15, 16 e 18</td><td>L16, L15 e L13</td><td>5V e GND</td></tr>
+        </tbody>
+      </table>
+      <p class="nota">O LED e o botão usam pinos livres. O alto-falante divide o 15 e o 16 com o microfone: é só soldar mais um fio no mesmo furo. Correção da minha mensagem anterior: o GPIO 18 já está reservado para o alto-falante, então o LED vai no 47.</p>
+    </div>
+  </section>
+
+  <div class="duas">
+    <article class="produto" id="mac">
+      <div class="palco" id="palco-mac"></div>
+      <div class="info">
+        <h2>Mini Macintosh</h2>
+        <p class="medida">uns 11 × 12 × 13 cm (largura × profundidade × altura)</p>
+        <ul>
+          <li>Tela inclinada de leve, numa moldura funda, como os computadores dos anos 80.</li>
+          <li>No “queixo”, embaixo da tela, uma <b>gradezinha</b> com o microfone logo atrás.</li>
+          <li>O <b>cabo USB</b> sai por uma fenda na lateral, perto do chão.</li>
+          <li>Os <b>furinhos no topo</b> ventilam o ESP32 e depois servem para o alto-falante.</li>
+          <li>Base com degrau e pezinhos de borracha.</li>
+        </ul>
+        <div class="cores" role="group" aria-label="Cor do Mini Macintosh"><span>Filamento:</span></div>
+      </div>
+    </article>
+
+    <article class="produto" id="tv">
+      <div class="palco" id="palco-tv"></div>
+      <div class="info">
+        <h2>TV de tubo</h2>
+        <p class="medida">uns 15 × 10 × 18 cm com as pernas e a antena</p>
+        <ul>
+          <li>Tela com cantos bem arredondados e linhas de varredura, como tubo de imagem.</li>
+          <li>Dois <b>botões giratórios</b> do lado: hoje enfeite, depois podem trocar de sessão de verdade.</li>
+          <li>A <b>grade</b> embaixo dos botões já fica pronta para o alto-falante.</li>
+          <li><b>Antena “orelha de coelho”</b> de arame ou impressa, e pernas palito abertas.</li>
+        </ul>
+        <div class="cores" role="group" aria-label="Cor da TV"><span>Filamento:</span></div>
+      </div>
+    </article>
+  </div>
+
+  <section class="produto" id="dentro" aria-labelledby="t-dentro">
+    <div class="info">
+      <h2 id="t-dentro">Mini Macintosh por dentro</h2>
+      <p class="nota" style="color:var(--fg)">A placa vai <b>deitada numa bandeja</b> no fundo, que desliza para fora por trás (como o chassi do Macintosh original). O <b>microfone sai da placa</b> por 6 jumpers curtos e fica preso atrás da gradezinha do queixo, vedado, virado para quem fala.</p>
+    </div>
+    <div class="vistas2">
+      <figure><div class="palco" id="corte"></div><figcaption>Corte de lado (a frente à esquerda). Medidas em mm, aproximadas.</figcaption></figure>
+      <figure><div class="palco" id="bandeja"></div><figcaption>A bandeja vista de cima (a frente embaixo), com a placa no lugar.</figcaption></figure>
+    </div>
+    <div class="info">
+      <h2 style="font-size:16px">Por que assim</h2>
+      <ul>
+        <li><b>Microfone:</b> encostado num furinho com uma arruela de EVA em volta, o som vai direto ao microfone, sem pegar o eco de dentro da caixa. Com os jumpers, a placa pode ficar onde for melhor.</li>
+        <li><b>Placa deitada:</b> a fileira com os soquetes da tela e do microfone fica para a frente, então os jumpers da tela sobem curtos até ela e os do microfone ficam com uns 5 cm.</li>
+        <li><b>USB:</b> o USB-C do ESP32 (a porta “USB”, do lado da linha L; a COM queimou) fica na beirada da placa; uma fenda na lateral, alinhada com ele, deixa gravar sem abrir nada.</li>
+        <li><b>Calor e antena:</b> o ar quente sobe para os furinhos do topo; a ponta da antena do ESP32 fica livre, sem metal perto.</li>
+        <li><b>Montagem:</b> tudo é montado na bandeja aberta, liga os jumpers, desliza para dentro e 2 parafusos atrás seguram.</li>
+      </ul>
+      <h2 style="font-size:16px">Para eu desenhar as peças de verdade, preciso de</h2>
+      <ul>
+        <li>Os <b>pininhos do microfone</b> saem do mesmo lado do furinho do som ou do lado do chip?</li>
+        <li>A placa ilhada tem <b>furos nos cantos</b>? Qual o diâmetro e a distância entre eles?</li>
+        <li>A <b>altura da placa montada</b>: da parte de baixo das soldas até o topo do ESP32 encaixado.</li>
+        <li>A <b>tela</b>: largura e altura da placa vermelha, onde fica a área da imagem e de que lado fica o conector de 14 pinos.</li>
+      </ul>
+      <p class="nota">Para comprar: 6 jumpers macho-fêmea de 10 cm (microfone) e uma folha fina de EVA ou borracha (vedação do microfone).</p>
+    </div>
+  </section>
+  <p class="nota">As duas cabem inteiras na mesa da A1 (256 mm). A frente é impressa deitada, com a face da tela virada para a mesa texturizada, para a moldura sair lisa. As cores são as de filamentos PLA comuns.</p>
+</div>
+
+<script>
+(() => {
+  // ---------- mascote em pixels (o mesmo desenho do firmware) ----------
+  const SPRITE = ['...############...', '...############...', '.################.', '...############...', '....#.#....#.#....'];
+  function mascote(cx, cy, bw, bh) {   // centro, tamanho de cada bloco
+    const W = 18 * bw, H = 5 * bh, x0 = cx - W / 2, y0 = cy - H / 2;
+    let s = `<g class="corpo">`;
+    SPRITE.forEach((row, r) => { for (let c = 0; c < 18; c++) if (row[c] === '#') s += `<rect x="${x0 + c * bw}" y="${y0 + r * bh}" width="${bw + .4}" height="${bh + .4}" shape-rendering="crispEdges" fill="${r === 4 ? '#bf6446' : '#d97757'}"/>`; });
+    [5, 12].forEach(c => s += `<rect class="olho" x="${x0 + c * bw}" y="${y0 + bh}" width="${bw}" height="${bh}" fill="#141210"/>`);
+    return s + `</g>`;
+  }
+  // a tela: barra de cima, mascote, chão e barrinhas, como no aparelho
+  function tela(x, y, w, h, extra = '') {
+    const bw = w / 30, bh = bw * 2;
+    let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#141210"/>`
+      + `<rect x="${x}" y="${y}" width="${w}" height="${h * .08}" fill="#1a1613"/><text x="${x + w * .04}" y="${y + h * .062}" font-size="${h * .05}" fill="#ede6dc" font-family="monospace">14:05</text><rect x="${x + w * .9}" y="${y + h * .025}" width="${h * .035}" height="${h * .035}" fill="#6fbf73"/>`
+      + mascote(x + w / 2, y + h * .46, bw, bh)
+      + `<rect x="${x + w * .2}" y="${y + h * .67}" width="${w * .6}" height="${h * .025}" fill="#0b0908"/>`;
+    for (let i = 0; i < 12; i++) { const hh = [2, 4, 3, 6, 5, 3, 7, 4, 5, 2, 4, 3][i] * h * .012; s += `<rect x="${x + w * .32 + i * w * .03}" y="${y + h * .86 - hh}" width="${w * .018}" height="${hh}" fill="#d97757"/>`; }
+    return s + extra;
+  }
+
+  // ---------- Mini Macintosh ----------
+  const MAC = {
+    bege: { nome: 'Bege clássico', f: '#e7dfca', l: '#d2c8af', t: '#f1ebdc', d: '#b9ae93', fenda: '#3b352c' },
+    branco: { nome: 'Branco', f: '#f2f1ec', l: '#d9d7d0', t: '#fbfaf7', d: '#bdbab1', fenda: '#3b3a36' },
+    grafite: { nome: 'Grafite', f: '#4a4744', l: '#383533', t: '#5b5855', d: '#2a2826', fenda: '#151413' },
+  };
+  function desenhaMac(k) {
+    const c = MAC[k];
+    let s = `<defs><linearGradient id="vidroMac" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <filter id="somb" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="8"/></filter></defs>`;
+    s += `<ellipse cx="212" cy="372" rx="150" ry="16" fill="#000" opacity=".22" filter="url(#somb)"/>`;
+    // topo e lateral (profundidade)
+    s += `<path d="M96 62 L136 40 L334 40 L294 62 Z" fill="${c.t}"/>`;
+    s += `<path d="M294 62 L334 40 L334 318 L294 344 Z" fill="${c.l}"/>`;
+    for (let i = 0; i < 7; i++) s += `<path d="M${304 + i * 3.6} ${80 + i * -2.3} l0 40" stroke="${c.d}" stroke-width="2" stroke-linecap="round"/>`;
+    // furinhos de ventilacao no topo
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) s += `<ellipse cx="${178 + i * 11 + j * 6}" cy="${52 - j * 5}" rx="2.4" ry="1.2" fill="${c.d}"/>`;
+    // frente
+    s += `<rect x="96" y="62" width="198" height="282" rx="14" fill="${c.f}"/>`;
+    s += `<rect x="96" y="318" width="198" height="26" rx="6" fill="${c.l}" opacity=".55"/>`;
+    // moldura funda da tela
+    s += `<rect x="112" y="84" width="166" height="140" rx="12" fill="${c.d}"/><rect x="116" y="88" width="158" height="132" rx="10" fill="${c.l}"/>`;
+    s += `<rect x="124" y="98" width="142" height="95" rx="5" fill="#141210"/>`;
+    s += `<g>${tela(126, 100, 138, 92)}</g><rect x="124" y="98" width="142" height="95" rx="5" fill="url(#vidroMac)"/>`;
+    // grade do microfone no queixo e fenda do USB na lateral
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) s += `<circle cx="${177 + i * 6.5 + (j % 2) * 3.2}" cy="${258 + j * 6}" r="1.9" fill="${c.fenda}"/>`;
+    s += `<path d="M306 318 L322 308 L322 314 L306 324 Z" fill="${c.fenda}"/>`;
+    s += `<text x="118" y="300" font-size="9" fill="${c.d}" font-family="'Silkscreen', monospace">mascote</text>`;
+    s += `<circle cx="120" cy="270" r="3" fill="#6fbf73" opacity=".9"/>`;
+    // pezinhos
+    s += `<rect x="112" y="344" width="26" height="6" rx="2" fill="${c.d}"/><rect x="252" y="344" width="26" height="6" rx="2" fill="${c.d}"/>`;
+    return `<svg viewBox="20 20 360 360" role="img" aria-label="Mini Macintosh com o mascote na tela">${s}</svg>`;
+  }
+
+  // ---------- TV de tubo ----------
+  const TV = {
+    laranja: { nome: 'Laranja anos 70', f: '#d9772f', l: '#b65f22', d: '#8c4518', painel: '#efe1c6' },
+    menta: { nome: 'Verde menta', f: '#9cc7ad', l: '#7fae93', d: '#5f8a71', painel: '#f2ede1' },
+    madeira: { nome: 'Creme e madeira', f: '#8a5a36', l: '#6e4529', d: '#4f311c', painel: '#efe4cc' },
+  };
+  function desenhaTV(k) {
+    const c = TV[k];
+    let s = `<defs><pattern id="linhas" width="4" height="3" patternUnits="userSpaceOnUse"><rect width="4" height="1.2" fill="#000"/></pattern>
+      <radialGradient id="vidroTV" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <clipPath id="cortaTV"><rect x="102" y="150" width="150" height="104" rx="22"/></clipPath>
+      <filter id="somb2" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="8"/></filter></defs>`;
+    s += `<ellipse cx="200" cy="384" rx="150" ry="14" fill="#000" opacity=".2" filter="url(#somb2)"/>`;
+    // antena
+    s += `<path d="M200 118 L150 36" stroke="#9aa1a8" stroke-width="3" stroke-linecap="round"/><path d="M204 118 L268 30" stroke="#9aa1a8" stroke-width="3" stroke-linecap="round"/><circle cx="150" cy="36" r="5" fill="#cfd4d9"/><circle cx="268" cy="30" r="5" fill="#cfd4d9"/>`
+      + `<path d="M178 122 Q202 98 226 122 Z" fill="#3b3a36"/>`;
+    // pernas de tras e da frente
+    s += `<path d="M120 318 L110 372" stroke="${c.d}" stroke-width="7" stroke-linecap="round" opacity=".7"/><path d="M284 318 L296 372" stroke="${c.d}" stroke-width="7" stroke-linecap="round" opacity=".7"/>`;
+    s += `<path d="M96 320 L74 382" stroke="${c.d}" stroke-width="8" stroke-linecap="round"/><path d="M308 320 L330 382" stroke="${c.d}" stroke-width="8" stroke-linecap="round"/><circle cx="74" cy="383" r="5" fill="#cfd4d9"/><circle cx="330" cy="383" r="5" fill="#cfd4d9"/>`;
+    // gabinete (com lateral)
+    s += `<path d="M330 128 L346 138 L346 318 L330 326 Z" fill="${c.l}"/>`;
+    s += `<rect x="72" y="118" width="258" height="208" rx="30" fill="${c.f}"/>`;
+    if (k === 'madeira') for (let i = 0; i < 9; i++) s += `<path d="M78 ${140 + i * 20} Q200 ${132 + i * 20} 324 ${142 + i * 20}" stroke="#7a4d2c" stroke-width="1.4" fill="none" opacity=".55"/>`;
+    // moldura e tubo
+    s += `<rect x="88" y="136" width="178" height="132" rx="30" fill="#2a2522"/><rect x="96" y="144" width="162" height="116" rx="26" fill="#1c1916"/>`;
+    s += `<g clip-path="url(#cortaTV)"><rect x="102" y="150" width="150" height="104" fill="#141210"/>${tela(104, 152, 146, 100)}<rect class="scan" x="102" y="150" width="150" height="104" fill="url(#linhas)" opacity=".2"/><rect x="102" y="150" width="150" height="104" fill="url(#vidroTV)"/></g>`;
+    // painel dos botoes
+    s += `<rect x="276" y="140" width="44" height="170" rx="10" fill="${c.painel}" opacity="${k === 'madeira' ? 1 : .9}"/>`;
+    [176, 222].forEach((yy, i) => s += `<circle cx="298" cy="${yy}" r="14" fill="#3b3a36"/><circle cx="298" cy="${yy}" r="10" fill="#55524d"/><path d="M298 ${yy} L${298 + (i ? 7 : -4)} ${yy - 8}" stroke="#ede6dc" stroke-width="2.4" stroke-linecap="round"/>`);
+    for (let i = 0; i < 7; i++) s += `<rect x="284" y="${250 + i * 7}" width="28" height="3" rx="1.5" fill="#3b3a36" opacity=".8"/>`;
+    s += `<circle cx="112" cy="288" r="3" fill="#6fbf73"/><text x="122" y="291" font-size="8" fill="${k === 'madeira' ? '#efe4cc' : c.d}" font-family="'Silkscreen', monospace">mascote</text>`;
+    return `<svg viewBox="20 10 360 390" role="img" aria-label="TV de tubo com o mascote na tela">${s}</svg>`;
+  }
+
+  // ---------- cores ----------
+  function montar(id, palco, cores, desenha, inicial) {
+    const grupo = document.querySelector(`#${id} .cores`);
+    const por = k => { document.getElementById(palco).innerHTML = desenha(k); grupo.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === k))); try { localStorage.setItem('caixa-' + id, k); } catch (e) {} };
+    Object.entries(cores).forEach(([k, c]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.dataset.k = k; b.innerHTML = `<i style="background:${c.f}"></i>${c.nome}`; b.addEventListener('click', () => por(k)); grupo.appendChild(b); });
+    let k = inicial; try { const m = localStorage.getItem('caixa-' + id); if (m && cores[m]) k = m; } catch (e) {}
+    por(k);
+  }
+
+  // ---------- por dentro: corte de lado e bandeja vista de cima (medidas em mm) ----------
+  const CASCA = '#e7dfca', CASCA_D = '#b9ae93', BAND = '#e3a77f', PCB = '#2f6b52', ESP = '#20302b', MIC = '#1f3a6e', T1 = '#5b544c';
+  function corte() {
+    const k = 2.6, X = x => 34 + x * k, Z = z => 26 + (130 - z) * k, R = (x1, z1, x2, z2, f, extra = '') => `<rect x="${X(Math.min(x1, x2))}" y="${Z(Math.max(z1, z2))}" width="${Math.abs(x2 - x1) * k}" height="${Math.abs(z2 - z1) * k}" fill="${f}"${extra}/>`;
+    const lab = (x, y, t, a = 'start', cor = 'var(--fg)') => `<text x="${x}" y="${y}" font-size="11" fill="${cor}" text-anchor="${a}" style="paint-order:stroke;stroke:var(--card);stroke-width:3px">${t}</text>`;
+    let s = '';
+    // casca: frente (com abertura da tela e furinhos do microfone) e topo
+    s += R(0, 3, 2.5, 26, CASCA) + R(0, 34.5, 2.5, 56, CASCA) + R(0, 116, 2.5, 130, CASCA) + R(0, 127.5, 116, 130, CASCA);
+    [27.5, 30, 32.5].forEach(z => s += R(0, z - .6, 2.5, z + .6, CASCA));
+    for (let x = 70; x < 104; x += 6) s += R(x, 127.5, x + 3, 130, '#0000');
+    s += `<rect x="${X(70)}" y="${Z(130)}" width="${34 * k}" height="${2.5 * k}" fill="${CASCA_D}" opacity=".5"/>`;
+    // bandeja (fundo + tampa de tras), que sai por tras
+    s += R(2.5, 0, 120, 3, BAND) + R(116, 0, 120, 127.5, BAND) + R(10, -3, 18, 0, '#55524d') + R(100, -3, 108, 0, '#55524d');
+    // tela
+    s += R(2.5, 56, 3.4, 116, '#9fb7c9') + R(3.4, 57, 9, 115, '#141210') + lab(X(10), Z(88), 'tela 3,5″');
+    // microfone com vedacao e suporte
+    s += R(2.5, 24, 4, 37, '#e3864f') + R(4, 22, 5.6, 39, MIC) + `<rect x="${X(5.6)}" y="${Z(41)}" width="${7 * k}" height="${21 * k}" fill="none" stroke="${CASCA_D}" stroke-width="2"/>`;
+    [26, 30.5, 35].forEach(z => s += R(5.6, z - .3, 10, z + .3, '#c9a84a'));
+    // placa, colunas, soquetes e ESP32
+    s += R(17, 3, 19, 11, '#9aa1a8') + R(73, 3, 75, 11, '#9aa1a8') + R(15, 11, 77, 12.6, PCB);
+    s += R(24.5, 12.6, 26.5, 21, '#1d2125') + R(29.5, 12.6, 32, 21, '#1d2125') + R(42, 12.6, 45, 21, '#1d2125') + R(67.5, 12.6, 70.5, 21, '#1d2125');
+    s += R(38, 21, 76, 22.6, ESP) + R(54, 22.6, 72, 26, '#9aa3ad');
+    // jumpers do microfone e da tela
+    ['#3fb56b', '#3fb56b', '#3fb56b'].forEach((c, i) => s += `<path d="M${X(25.5)} ${Z(21)} C${X(24)} ${Z(32 + i)} ${X(16)} ${Z(31 + i * 2)} ${X(10)} ${Z(26 + i * 4.5)}" stroke="${c}" stroke-width="2" fill="none"/>`);
+    ['#f08a3c', '#4a8fe0', '#e04848'].forEach((c, i) => s += `<path d="M${X(30.7 + i * .4)} ${Z(21)} C${X(32)} ${Z(45)} ${X(20)} ${Z(60 + i * 3)} ${X(9)} ${Z(70 + i * 4)}" stroke="${c}" stroke-width="2" fill="none"/>`);
+    // alto-falante no futuro
+    s += `<rect x="${X(78)}" y="${Z(126)}" width="${32 * k}" height="${12 * k}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    // rotulos
+    s += lab(X(80), Z(118) + 4, 'alto-falante (depois)', 'start', 'var(--muted)')
+      + lab(X(70), Z(130) - 6, 'furinhos de ventilação')
+      + `<path d="M${X(39)} ${Z(46) - 4} L${X(7)} ${Z(31)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/><circle cx="${X(7)}" cy="${Z(31)}" r="2.5" fill="var(--muted)"/>`
+      + lab(X(40), Z(46), 'microfone + EVA') + lab(X(40), Z(46) + 13, 'atrás da grade')
+      + lab(X(36), Z(66), '13 jumpers sobem até a tela')
+      + lab(X(46), Z(31), 'ESP32 (USB sai pela lateral)')
+      + lab(X(46), Z(8), 'placa deitada sobre 4 colunas')
+      + lab(X(113), Z(86), 'bandeja: fundo + tampa de trás,', 'end', '#b5552c') + lab(X(113), Z(86) + 14, 'sai por trás com tudo junto', 'end', '#b5552c')
+      + lab(X(0), Z(-3) + 16, '← frente', 'start', 'var(--muted)') + lab(X(120), Z(-3) + 16, 'trás →', 'end', 'var(--muted)');
+    // cotas
+    s += `<path d="M${X(0)} ${Z(-6)} H${X(120)}" stroke="var(--muted)" stroke-width="1"/>` + lab(X(60), Z(-6) - 4, '120', 'middle', 'var(--muted)')
+      + `<path d="M${X(124)} ${Z(0)} V${Z(130)}" stroke="var(--muted)" stroke-width="1"/>` + lab(X(126), Z(65), '130', 'start', 'var(--muted)');
+    return `<svg viewBox="0 0 390 400" role="img" aria-label="Corte de lado da caixa Mini Macintosh">${s}</svg>`;
+  }
+  function bandeja() {
+    const k = 2.7, Y = y => 36 + y * k, X = x => 36 + (115 - x) * k;   // y: esquerda→direita (olhando de frente); x: frente(0)→trás
+    const R = (x1, y1, x2, y2, f, extra = '') => `<rect x="${Y(Math.min(y1, y2))}" y="${X(Math.max(x1, x2))}" width="${Math.abs(y2 - y1) * k}" height="${Math.abs(x2 - x1) * k}" fill="${f}"${extra}/>`;
+    const lab = (x, y, t, a = 'start', cor = 'var(--fg)') => `<text x="${x}" y="${y}" font-size="11" fill="${cor}" text-anchor="${a}" style="paint-order:stroke;stroke:var(--card);stroke-width:3px">${t}</text>`;
+    const colY = c => 92 - 7 - (c - 1) * 2.54, linX = r => 19 + (22 - r) * 2.54;   // linha V na frente, coluna 1 à direita
+    let s = R(0, 0, 115, 105, BAND, ' opacity=".55"') + R(0, -2.5, 115, 0, CASCA) + R(0, 105, 115, 107.5, CASCA) + R(-2.5, -2.5, 0, 107.5, CASCA);
+    // tela por cima (tracejada) e microfone na frente
+    s += `<rect x="${Y(4)}" y="${X(9)}" width="${97 * k}" height="${6.5 * k}" fill="none" stroke="#141210" stroke-width="1.5" stroke-dasharray="5 4"/>` + lab(Y(5), X(2.5) - 5, 'tela (por cima)', 'start', 'var(--muted)');
+    s += R(0, 44, 2.5, 60, '#e3864f') + R(2.5, 44, 4.5, 60, MIC);
+    // placa
+    s += R(16, 12, 76, 92, PCB);
+    [[19, 15], [19, 89], [73, 15], [73, 89]].forEach(([x, y]) => s += `<circle cx="${Y(y)}" cy="${X(x)}" r="4" fill="#9aa1a8"/>`);
+    // ESP32 (linhas B a L, colunas 2 a 23) com USB na ponta da coluna 2 e antena na outra
+    s += R(linX(12) - 3, colY(23) - 6, linX(2) + 3, colY(2) + 4, ESP) + R(linX(12) + 2, colY(23) - 6, linX(2) - 2, colY(23) + 2, '#9aa3ad', ' opacity=".6"');
+    s += R(linX(8) - 2, colY(2) + 4, linX(8) + 6, colY(2) + 9, '#cfd4d9') + R(linX(5) - 2, colY(2) + 4, linX(5) + 6, colY(2) + 9, '#cfd4d9');
+    s += `<path d="M${Y(colY(2) + 9)} ${X(linX(8) + 2)} H${Y(107.5)}" stroke="#2a2a2a" stroke-width="5" stroke-linecap="round"/>` + R(linX(8) - 3, 105, linX(8) + 7, 107.5, '#3b352c');
+    // soquete da tela (linha Q, colunas 9 a 21) e do microfone (colunas 1 e 4, linhas Q a S)
+    s += R(linX(17) - 1, colY(21) - 1, linX(17) + 1, colY(9) + 1, '#1d2125');
+    s += R(linX(19) - 1, colY(1) - 1, linX(17) + 1, colY(1) + 1, '#1d2125') + R(linX(19) - 1, colY(4) - 1, linX(17) + 1, colY(4) + 1, '#1d2125');
+    // jumpers do microfone até a frente
+    [0, 1, 2].forEach(i => s += `<path d="M${Y(colY(i ? 4 : 1))} ${X(linX(19 - i) - 1)} C${Y(70)} ${X(8)} ${Y(60)} ${X(6)} ${Y(53 + i * 2)} ${X(4.5)}" stroke="#3fb56b" stroke-width="2" fill="none"/>`);
+    // rotulos
+    s += lab(Y(52), X(0) + 22, 'FRENTE (grade + microfone)', 'middle')
+      + lab(Y(52), X(115) - 8, 'TRÁS: a bandeja sai por aqui', 'middle', '#b5552c')
+      + lab(Y(colY(2) + 12), X(linX(8) + 8), 'USB → fenda', 'start')
+      + lab(Y(colY(23) - 7), X(linX(6)), 'antena', 'end', 'var(--muted)')
+      + lab(Y(colY(15)), X(linX(17) - 3) + 4, 'soquete da tela', 'middle', '#eef4f0').replace('var(--card)', '#1f4a38')
+      + lab(Y(colY(2.5)), X(linX(16)) - 3, 'mic', 'middle', '#eef4f0').replace('var(--card)', '#1f4a38')
+      + lab(Y(52), X(46), 'ESP32', 'middle', '#eef4f0').replace('var(--card)', '#20302b');
+    return `<svg viewBox="0 0 390 390" role="img" aria-label="Bandeja vista de cima com a placa">${s}</svg>`;
+  }
+  // ---------- Mini Mac com LED, botao e extras (u = largura, v = altura, w = profundidade, em mm) ----------
+  const ESTADOS = {
+    dormindo: { nome: 'Cochilando', cor: '#8c8578', anim: '', txt: 'zzz', diz: 'apagado: cochilando (1 clique no botão acorda)', apagado: true },
+    ligado: { nome: 'Ligado', cor: '#5fd17a', anim: 'led-resp', txt: '14:05', diz: 'verde respirando: ligado, esperando você' },
+    ouvindo: { nome: 'Ouvindo', cor: '#4a9cff', anim: '', txt: 'ouvindo...', diz: 'azul: ouvindo (botão apertado)' },
+    trabalhando: { nome: 'Trabalhando', cor: '#ff9a3c', anim: 'led-resp', txt: 'pensando...', diz: 'laranja respirando: o Claude está trabalhando' },
+    terminou: { nome: 'Terminou', cor: '#ffd23f', anim: 'led-pisca', txt: 'pronto!', diz: 'amarelo piscando: terminou ou precisa da sua resposta' },
+    semwifi: { nome: 'Sem Wi-Fi', cor: '#ff4d4d', anim: '', txt: 'sem wi-fi', diz: 'vermelho: sem Wi-Fi ou sem a ponte' },
+  };
+  function desenhaExtras(e) {
+    const c = MAC.bege, E = ESTADOS[e];
+    // a frente fica de pe; a lateral direita e o topo vao para tras em perspectiva
+    const FRENTE = 'matrix(1.6 0 0 -1.6 50 330)', TOPO = 'matrix(1.6 0 .8 -.4 50 122)', LADO = 'matrix(.8 -.4 0 -1.6 226 330)';
+    let s = `<defs><filter id="brilho" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
+      <filter id="somb4" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+      <linearGradient id="vidroE" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>`;
+    s += `<ellipse cx="190" cy="338" rx="150" ry="13" fill="#000" opacity=".22" filter="url(#somb4)"/>`;
+    // lateral: ventilacao e fenda do USB
+    s += `<g transform="${LADO}"><rect width="120" height="130" fill="${c.l}"/>`;
+    for (let w = 66; w < 100; w += 5.5) s += `<rect x="${w}" y="110" width="1.8" height="14" rx=".9" fill="${c.d}"/>`;
+    s += `<rect x="44" y="18" width="10" height="5" rx="1" fill="${c.fenda}"/></g>`;
+    // topo: grade do alto-falante
+    s += `<g transform="${TOPO}"><rect width="110" height="120" fill="${c.t}"/>`;
+    [[0, 1], [4, 6], [8, 12], [12, 18]].forEach(([r, n]) => { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; s += `<circle cx="${55 + r * Math.cos(a)}" cy="${86 + r * Math.sin(a)}" r="1.1" fill="${c.d}"/>`; } });
+    s += `</g>`;
+    // frente, moldura e tela
+    s += `<rect x="50" y="122" width="176" height="208" rx="12" fill="${c.f}"/><rect x="50" y="310.8" width="176" height="19.2" rx="6" fill="${c.l}" opacity=".55"/>`;
+    s += `<rect x="66" y="131.6" width="144" height="102.4" rx="10" fill="${c.d}"/><rect x="70.8" y="136.4" width="134.4" height="92.8" rx="8" fill="${c.l}"/>`;
+    const tx = 79, ty = 144.5, tw = 118, th = 78;
+    s += `<rect x="77.2" y="142.8" width="121.6" height="81.6" rx="4" fill="#141210"/>${tela(tx, ty, tw, th)}`;
+    s += `<rect x="${tx}" y="${ty}" width="${tw * .6}" height="${th * .08}" fill="#1a1613"/><text x="${tx + tw * .04}" y="${ty + th * .062}" font-size="${th * .055}" fill="${e === 'semwifi' ? '#ff6b6b' : '#ede6dc'}" font-family="monospace">${E.txt}</text>`;
+    if (e === 'ouvindo') {   // barrinhas do volume mexendo
+      s += `<rect x="${tx + tw * .3}" y="${ty + th * .74}" width="${tw * .4}" height="${th * .13}" fill="#141210"/>`;
+      for (let i = 0; i < 12; i++) s += `<rect class="onda" style="animation-delay:${(i * 0.13) % .7}s" x="${tx + tw * .32 + i * tw * .03}" y="${ty + th * .86 - th * .1}" width="${tw * .018}" height="${th * .1}" fill="#4a9cff"/>`;
+    }
+    if (E.apagado) s += `<rect x="77.2" y="142.8" width="121.6" height="81.6" rx="4" fill="#000" opacity=".72"/><text x="${tx + tw * .66}" y="${ty + th * .32}" font-size="9" fill="#d97757" font-family="'Silkscreen', monospace">z z z</text>`;
+    s += `<rect x="77.2" y="142.8" width="121.6" height="81.6" rx="4" fill="url(#vidroE)"/>`;
+    // grade do microfone e LED (com brilho)
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) s += `<circle cx="${118.5 + i * 6.5 + (j % 2) * 3.2}" cy="${250 + j * 6}" r="1.9" fill="${c.fenda}"/>`;
+    s += `<circle cx="66" cy="259.6" r="5.4" fill="${c.d}"/>${E.apagado ? `<circle cx="66" cy="259.6" r="3.9" fill="#cfc8b6"/>` : `<circle class="${E.anim}" cx="66" cy="259.6" r="10" fill="${E.cor}" opacity=".6" filter="url(#brilho)"/><circle class="${E.anim}" cx="66" cy="259.6" r="3.9" fill="${E.cor}"/>`}<circle cx="64.8" cy="258.4" r="1.2" fill="#fff" opacity=".6"/>`;
+    // botao de falar na frente, a direita da grade: a capinha sai para fora (afunda quando esta ouvindo)
+    const bx = 205, by = 259.6, alt = e === 'ouvindo' ? .8 : 3;
+    s += `<circle cx="${bx}" cy="${by}" r="11.2" fill="${c.d}"/><circle cx="${bx}" cy="${by}" r="9.8" fill="#3b352c" opacity=".35"/>`;
+    for (let k = 0; k <= alt + .01; k += .2) s += `<circle cx="${bx - k * .8}" cy="${by + k * .4}" r="8.6" fill="${k + .2 > alt ? '#d97757' : '#a8502f'}"/>`;
+    s += `<circle cx="${bx - alt * .8 - 2.6}" cy="${by + alt * .4 - 2.6}" r="2.8" fill="#fff" opacity=".28"/>`;
+    s += `<text x="${bx}" y="284" font-size="7" text-anchor="middle" fill="${c.d}" font-family="'Silkscreen', monospace">falar</text>`;
+    const alvo = `<circle data-botao="1" cx="${bx}" cy="${by}" r="14" fill="transparent" style="cursor:pointer;touch-action:none"/>`;
+    s += `<text x="58" y="292" font-size="9" fill="${c.d}" font-family="'Silkscreen', monospace">mascote</text>`;
+    s += `<rect x="66" y="330" width="29" height="5" rx="2" fill="${c.d}"/><rect x="181" y="330" width="29" height="5" rx="2" fill="${c.d}"/>`;
+    // numeros da legenda
+    const marca = (n, x, y, px, py) => `<path d="M${x} ${y} L${px} ${py}" stroke="#3b352c" stroke-width="1" opacity=".6"/><circle cx="${px}" cy="${py}" r="2" fill="#3b352c" opacity=".6"/><circle cx="${x}" cy="${y}" r="8.5" fill="#c2602e"/><text x="${x}" y="${y + 4}" font-size="11" font-weight="700" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif">${n}</text>`;
+    s += marca(1, 34, 232, 62, 256) + marca(2, 272, 340, 213, 266) + marca(3, 266, 62, 210, 87) + alvo;
+    return `<svg viewBox="18 50 344 314" role="img" aria-label="Mini Macintosh com LED de status, botão na frente e alto-falante no topo">${s}</svg>`;
+  }
+  function montarExtras() {
+    const grupo = document.querySelector('#extras .estados'), palco = document.getElementById('palco-extras'), agora = document.getElementById('agora-led');
+    let atual = 'ligado', segurando = false, acordar = false;
+    const por = k => { atual = k; palco.innerHTML = desenhaExtras(k); agora.textContent = 'Agora: ' + ESTADOS[k].diz + '.'; grupo.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === k))); };
+    Object.entries(ESTADOS).forEach(([k, e]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.dataset.k = k; b.innerHTML = `<i style="background:${e.cor}"></i>${e.nome}`; b.addEventListener('click', () => por(k)); grupo.appendChild(b); });
+    palco.addEventListener('pointerdown', ev => {
+      if (!ev.target.closest('[data-botao]')) return;
+      ev.preventDefault(); segurando = true; acordar = atual === 'dormindo';
+      if (!acordar) por('ouvindo');
+    });
+    const soltar = () => { if (!segurando) return; segurando = false; por(acordar ? 'ligado' : 'trabalhando'); };
+    window.addEventListener('pointerup', soltar); window.addEventListener('pointercancel', soltar);
+    por('ligado');
+  }
+  // tipos comuns de botao, desenhados de lado
+  function desenhaBotoes() {
+    const pernas = (xs, y, h) => xs.map(x => `<rect x="${x}" y="${y}" width="2" height="${h}" fill="#b9bec4"/>`).join('');
+    const T = [
+      { nome: 'Tátil 6×6 mm', txt: 'O pequenininho de 4 perninhas. Serve: a caixa leva uma tecla impressa que passa pelo furo da frente e aperta ele por dentro.',
+        svg: pernas([47, 71], 52, 14) + `<rect x="42" y="40" width="36" height="13" rx="1.5" fill="#2a2a2a"/><rect x="51" y="30" width="18" height="10" rx="2" fill="#151515"/><rect x="40" y="38" width="40" height="3" fill="#9aa1a8"/>` },
+      { nome: 'Tátil 12×12 mm com capinha', txt: 'O mais fácil: a capinha colorida passa direto por um furo de 13 mm na frente.',
+        svg: pernas([40, 78], 56, 14) + `<rect x="34" y="42" width="52" height="15" rx="2" fill="#2a2a2a"/><rect x="32" y="40" width="56" height="3" fill="#9aa1a8"/><rect x="48" y="30" width="24" height="10" fill="#151515"/><ellipse cx="60" cy="27" rx="17" ry="9" fill="#d97757"/><ellipse cx="60" cy="24" rx="15" ry="6" fill="#e58f6f"/>` },
+      { nome: 'De painel, com rosca', txt: 'Redondo, com porca (12 ou 16 mm). Rosqueia na frente e fica com cara de aparelho antigo.',
+        svg: `<rect x="50" y="44" width="20" height="26" fill="#9aa1a8"/>` + [48, 52, 56, 60, 64].map(y => `<rect x="48" y="${y}" width="24" height="1.6" fill="#7d848b"/>`).join('') + `<rect x="36" y="38" width="48" height="8" rx="1" fill="#6d747b"/><rect x="44" y="22" width="32" height="16" rx="3" fill="#c9ced3"/><rect x="50" y="16" width="20" height="8" rx="3" fill="#d63a3a"/>` + pernas([54, 64], 70, 8) },
+      { nome: 'Fliperama (arcade)', txt: 'O grandão de 24 ou 30 mm. Também serve, mas na frente do Mac fica enorme, do tamanho da grade.',
+        svg: `<rect x="44" y="50" width="32" height="20" fill="#2a2a2a"/><rect x="26" y="44" width="68" height="8" rx="3" fill="#151515"/><path d="M34 44 Q60 12 86 44 Z" fill="#d63a3a"/><path d="M42 40 Q56 24 66 26" stroke="#fff" stroke-width="3" fill="none" opacity=".3"/>` + pernas([50, 68], 70, 8) },
+    ];
+    document.getElementById('botoes').innerHTML = T.map(t => `<div class="bt"><svg viewBox="0 0 120 84" role="img" aria-label="${t.nome}">${t.svg}</svg><b>${t.nome}</b><p>${t.txt}</p></div>`).join('');
+  }
+  montarExtras();
+  desenhaBotoes();
+  document.getElementById('corte').innerHTML = corte();
+  document.getElementById('bandeja').innerHTML = bandeja();
+  montar('mac', 'palco-mac', MAC, desenhaMac, 'bege');
+  montar('tv', 'palco-tv', TV, desenhaTV, 'laranja');
+})();
+</script>
+
+</body></html>
