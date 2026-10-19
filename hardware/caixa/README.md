@@ -7,6 +7,7 @@
 | Arquivo | O que é |
 |---|---|
 | `caixas-retro.html` | As ideias de caixa (o Mini Mac foi o escolhido) e o desenho por dentro, com a bandeja. |
+| `planta-caixa.html` | A planta da caixa inteira em escala (frente, corte de lado, vista de cima e lateral), com as peças reais dentro. Proposta, ainda não confirmada. |
 | `medidas-mini-mac.html` | A página das medidas, com os desenhos em escala. Esta cópia abre com as medidas de `medidas.json`; o que você digitar nela fica só no navegador. |
 | `medidas.json` | As medidas em mm, de 19/out/2026. Os nomes dos campos aparecem na página (por exemplo `v_esq` é a medida H, da borda esquerda da placa da tela até o vidro). |
 | `gerar_teste_tela.py` | Gera as duas peças de teste da tela: STEP de cada uma e um 3MF com as duas. |
@@ -45,4 +46,4 @@ As medidas ficam no começo de `gerar_teste_tela.py`. Mudou uma medida, muda lá
 2. Confirmar o tamanho dos insertos. Supus os de 5,7 mm de comprimento e 4,6 por fora (furo de 4,0).
 3. Furos da tela: a 1 mm da borda dá 90,4 × 49,2 entre centros; a primeira medida tinha dado 89,5 × 50. O teste decide.
 4. Alto-falante: tem furos ou abas? Amplificador: medir (supus 18 × 19).
-5. Modelar a caixa inteira.
+5. Confirmar a planta (`planta-caixa.html`) e modelar a caixa inteira.

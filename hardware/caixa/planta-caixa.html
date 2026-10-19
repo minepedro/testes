@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Planta da Caixa Mini Mac</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+/* Pranchas de oficina: quatro vistas em escala da caixa com as peças reais dentro, a lista de peças e o que falta decidir */
+:root {
+  --bg: #E6E9ED; --folha: #FAFAF9; --tinta: #1B2130; --mudo: #586172; --linha: #CBD0D8;
+  --cota: #1E5BB8; --sup: #7A4ED0; --ok: #24804F; --erro: #BF3326; --grade: rgba(30, 91, 184, .07);
+  --bege: #DCD5C3; --bege-borda: #A89F88; --chanfro: #C7BFA9; --anel: #CFC7B2; --tela: #23272F; --sobre-tela: #C9D1DC;
+  --pcb-tela: #B3322B; --pcb: #2F6A46; --esp: #2A2F38; --metal: #B3BAC3; --preto: #2A2D33; --vidro: #272C34;
+  --led: #5FD17A; --fio-a: #D9453B; --fio-b: #E8B52F; --fio-c: #3D9B5B; --fio-d: #3B7DD8;
+  --f-titulo: "Pixelify Sans", "Courier New", monospace;
+  --f-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+    --cota: #78AAFF; --sup: #B597FF; --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06);
+    --bege: #BDB5A2; --bege-borda: #8C846F; --chanfro: #A39B87; --anel: #ACA48F; --tela: #0B0D11; --sobre-tela: #8E97A5;
+    --pcb-tela: #A02D27; --pcb: #275A3B; --esp: #0F1217; --metal: #8D96A3; --preto: #0E1013; --vidro: #0B0D11;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+  --cota: #78AAFF; --sup: #B597FF; --ok: #4CC089; --erro: #FF7B6C; --grade: rgba(120, 170, 255, .06);
+  --bege: #BDB5A2; --bege-borda: #8C846F; --chanfro: #A39B87; --anel: #ACA48F; --tela: #0B0D11; --sobre-tela: #8E97A5;
+  --pcb-tela: #A02D27; --pcb: #275A3B; --esp: #0F1217; --metal: #8D96A3; --preto: #0E1013; --vidro: #0B0D11;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--tinta); font: 16px/1.5 var(--f-texto); }
+.pagina {
+  max-width: 1040px; margin: 0 auto; display: grid; gap: 24px;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sobre { margin: 0 0 4px; font: 600 12px var(--f-texto); letter-spacing: .09em; text-transform: uppercase; color: var(--mudo); }
+h1 { margin: 0; font: 500 clamp(30px, 6vw, 44px)/1.05 var(--f-titulo); text-wrap: balance; }
+h2 { margin: 0; font: 500 22px/1.2 var(--f-titulo); }
+.lead { margin: 12px 0 0; max-width: 66ch; }
+.prancha { background: var(--folha); border: 1px solid var(--linha); border-radius: 6px; padding: 18px 20px 20px; display: grid; gap: 14px; min-width: 0; }
+.prancha > p { margin: 0; max-width: 72ch; color: var(--mudo); }
+.duas { display: grid; gap: 14px; }
+@media (min-width: 820px) { .duas { grid-template-columns: 1fr 1fr; align-items: start; } }
+.desenho {
+  margin: 0; padding: 8px; border: 1px solid var(--linha); border-radius: 4px; min-width: 0;
+  background-color: var(--folha);
+  background-image: linear-gradient(var(--grade) 1px, transparent 1px), linear-gradient(90deg, var(--grade) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.desenho svg { display: block; width: 100%; height: auto; }
+.desenho figcaption { padding: 6px 4px 2px; font-size: 13px; color: var(--mudo); }
+.tab { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+th { text-align: left; font: 600 12px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: var(--mudo); padding: 8px 10px; border-bottom: 1px solid var(--linha); }
+td { padding: 9px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+td.num { font: 500 14px var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.confirmar { border-left: 3px solid var(--sup); }
+.confirmar ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 72ch; }
+svg .cota-l { stroke: var(--cota); fill: none; }
+svg .cota-e { stroke: var(--cota); fill: none; opacity: .7; }
+svg .cota-s { fill: var(--cota); }
+svg .cota-t { fill: var(--cota); font-family: var(--f-num); font-weight: 700; }
+svg .rot { fill: var(--mudo); font-family: var(--f-texto); font-weight: 500; }
+svg .rot-forte { fill: var(--tinta); font-family: var(--f-texto); font-weight: 600; }
+svg .rot-claro { fill: var(--sobre-tela); font-family: var(--f-texto); font-weight: 600; }
+svg .bege { fill: var(--bege); stroke: var(--bege-borda); }
+svg .chanfro { fill: var(--chanfro); stroke: var(--bege-borda); }
+svg .anel { fill: var(--anel); stroke: var(--bege-borda); }
+svg .tela { fill: var(--tela); }
+svg .furo { fill: var(--folha); stroke: var(--bege-borda); }
+svg .oculto { fill: none; stroke: var(--mudo); stroke-dasharray: 1.6 1; }
+svg .pcb-tela { fill: var(--pcb-tela); opacity: .8; }
+svg .vidro { fill: var(--vidro); opacity: .75; }
+svg .pcb { fill: var(--pcb); stroke: var(--contorno, none); }
+svg .esp { fill: var(--esp); }
+svg .metal { fill: var(--metal); }
+svg .preto { fill: var(--preto); }
+svg .led { fill: var(--led); }
+svg .corte { fill: var(--bege); stroke: var(--bege-borda); }
+svg .vazio { fill: var(--folha); stroke: var(--bege-borda); }
+</style>
+
+<main class="pagina">
+  <header>
+    <p class="sobre">Mascote do Claude · caixa Mini Mac</p>
+    <h1>Planta da caixa</h1>
+    <p class="lead">A caixa inteira em escala, com as peças de verdade dentro: a tela, a placa ilhada com o ESP32, o alto-falante, o microfone, o botão e o LED. Confira a disposição e me diga o que mudar. Só depois eu modelo.</p>
+  </header>
+
+  <section class="prancha" aria-labelledby="h-frente">
+    <h2 id="h-frente">De frente</h2>
+    <p>A tela fica recuada numa moldura chanfrada, como no Macintosh. Embaixo, no queixo: o LED à esquerda, a gradezinha do microfone no meio e o botão à direita. O tracejado é o que fica escondido.</p>
+    <figure class="desenho"><div id="d-frente"></div><figcaption>A janela fica no meio da caixa: a tela anda 2,3 mm para a direita porque a parte que acende não é centrada no vidro.</figcaption></figure>
+  </section>
+
+  <section class="prancha" aria-labelledby="h-lado">
+    <h2 id="h-lado">Em corte, de lado</h2>
+    <p>Cortada no meio, com a frente à esquerda. A placa ilhada fica deitada na bandeja, atrás e abaixo da tela; o alto-falante fica em cima, virado para a grade do topo.</p>
+    <figure class="desenho"><div id="d-lado"></div><figcaption>Os jumpers da tela e do amplificador ficam em pé até 55,5 mm; a tela começa em 58 e o alto-falante em 106,6, então nada encosta.</figcaption></figure>
+  </section>
+
+  <section class="prancha" aria-labelledby="h-cima">
+    <h2 id="h-cima">Vista de cima, na altura da placa</h2>
+    <div class="duas">
+      <figure class="desenho"><div id="d-cima"></div><figcaption>A placa vira com a linha V para a frente: os soquetes da tela e do microfone ficam perto da tela, e o USB-C “USB” fica na lateral direita.</figcaption></figure>
+      <figure class="desenho"><div id="d-direita"></div><figcaption>Lateral direita: a fenda do cabo e a ventilação.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="prancha" aria-labelledby="h-pecas">
+    <h2 id="h-pecas">Peças</h2>
+    <div class="tab"><table>
+      <thead><tr><th>Peça</th><th>Tamanho</th><th>Como imprime</th></tr></thead>
+      <tbody>
+        <tr><td><b>Corpo</b>: frente, topo e laterais numa peça só, com a moldura da tela, a grade do alto-falante, a fenda do USB e os trilhos da bandeja</td><td class="num">110 × 130 × 112</td><td>Frente na mesa (sai fosca na texturizada), sem suporte. A peça mais demorada.</td></tr>
+        <tr><td><b>Bandeja</b>: o fundo com os pininhos da placa e a tampa de trás, com ventilação; desliza por trás e prende com 2 parafusos M3</td><td class="num">105 × 110 × 128</td><td>Fundo na mesa, tampa em pé.</td></tr>
+        <tr><td><b>Moldura de trás da tela</b>, como a do teste, com os 4 insertos em cima e embaixo da tela</td><td class="num">100 × 70</td><td>Deitada, torres para cima.</td></tr>
+        <tr><td><b>Tecla do botão</b>, <b>suporte do microfone</b> com anel de vedação, <b>anel do alto-falante</b> e <b>berço do amplificador</b></td><td class="num">pequenas</td><td>Juntas numa mesa; a tecla pode ir em branco.</td></tr>
+        <tr><td>Compras: 6 insertos M3, 4 pezinhos de borracha. Os parafusos M3 × 19 servem.</td><td class="num">–</td><td>–</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="prancha confirmar" aria-labelledby="h-conf">
+    <h2 id="h-conf">Para você confirmar</h2>
+    <ol>
+      <li><b>Tamanho:</b> 110 de largura, 112 de fundo e 130 de altura, perto dos 11 × 12 × 13 cm do desenho de antes.</li>
+      <li><b>Tela reta</b>, recuada 3 mm numa moldura chanfrada. Inclinar a tela deixa a caixa mais funda e difícil de imprimir.</li>
+      <li><b>Corpo numa peça só</b>, sem emenda na frente. A placa entra por trás, na bandeja, e sai deslizando depois de tirar o cabo USB.</li>
+      <li><b>Placa virada com a linha V para a frente</b>, com o USB na lateral direita, a 23,5 mm do chão.</li>
+      <li><b>Insertos da tela em cima e embaixo</b> dela, não nas laterais como no teste, para a caixa caber em 11 cm de largura. O teste continua valendo para provar o encaixe e o aperto.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------------- caixa (mm): x para a direita vista de frente, y para trás, z para cima ----------------
+  const W = 110, D = 112, H = 130, PAR = 2.4, FUNDO = 3;
+  // tela: a placa vermelha (96 x 54,8) com a parte que acende centrada na caixa
+  const PCB_X0 = W / 2 - 45.7, PCB_Z1 = 120, PCB_Z0 = PCB_Z1 - 54.8;
+  const JAN = [PCB_X0 + 7.6, PCB_X0 + 83.8, PCB_Z1 - 53, PCB_Z1 - 1.8];       // x0, x1, z0, z1
+  const BISEL = 5, RECUO = 3;                                                // chanfro em volta da janela: 5 na frente, 3 de fundo
+  const Y_VIDRO = RECUO + 1.6, Y_APOIO = Y_VIDRO + 4.0, Y_PLACA = Y_APOIO + 1.6, Y_TORRE = Y_PLACA + 13, Y_JUMPER = Y_VIDRO + 0.2 + 35;
+  const INSERTOS_TELA = [[PCB_X0 + 10, PCB_Z1 + 3.6], [PCB_X0 + 86, PCB_Z1 + 3.6], [PCB_X0 + 10, PCB_Z0 - 3.6], [PCB_X0 + 86, PCB_Z0 - 3.6]];
+  // queixo
+  const Z_QUEIXO = 38, LED = [16, Z_QUEIXO], MIC = [W / 2, Z_QUEIXO], BOTAO = [W - 16, Z_QUEIXO];
+  // placa ilhada 80 x 60, linha V para a frente, coluna 1 (USB) à direita
+  const BX1 = W - PAR - 1, BX0 = BX1 - 80, BY0 = 44, BY1 = BY0 + 60, BZ0 = FUNDO + 5, BZ1 = BZ0 + 1.6;
+  const col = c => BX1 - (6.98 + (c - 1) * 2.54), lin = r => BY1 - (3.33 + (r - 1) * 2.54);   // r: A = 1
+  const ESP = [col(23) - 7.5, BX1 - 8.3, lin(12) - 1.6, lin(2) + 1.6];       // x0, x1, y0, y1
+  const ESP_TOPO = BZ0 - 1 + 19.3, JUMPER_TOPO = BZ0 - 1 + 48.5, USB_Z = BZ1 + 13.9;
+  const USB_Y = (ESP[2] + ESP[3]) / 2 - 6.5;
+  const FENDA = [USB_Y - 9, USB_Y + 9, USB_Z - 5, USB_Z + 5];               // y0, y1, z0, z1
+  const ALTO = { y: 70, d: 40, p: 21 };
+
+  // ---------------- cotas ----------------
+  const r2 = n => Math.round(n * 100) / 100;
+  const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
+  let U = 1;
+  const FS = () => 2.6 * U;
+  const t = (x, y, s, anc = 'middle', cls = 'cota-t', gira = false) => `<text class="${cls}" x="${r2(x)}" y="${r2(y)}" font-size="${r2(cls === 'cota-t' ? FS() : FS() * .95)}" text-anchor="${anc}"${gira ? ` transform="rotate(-90 ${r2(x)} ${r2(y)})"` : ''}>${s}</text>`;
+  const seta = (x, y, d) => {
+    const a = 1.5 * U, b = .55 * U;
+    const p = { e: [[x + a, y - b], [x + a, y + b]], d: [[x - a, y - b], [x - a, y + b]], c: [[x - b, y + a], [x + b, y + a]], b: [[x - b, y - a], [x + b, y - a]] }[d];
+    return `<polygon class="cota-s" points="${r2(x)},${r2(y)} ${p[0].map(r2)} ${p[1].map(r2)}"/>`;
+  };
+  const sw = () => `stroke-width="${r2(.25 * U)}"`;
+  function cH(x1, x2, y, y1, y2, txt, fora = 'dir') {
+    const ext = (x, yy) => yy == null ? '' : `M${r2(x)} ${r2(yy + (y > yy ? .8 : -.8) * U)} V${r2(y + (y > yy ? 1 : -1) * U)}`;
+    const vao = x2 - x1, peq = vao < 3.6 * U, cabe = vao >= txt.length * .6 * FS() + 1.2 * U;
+    const lin = peq ? `M${r2(x1 - 3 * U)} ${r2(y)} H${r2(x2 + 3 * U)}` : `M${r2(x1)} ${r2(y)} H${r2(x2)}`;
+    const off = (peq ? 3.8 : 1.2) * U;
+    const tx = cabe ? t((x1 + x2) / 2, y - .8 * U, txt) : fora === 'dir' ? t(x2 + off, y + FS() * .35, txt, 'start') : t(x1 - off, y + FS() * .35, txt, 'end');
+    return `<path class="cota-e" ${sw()} d="${ext(x1, y1)} ${ext(x2, y2 ?? y1)}"/><path class="cota-l" ${sw()} d="${lin}"/>${peq ? seta(x1, y, 'd') + seta(x2, y, 'e') : seta(x1, y, 'e') + seta(x2, y, 'd')}${tx}`;
+  }
+  function cV(y1, y2, x, x1, x2, txt, lado = 'esq') {
+    const ext = (xx, yy) => xx == null ? '' : `M${r2(xx + (x > xx ? .8 : -.8) * U)} ${r2(yy)} H${r2(x + (x > xx ? 1 : -1) * U)}`;
+    const vao = y2 - y1, peq = vao < 3.6 * U, cabe = vao >= txt.length * .6 * FS() + 1.2 * U;
+    const lin = peq ? `M${r2(x)} ${r2(y1 - 3 * U)} V${r2(y2 + 3 * U)}` : `M${r2(x)} ${r2(y1)} V${r2(y2)}`;
+    const m = (y1 + y2) / 2;
+    const tx = cabe
+      ? (lado === 'esq' ? t(x - .8 * U, m, txt, 'middle', 'cota-t', true) : t(x + .8 * U + FS() * .75, m, txt, 'middle', 'cota-t', true))
+      : (lado === 'esq' ? t(x - 1.4 * U, m + FS() * .35, txt, 'end') : t(x + 1.4 * U, m + FS() * .35, txt, 'start'));
+    return `<path class="cota-e" ${sw()} d="${ext(x1, y1)} ${ext(x2 ?? x1, y2)}"/><path class="cota-l" ${sw()} d="${lin}"/>${peq ? seta(x, y1, 'b') + seta(x, y2, 'c') : seta(x, y1, 'c') + seta(x, y2, 'b')}${tx}`;
+  }
+  const chamada = (x, y, bx, by, txt, anc = 'start') => `<path class="cota-l" ${sw()} d="M${r2(x)} ${r2(y)} L${r2(bx)} ${r2(by)}"/><circle class="cota-s" cx="${r2(x)}" cy="${r2(y)}" r="${r2(.45 * U)}"/>${t(bx + (anc === 'start' ? .6 : -.6) * U, by + FS() * .35, txt, anc)}`;
+  const svg = (x, y, w, h, rotulo, corpo) => `<svg viewBox="${r2(x)} ${r2(y)} ${r2(w)} ${r2(h)}" role="img" aria-label="${rotulo}">${corpo}</svg>`;
+  const rect = (x0, x1, y0, y1, cls, extra = '') => `<rect class="${cls}" x="${r2(Math.min(x0, x1))}" y="${r2(Math.min(y0, y1))}" width="${r2(Math.abs(x1 - x0))}" height="${r2(Math.abs(y1 - y0))}" ${extra}/>`;
+  const o = () => `stroke-width="${r2(.22 * U)}"`;
+
+  // ---------------- de frente (z para cima: y do desenho = H - z) ----------------
+  function frente() {
+    U = (W + 40) / 120;
+    const Z = z => H - z;
+    let s = rect(0, W, Z(0), Z(H), 'bege', `rx="6" ${sw()}`);
+    s += rect(JAN[0] - BISEL, JAN[1] + BISEL, Z(JAN[2] - BISEL), Z(JAN[3] + BISEL), 'chanfro', `rx="2" ${sw()}`)
+      + rect(JAN[0] - 2, JAN[1] + 2, Z(JAN[2] - 2), Z(JAN[3] + 2), 'anel', sw())
+      + rect(JAN[0], JAN[1], Z(JAN[2]), Z(JAN[3]), 'tela')
+      + t((JAN[0] + JAN[1]) / 2, Z((JAN[2] + JAN[3]) / 2) - 1.5 * U, 'janela', 'middle', 'rot-claro')
+      + t((JAN[0] + JAN[1]) / 2, Z((JAN[2] + JAN[3]) / 2) + 2.4 * U, `${fmt(JAN[1] - JAN[0])} × ${fmt(JAN[3] - JAN[2])}`, 'middle', 'rot-claro');
+    s += rect(PCB_X0, PCB_X0 + 96, Z(PCB_Z0), Z(PCB_Z1), 'oculto', o());
+    INSERTOS_TELA.forEach(([x, z]) => s += `<circle class="oculto" ${o()} cx="${r2(x)}" cy="${r2(Z(z))}" r="2"/>`);
+    // queixo
+    s += `<circle class="led" cx="${LED[0]}" cy="${Z(LED[1])}" r="2.5"/><circle class="furo" ${o()} cx="${BOTAO[0]}" cy="${Z(BOTAO[1])}" r="4"/><circle class="anel" ${o()} cx="${BOTAO[0]}" cy="${Z(BOTAO[1])}" r="1.9"/>`;
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 3; j++) { if (j === 1 && i === 6) continue; s += `<circle class="tela" cx="${r2(MIC[0] + (i - 3) * 3.2 + (j === 1 ? 1.6 : 0))}" cy="${r2(Z(MIC[1]) + (j - 1) * 2.8)}" r=".8"/>`; }
+    s += t(LED[0], Z(LED[1]) + 6.5 * U, 'LED', 'middle', 'rot') + t(MIC[0], Z(MIC[1]) + 6.5 * U, 'microfone', 'middle', 'rot') + t(BOTAO[0], Z(BOTAO[1]) + 6.5 * U, 'botão', 'middle', 'rot');
+    // cotas
+    s += cH(0, W, Z(H) - 5 * U, Z(H), Z(H), fmt(W)) + cV(Z(H), Z(0), -5 * U, 0, 0, fmt(H))
+      + cV(Z(H), Z(JAN[3]), W + 5 * U, W, JAN[1], fmt(H - JAN[3]), 'dir') + cV(Z(JAN[3]), Z(JAN[2]), W + 5 * U, JAN[1], JAN[1], fmt(JAN[3] - JAN[2]), 'dir')
+      + cV(Z(JAN[2]), Z(0), W + 5 * U, JAN[1], W, fmt(JAN[2]), 'dir')
+      + cV(Z(Z_QUEIXO), Z(0), W + 12 * U, BOTAO[0] + 4, W, fmt(Z_QUEIXO), 'dir')
+      + cH(0, LED[0], Z(0) + 5 * U, Z(0), Z(LED[1]) + 2.5, fmt(LED[0])) + cH(LED[0], BOTAO[0], Z(0) + 5 * U, Z(LED[1]) + 2.5, Z(BOTAO[1]) + 4, fmt(BOTAO[0] - LED[0]))
+      + cH(BOTAO[0], W, Z(0) + 5 * U, Z(BOTAO[1]) + 4, Z(0), fmt(W - BOTAO[0]));
+    return svg(-14 * U, -10 * U, W + 34 * U, H + 20 * U, 'A caixa vista de frente, com as medidas', s);
+  }
+
+  // ---------------- em corte de lado (y para a direita, z para cima) ----------------
+  function lado() {
+    U = (D + 40) / 120;
+    const Z = z => H - z;
+    let s = '';
+    // corpo: topo, frente com a moldura da tela; bandeja: fundo e tampa de trás
+    const frentePts = [[0, 0], [0, JAN[2] - BISEL], [RECUO, JAN[2] - 2], [RECUO, JAN[2]], [Y_VIDRO, JAN[2]], [Y_VIDRO, PCB_Z0 - 0.3], [Y_PLACA - 0.2, PCB_Z0 - 0.3],
+      [Y_PLACA - 0.2, PCB_Z0 - 6], [PAR, PCB_Z0 - 6], [PAR, FUNDO]];
+    s += `<polygon class="corte" ${sw()} points="${frentePts.map(([y, z]) => `${r2(y)},${r2(Z(z))}`).join(' ')}"/>`;
+    const cimaPts = [[0, H], [D, H], [D, H - PAR], [Y_PLACA - 0.2, H - PAR], [Y_PLACA - 0.2, PCB_Z1 + 0.3], [Y_VIDRO, PCB_Z1 + 0.3], [Y_VIDRO, JAN[3]], [RECUO, JAN[3]], [RECUO, JAN[3] + 2], [0, JAN[3] + BISEL]];
+    s += `<polygon class="corte" ${sw()} points="${cimaPts.map(([y, z]) => `${r2(y)},${r2(Z(z))}`).join(' ')}"/>`;
+    s += rect(PAR + .3, D, Z(0), Z(FUNDO), 'corte', sw()) + rect(D - PAR, D, Z(FUNDO), Z(H - PAR - .3), 'corte', sw());
+    // tela fantasma: vidro e placa; moldura de trás e torre (tracejada, fora do corte)
+    s += rect(Y_VIDRO + .2, Y_APOIO, Z(PCB_Z0 + 0.3), Z(PCB_Z1 - 0.3), 'vidro') + rect(Y_APOIO, Y_PLACA, Z(PCB_Z0), Z(PCB_Z1), 'pcb-tela')
+      + rect(Y_PLACA, Y_PLACA + 2.4, Z(PCB_Z0 - 6), Z(PCB_Z1 + 6), 'oculto', o()) + rect(Y_PLACA + 2.4, Y_TORRE, Z(PCB_Z1 + 7), Z(PCB_Z1 + 0.1), 'oculto', o());
+    // jumpers da tela descendo até o soquete da placa
+    const fios = ['--fio-a', '--fio-b', '--fio-c', '--fio-d'];
+    fios.forEach((f, i) => { const z = 100 - i * 6; s += `<path d="M${r2(Y_PLACA + 2.5)} ${r2(Z(z))} H${r2(Y_JUMPER - 12)} C${r2(Y_JUMPER + 4)} ${r2(Z(z))} ${r2(lin(17) - 2 + i)} ${r2(Z(70))} ${r2(lin(17) + i * .6)} ${r2(Z(JUMPER_TOPO - 22))}" stroke="var(${f})" stroke-width="${r2(.9 * U)}" fill="none"/>`; });
+    // placa ilhada, ESP32, soquete da tela com jumpers em pé
+    s += rect(BY0, BY1, Z(BZ0), Z(BZ1), 'pcb') + rect(BY0 + 3, BY0 + 6, Z(FUNDO), Z(BZ0), 'preto') + rect(BY1 - 6, BY1 - 3, Z(FUNDO), Z(BZ0), 'preto')
+      + rect(ESP[2], ESP[3], Z(BZ1), Z(ESP_TOPO - 3.2), 'preto') + rect(ESP[2], ESP[3], Z(ESP_TOPO - 3.2), Z(ESP_TOPO - 1.6), 'esp') + rect(ESP[2] + 2, ESP[2] + 20, Z(ESP_TOPO - 1.6), Z(ESP_TOPO), 'metal')
+      + rect(lin(17) - 1.3, lin(17) + 1.3, Z(BZ1), Z(JUMPER_TOPO - 22), 'preto');
+    s += t((ESP[2] + ESP[3]) / 2, Z(ESP_TOPO) - 1.5 * U, 'ESP32', 'middle', 'rot') + t((BY0 + BY1) / 2, Z(BZ0) + 4 * U, 'placa ilhada na bandeja', 'middle', 'rot');
+    // microfone atrás da grade, botão
+    s += rect(PAR, PAR + 1.2, Z(MIC[1] - 7), Z(MIC[1] + 7), 'pcb') + rect(PAR + 1.2, PAR + 7, Z(MIC[1] - 9), Z(MIC[1] + 9), 'oculto', o())
+      + t(PAR + 9, Z(MIC[1]) + FS() * .35, 'microfone', 'start', 'rot');
+    // alto-falante embaixo da grade do topo
+    const a0 = ALTO.y - ALTO.d / 2, a1 = ALTO.y + ALTO.d / 2, az = H - PAR;
+    s += rect(a0, a1, Z(az), Z(az - 1), 'metal') + `<polygon class="preto" points="${r2(a0 + 2)},${r2(Z(az - 1))} ${r2(a1 - 2)},${r2(Z(az - 1))} ${r2(ALTO.y + 8)},${r2(Z(az - 9))} ${r2(ALTO.y - 8)},${r2(Z(az - 9))}"/>`
+      + rect(ALTO.y - 8, ALTO.y + 8, Z(az - 9), Z(az - ALTO.p), 'preto') + t(ALTO.y, Z(az - ALTO.p) + 4 * U, 'alto-falante', 'middle', 'rot');
+    for (let k = -3; k <= 3; k++) s += rect(ALTO.y + k * 4.4 - .8, ALTO.y + k * 4.4 + .8, Z(H), Z(H - PAR), 'vazio', o());
+    // amplificador na parede esquerda (fora do corte)
+    s += rect(52, 71, Z(66), Z(84), 'oculto', o()) + t(61.5, Z(75) + FS() * .35, 'amp', 'middle', 'rot');
+    // cotas
+    s += cH(0, D, Z(0) + 5 * U, Z(0), Z(0), fmt(D)) + cV(Z(H), Z(0), -6 * U, 0, 0, fmt(H))
+      + cH(0, Y_VIDRO, Z(H) - 5 * U, Z(JAN[3] + BISEL), Z(PCB_Z1 + .3), fmt(Y_VIDRO), 'esq') + cH(Y_VIDRO, Y_PLACA, Z(H) - 5 * U, Z(PCB_Z1 + .3), Z(H - PAR), fmt(Y_PLACA - Y_VIDRO))
+      + cV(Z(USB_Z), Z(0), D + 5 * U, BY1, D, `USB ${fmt(USB_Z)}`, 'dir')
+      + cV(Z(JUMPER_TOPO), Z(0), D + 12 * U, lin(17) + 1.3, D, fmt(JUMPER_TOPO), 'dir')
+      + cV(Z(H), Z(az - ALTO.p), D + 5 * U, ALTO.y + 8, D, fmt(ALTO.p + PAR), 'dir')
+      + cV(Z(PCB_Z0 - 6), Z(JUMPER_TOPO), BY0 - 4 * U, Y_PLACA, lin(17), `folga ${fmt(PCB_Z0 - 6 - JUMPER_TOPO)}`, 'esq');
+    return svg(-15 * U, -10 * U, D + 36 * U, H + 20 * U, 'A caixa cortada de lado, com as peças dentro', s);
+  }
+
+  // ---------------- de cima, na altura da placa (x para a direita, y para baixo no desenho = frente embaixo) ----------------
+  function cima() {
+    U = (W + 34) / 120;
+    const Y = y => D - y;
+    let s = rect(0, W, Y(0), Y(D), 'corte', `rx="3" ${sw()}`) + rect(PAR, W - PAR, Y(PAR), Y(D - PAR), 'vazio', sw());
+    // fenda do USB na parede direita
+    s += rect(W - PAR - .1, W + .1, Y(FENDA[0]), Y(FENDA[1]), 'vazio', 'stroke="none"');
+    // placa e furos
+    s += rect(BX0, BX1, Y(BY0), Y(BY1), 'pcb', 'rx=".8"');
+    let pads = '';
+    for (let c = 1; c <= 27; c += 2) for (let r = 1; r <= 22; r += 2) pads += `<circle class="metal" cx="${r2(col(c))}" cy="${r2(Y(lin(r)))}" r=".35"/>`;
+    s += pads;
+    [[-37.8, -27.9], [37.8, -27.9], [-37.8, 27.9], [37.8, 27.9]].forEach(([dx, dy]) => s += `<circle class="furo" ${o()} cx="${r2((BX0 + BX1) / 2 + dx)}" cy="${r2(Y((BY0 + BY1) / 2 + dy))}" r="1.1"/>`);
+    // ESP32 e os dois USB-C
+    s += rect(ESP[0], ESP[1], Y(ESP[2]), Y(ESP[3]), 'esp', 'rx=".8"') + rect(ESP[0], ESP[0] + 18, Y((ESP[2] + ESP[3]) / 2 - 7.5), Y((ESP[2] + ESP[3]) / 2 + 7.5), 'metal')
+      + rect(ESP[1] - 7.3, ESP[1], Y(USB_Y - 4.45), Y(USB_Y + 4.45), 'metal') + rect(ESP[1] - 7.3, ESP[1], Y(USB_Y + 13 - 4.45), Y(USB_Y + 13 + 4.45), 'metal')
+      + t(ESP[1] - 3.65, Y(USB_Y) + FS() * .35, 'USB', 'middle', 'rot-forte') + t((ESP[0] + ESP[1] - 18) / 2 + 9, Y((ESP[2] + ESP[3]) / 2) + FS() * .35, 'ESP32-S3', 'middle', 'rot-claro');
+    // soquetes: tela (linha Q), microfone (colunas 1 e 4), amplificador (coluna 27)
+    s += rect(col(21) - 1.27, col(9) + 1.27, Y(lin(17) - 1.27), Y(lin(17) + 1.27), 'preto') + t((col(21) + col(9)) / 2, Y(lin(17)) - 2.2 * U, 'soquete da tela', 'middle', 'rot-forte')
+      + rect(col(4) - 1.27, col(1) + 1.27, Y(lin(19) - 1.27), Y(lin(17) + 1.27), 'oculto', o()) + t(col(1) - 3, Y(lin(18)) + 6 * U, 'mic', 'middle', 'rot-forte')
+      + rect(col(27) - 1.27, col(27) + 1.27, Y(lin(22) - 1.27), Y(lin(18) + 1.27), 'preto') + t(col(27) + 2.5, Y(lin(20)) + FS() * .35, 'amp', 'start', 'rot-forte');
+    s += t(col(14), Y(BY0) + 4 * U, 'linha V (frente)', 'middle', 'rot') + t(col(14), Y(BY1) - 2 * U, 'linha A', 'middle', 'rot');
+    // na frente: suportes do microfone, do botão e do LED
+    s += rect(MIC[0] - 9, MIC[0] + 9, Y(PAR), Y(PAR + 6), 'oculto', o()) + rect(BOTAO[0] - 5, BOTAO[0] + 5, Y(PAR), Y(PAR + 8), 'oculto', o()) + rect(LED[0] - 3.5, LED[0] + 3.5, Y(PAR), Y(PAR + 7), 'oculto', o())
+      + t(W / 2, Y(0) + 4.5 * U, 'frente', 'middle', 'rot');
+    // cotas
+    s += cH(0, W, Y(D) - 5 * U, Y(D), Y(D), fmt(W)) + cV(Y(D), Y(0), -5 * U, 0, 0, fmt(D))
+      + cH(PAR, BX0, Y(BY0) + 9 * U, Y(BY0 - 6), Y(BY0), fmt(BX0 - PAR), 'esq') + cH(BX0, BX1, Y(BY0) + 9 * U, Y(BY0), Y(BY0), fmt(BX1 - BX0))
+      + cV(Y(BY0), Y(PAR), BX0 - 5 * U, BX0, PAR, fmt(BY0 - PAR))
+      + cV(Y(FENDA[1]), Y(FENDA[0]), W + 5 * U, W, W, fmt(FENDA[1] - FENDA[0]), 'dir') + cV(Y(FENDA[0]), Y(0), W + 12 * U, W, W, fmt(FENDA[0]), 'dir');
+    return svg(-14 * U, -9 * U, W + 32 * U, D + 22 * U, 'A caixa vista de cima na altura da placa', s);
+  }
+
+  // ---------------- lateral direita (y para a direita: a frente à esquerda) ----------------
+  function direita() {
+    U = (D + 34) / 120;
+    const Z = z => H - z;
+    let s = rect(0, D, Z(0), Z(H), 'bege', `rx="4" ${sw()}`) + `<path class="cota-e" ${o()} d="M${PAR} ${Z(FUNDO)} H${D - PAR}"/>`;
+    s += rect(FENDA[0], FENDA[1], Z(FENDA[2]), Z(FENDA[3]), 'tela', 'rx="2"');
+    for (let k = 0; k < 5; k++) s += rect(D - 28 + k * 4.5, D - 26.4 + k * 4.5, Z(100), Z(120), 'tela', 'rx=".8"');
+    s += t((FENDA[0] + FENDA[1]) / 2, Z(FENDA[3]) - 1.5 * U, 'cabo USB', 'middle', 'rot') + t(D - 19, Z(120) - 1.5 * U, 'ventilação', 'middle', 'rot')
+      + t(D / 2, Z(FUNDO) + 4.5 * U, 'bandeja (sai por trás)', 'middle', 'rot') + t(3, Z(H) - 2 * U, 'frente', 'start', 'rot');
+    s += cH(0, FENDA[0], Z(0) + 5 * U, Z(0), Z(FENDA[2]), fmt(FENDA[0])) + cH(FENDA[0], FENDA[1], Z(0) + 5 * U, Z(FENDA[2]), Z(FENDA[2]), fmt(FENDA[1] - FENDA[0]))
+      + cV(Z(FENDA[3]), Z(FENDA[2]), FENDA[1] + 6 * U, FENDA[1], FENDA[1], fmt(FENDA[3] - FENDA[2]), 'dir') + cV(Z(FENDA[2]), Z(0), FENDA[1] + 6 * U, FENDA[1], D, fmt(FENDA[2]), 'dir');
+    return svg(-6 * U, -6 * U, D + 14 * U, H + 16 * U, 'A lateral direita com a fenda do cabo', s);
+  }
+
+  document.getElementById('d-frente').innerHTML = frente();
+  document.getElementById('d-lado').innerHTML = lado();
+  document.getElementById('d-cima').innerHTML = cima();
+  document.getElementById('d-direita').innerHTML = direita();
+})();
+</script>
+
+</body></html>
