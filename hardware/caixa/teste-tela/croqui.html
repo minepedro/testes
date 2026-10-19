@@ -98,11 +98,12 @@ svg .oculto.inserto { stroke: var(--erro); }
 
   <section class="prancha confirmar" aria-labelledby="h-muda">
     <h2 id="h-muda">O que muda no segundo teste</h2>
-    <p>No primeiro teste o vidro entrou perfeito, os pininhos entraram e a janela mostrou a imagem inteira. O que não entrou foi a placa vermelha, no encaixe de trás. Então o encaixe da placa fica 2 mm maior do lado esquerdo (o dos pinos): 1 mm que faltou e 1 de garantia. O bolso do vidro não muda. Em laranja, o que entra; tracejado, como era. Os arquivos já foram gerados com estas medidas e conferidos.</p>
-    <figure class="desenho"><div id="d-muda"></div><figcaption>De frente, com a placa vermelha clarinha por cima. A direita, o topo e o fundo do encaixe continuam iguais; a profundidade continua 1,4.</figcaption></figure>
+    <p>No primeiro teste o vidro entrou perfeito, os pininhos entraram e a janela mostrou a imagem inteira. O que não entrou foi a placa vermelha, no encaixe de trás. Então o encaixe da placa fica 1 mm maior de cada lado, à esquerda e à direita. O bolso do vidro não muda. Em laranja, o que entra; tracejado, como era. Os arquivos já foram gerados com estas medidas e conferidos.</p>
+    <figure class="desenho"><div id="d-muda"></div><figcaption>De frente, com a placa vermelha clarinha por cima. O topo e o fundo do encaixe continuam iguais; a profundidade continua 1,4.</figcaption></figure>
     <div class="duas">
-      <figure class="desenho"><div id="d-muda-canto"></div><figcaption>O canto de cima à esquerda, de perto: tracejado, onde a parede do encaixe estava; em laranja, onde fica. A parede até o inserto, medida no arquivo, fica com 1,5.</figcaption></figure>
-      <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Em corte, na ponta esquerda: a faixa laranja são os 2 mm a mais do encaixe.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-canto"></div><figcaption>O canto de cima à esquerda, de perto: tracejado, onde a parede do encaixe estava; em laranja, onde fica. A parede até o inserto, medida no arquivo, fica com 2,0.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Em corte, na ponta esquerda: a faixa laranja é o 1 mm a mais do encaixe.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-corte-dir"></div><figcaption>Em corte, na ponta direita: o outro 1 mm.</figcaption></figure>
     </div>
     <p>A moldura de trás acompanha: o vão dela também cresce 1 mm à esquerda. A antiga ainda serve, então só a moldura da frente precisa ser impressa de novo.</p>
   </section>
@@ -134,7 +135,7 @@ svg .oculto.inserto { stroke: var(--erro); }
       <thead><tr><th>O quê</th><th>Medida</th><th>Origem</th></tr></thead>
       <tbody>
         <tr><td>Placa vermelha</td><td class="num">96 × 54,8</td><td><span class="tag sua">sua</span> 54,8 = 0,3 + 54,2 + 0,3</td></tr>
-        <tr><td>Encaixe da placa (por trás)</td><td class="num">98,6 × 55,4 × 1,4</td><td><span class="tag sua">seu teste</span> 2 mm a mais à esquerda: 1 onde a placa não entrou e 1 de garantia; 0,3 de folga nos outros lados; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
+        <tr><td>Encaixe da placa (por trás)</td><td class="num">98,6 × 55,4 × 1,4</td><td><span class="tag sua">seu teste</span> 1 mm a mais de cada lado, porque a placa não entrou; 0,3 de folga nos outros lados; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
         <tr><td>Vidro: da borda da placa até o vidro</td><td class="num">6,1 esq. · 5,7 dir. · 0,3 cima e baixo</td><td><span class="tag sua">sua</span></td></tr>
         <tr><td>Vidro: largura</td><td class="num">84,2</td><td><span class="tag sua">sua</span> fecha: 6,1 + 84,2 + 5,7 = 96</td></tr>
         <tr><td>Bolso do vidro</td><td class="num">85,0 de largura, altura toda</td><td><span class="tag sua">seu teste</span> 0,4 de folga de cada lado: o vidro entrou perfeito</td></tr>
@@ -179,7 +180,7 @@ svg .oculto.inserto { stroke: var(--erro); }
   const PCB = [96, 54.8], FOLGA = .3, PAREDE = 7;
   const X0 = -FOLGA - PAREDE, X1 = PCB[0] + FOLGA + PAREDE, Y0 = -FOLGA - PAREDE, Y1 = PCB[1] + FOLGA + PAREDE;
   const BOLSO_V = [5.7, 90.7];                    // o vidro entrou perfeito no primeiro teste
-  const ENC_ESQ = -FOLGA - 2;                     // encaixe da placa: 2 mm a mais à esquerda, 1 que faltou no primeiro teste e 1 de garantia                 // bolso do vidro, na largura (altura toda do encaixe da placa)
+  const ENC_ESQ = -FOLGA - 1, ENC_DIR = PCB[0] + FOLGA + 1;   // encaixe da placa: 1 mm a mais de cada lado, a placa não entrou no primeiro teste                 // bolso do vidro, na largura (altura toda do encaixe da placa)
   const VIDRO = [6.1, 90.3, .3, 54.5];          // onde o vidro está pelas bordas medidas
   const JANELA = [7.6, 83.8, 1.8, 53.0], CH = 1;
   const FUROS = [[2.8, 2.8], [93.2, 2.8], [2.8, 52], [93.2, 52]];       // furos da tela a 1 mm da borda
@@ -229,7 +230,7 @@ svg .oculto.inserto { stroke: var(--erro); }
       + t((JANELA[0] + JANELA[1]) / 2, (JANELA[2] + JANELA[3]) / 2 - 1.5 * U, 'janela', 'middle', 'rot-claro')
       + t((JANELA[0] + JANELA[1]) / 2, (JANELA[2] + JANELA[3]) / 2 + 2.2 * U, `${fmt(JANELA[1] - JANELA[0])} × ${fmt(JANELA[3] - JANELA[2])}`, 'middle', 'rot-claro');
     const o = `stroke-width="${r2(.22 * U)}"`;
-    s += rect(ENC_ESQ, PCB[0] + FOLGA, -FOLGA, PCB[1] + FOLGA, 'oculto', o) + rect(BOLSO_V[0], BOLSO_V[1], -FOLGA, PCB[1] + FOLGA, 'oculto', o);
+    s += rect(ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA, 'oculto', o) + rect(BOLSO_V[0], BOLSO_V[1], -FOLGA, PCB[1] + FOLGA, 'oculto', o);
     FUROS.forEach(([x, y]) => s += `<circle class="oculto" ${o} cx="${x}" cy="${y}" r="${PINO_R}"/>`);
     INSERTOS.forEach(([x, y]) => s += `<circle class="oculto inserto" ${o} cx="${x}" cy="${y}" r="${INSERTO_R}"/>`);
     // marca do lado dos pinos
@@ -271,12 +272,12 @@ svg .oculto.inserto { stroke: var(--erro); }
     U = (xb - xa + 14) / 120;
     const pts = esq
       ? [[X0, 0], [JANELA[0] - CH, 0], [JANELA[0], CH], [JANELA[0], PELE], [BOLSO_V[0], PELE], [BOLSO_V[0], Z_APOIO], [FUROS[0][0] + PINO_R, Z_APOIO], [FUROS[0][0] + PINO_R, Z_APOIO + PINO_H], [FUROS[0][0] - PINO_R, Z_APOIO + PINO_H], [FUROS[0][0] - PINO_R, Z_APOIO], [ENC_ESQ, Z_APOIO], [ENC_ESQ, Z_TOTAL], [X0, Z_TOTAL]]
-      : [[JANELA[1], PELE], [JANELA[1], CH], [JANELA[1] + CH, 0], [X1, 0], [X1, Z_TOTAL], [PCB[0] + FOLGA, Z_TOTAL], [PCB[0] + FOLGA, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO], [BOLSO_V[1], Z_APOIO], [BOLSO_V[1], PELE]];
+      : [[JANELA[1], PELE], [JANELA[1], CH], [JANELA[1] + CH, 0], [X1, 0], [X1, Z_TOTAL], [ENC_DIR, Z_TOTAL], [ENC_DIR, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO], [FUROS[1][0] + PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO + PINO_H], [FUROS[1][0] - PINO_R, Z_APOIO], [BOLSO_V[1], Z_APOIO], [BOLSO_V[1], PELE]];
     const corte = pts.map(([x, z]) => [Math.min(Math.max(x, xa), xb), z]);
     let s = hachura() + `<g stroke-width="${r2(.25 * U)}">${poli(corte, 'corte hachura')}</g>` + fantasma(xa, xb);
     const ext = esq ? X0 : X1, ladoTxt = esq ? 'esq' : 'dir', xc = esq ? X0 - 4 * U : X1 + 4 * U;
     s += cV(Y(PELE), Y(0), xc, ext, ext, fmt(PELE), ladoTxt) + cV(Y(Z_APOIO), Y(PELE), xc, esq ? BOLSO_V[0] : BOLSO_V[1], ext, fmt(Z_APOIO - PELE), ladoTxt)
-      + cV(Y(Z_TOTAL), Y(Z_APOIO), xc, ext, esq ? ENC_ESQ : PCB[0] + FOLGA, fmt(Z_TOTAL - Z_APOIO), ladoTxt)
+      + cV(Y(Z_TOTAL), Y(Z_APOIO), xc, ext, esq ? ENC_ESQ : ENC_DIR, fmt(Z_TOTAL - Z_APOIO), ladoTxt)
       + cV(Y(Z_TOTAL), Y(0), esq ? X0 - 10 * U : X1 + 10 * U, ext, ext, fmt(Z_TOTAL), ladoTxt);
     const fx = esq ? FUROS[0][0] : FUROS[1][0];
     s += chamada(fx, Y(Z_APOIO + PINO_H), fx + (esq ? 2 : -2), Y(Z_TOTAL) - 3.5 * U, `pininho Ø2,8 × ${fmt(PINO_H)}`, esq ? 'start' : 'end');
@@ -288,7 +289,8 @@ svg .oculto.inserto { stroke: var(--erro); }
       s += chamada(BOLSO_V[1], Y(3.5), 86.5, Y(0) + 3.6 * U, 'folga 0,4', 'end')
         + t(84, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro');
     }
-    if (comAntes) s += `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${-FOLGA} ${Y(Z_APOIO)} V${Y(Z_TOTAL)}"/>` + `<rect class="novo-faixa" x="${ENC_ESQ}" y="${Y(Z_TOTAL)}" width="${r2(-FOLGA - ENC_ESQ)}" height="${r2(Z_TOTAL - Z_APOIO)}"/>`
+    const velho = esq ? -FOLGA : PCB[0] + FOLGA, novo = esq ? ENC_ESQ : ENC_DIR;
+    if (comAntes) s += `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${velho} ${Y(Z_APOIO)} V${Y(Z_TOTAL)}"/>` + `<rect class="novo-faixa" x="${r2(Math.min(velho, novo))}" y="${Y(Z_TOTAL)}" width="${r2(Math.abs(novo - velho))}" height="${r2(Z_TOTAL - Z_APOIO)}"/>`
 ;
     s += t((xa + xb) / 2, Y(0) + 7.5 * U, 'frente (fica na mesa da impressora)', 'middle', 'rot');
     return svg(xa - (esq ? 14 : 2) * U, -6 * U, xb - xa + 16 * U, Z_TOTAL + 15 * U, esq ? 'Corte da ponta esquerda' : 'Corte da ponta direita', s);
@@ -296,19 +298,19 @@ svg .oculto.inserto { stroke: var(--erro); }
 
   function mudanca() {
     U = (X1 - X0 + 34) / 120;
-    const o = `stroke-width="${r2(.22 * U)}"`, E = [ENC_ESQ, PCB[0] + FOLGA, -FOLGA, PCB[1] + FOLGA];
+    const o = `stroke-width="${r2(.22 * U)}"`, E = [ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA], D0 = PCB[0] + FOLGA;
     const rect = (x1, x2, y1, y2, cls, extra = '') => `<rect class="${cls}" x="${r2(x1)}" y="${r2(y1)}" width="${r2(x2 - x1)}" height="${r2(y2 - y1)}" ${extra}/>`;
     let s = rect(X0, X1, Y0, Y1, 'bege', `rx="3" stroke-width="${r2(.3 * U)}" opacity=".7"`)
       + rect(0, PCB[0], 0, PCB[1], 'fantasma-pcb', 'style="opacity:.16"')
       + rect(BOLSO_V[0], BOLSO_V[1], E[2], E[3], 'oculto', o)
-      + rect(E[0], -FOLGA, E[2], E[3], 'novo-faixa')
-      + rect(-FOLGA, E[1], E[2], E[3], 'antes', `stroke-width="${r2(.3 * U)}"`)
+      + rect(E[0], -FOLGA, E[2], E[3], 'novo-faixa') + rect(D0, E[1], E[2], E[3], 'novo-faixa')
+      + rect(-FOLGA, D0, E[2], E[3], 'antes', `stroke-width="${r2(.3 * U)}"`)
       + rect(E[0], E[1], E[2], E[3], 'novo', `stroke-width="${r2(.45 * U)}"`);
     FUROS.forEach(([x, y]) => s += `<circle class="oculto" ${o} cx="${x}" cy="${y}" r="${PINO_R}"/>`);
     s += t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 - 1.5 * U, 'bolso do vidro: 85,0', 'middle', 'rot-forte')
       + t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 + 2.4 * U, '(não muda: o vidro entrou perfeito)', 'middle', 'rot');
-    s += cH(E[0], E[1], Y0 - 10 * U, E[2], E[2], `encaixe da placa: ${fmt(E[1] - E[0])} (era ${fmt(E[1] + FOLGA)})`)
-      + cH(E[0], -FOLGA, Y0 - 4 * U, E[2], E[2], fmt(-FOLGA - E[0]), 'esq')
+    s += cH(E[0], E[1], Y0 - 10 * U, E[2], E[2], `encaixe da placa: ${fmt(E[1] - E[0])} (era ${fmt(D0 + FOLGA)})`)
+      + cH(E[0], -FOLGA, Y0 - 4 * U, E[2], E[2], fmt(-FOLGA - E[0]), 'esq') + cH(D0, E[1], Y0 - 4 * U, E[2], E[2], fmt(E[1] - D0), 'dir')
       + cH(FUROS[2][0], FUROS[3][0], Y1 + 5 * U, FUROS[2][1] + PINO_R, FUROS[3][1] + PINO_R, `pininhos ${fmt(FUROS[3][0] - FUROS[2][0])}: não mudam`);
     return svg(X0 - 20 * U, Y0 - 15 * U, X1 - X0 + 31 * U, Y1 - Y0 + 26 * U, 'O que muda: o encaixe da placa fica 1 mm maior à esquerda', s);
   }
@@ -335,7 +337,7 @@ svg .oculto.inserto { stroke: var(--erro); }
   function tras() {
     U = (X1 - X0 + 34) / 120;
     const o = `stroke-width="${r2(.25 * U)}"`;
-    const P = [ENC_ESQ, PCB[0] + FOLGA, -FOLGA, PCB[1] + FOLGA], A = CANTO[0], B = CANTO[1];
+    const P = [ENC_ESQ, ENC_DIR, -FOLGA, PCB[1] + FOLGA], A = CANTO[0], B = CANTO[1];
     const vao = [[A, P[2]], [PCB[0] - A, P[2]], [PCB[0] - A, B], [P[1], B], [P[1], PCB[1] - B], [PCB[0] - A, PCB[1] - B], [PCB[0] - A, P[3]],
       [A, P[3]], [A, PCB[1] - B], [P[0], PCB[1] - B], [P[0], B], [A, B]];
     let s = `<rect class="bege" x="${X0}" y="${Y0}" width="${r2(X1 - X0)}" height="${r2(Y1 - Y0)}" rx="3" ${o}/>`
@@ -353,6 +355,7 @@ svg .oculto.inserto { stroke: var(--erro); }
   document.getElementById('d-muda').innerHTML = mudanca();
   document.getElementById('d-muda-canto').innerHTML = canto();
   document.getElementById('d-muda-corte').innerHTML = detalhe('esq', true);
+  document.getElementById('d-muda-corte-dir').innerHTML = detalhe('dir', true);
   document.getElementById('d-frente').innerHTML = frente();
   document.getElementById('d-tras').innerHTML = tras();
   document.getElementById('d-esq').innerHTML = detalhe('esq');

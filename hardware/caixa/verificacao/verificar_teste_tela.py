@@ -46,7 +46,7 @@ pts = np.vstack([e.discrete(sec.vertices) for e in sec.entities])[:, :2]
 ix, iy = X(g.INSERTOS[0][0]), Y(g.INSERTOS[0][1])
 dist = np.hypot(pts[:, 0] - ix, pts[:, 1] - iy)
 u, v = g.CX - pts[:, 0], g.CY - pts[:, 1]
-encaixe = (u > g.ENC_U0 - 0.05) & (v > -g.FOLGA - 0.05) & (u < g.PCB[0] + g.FOLGA + 0.05) & (v < g.PCB[1] + g.FOLGA + 0.05) & (dist > g.INSERTO_FURO / 2 + 0.05)
+encaixe = (u > g.ENC_U0 - 0.05) & (v > -g.FOLGA - 0.05) & (u < g.ENC_U1 + 0.05) & (v < g.PCB[1] + g.FOLGA + 0.05) & (dist > g.INSERTO_FURO / 2 + 0.05)
 fora = (u < g.FORA[0] + 0.05) | (v < g.FORA[2] + 0.05)
 print('parede do furo do inserto (canto de cima à esquerda), z=6,3: até o encaixe da placa %.2f mm; até a borda de fora %.2f mm'
       % (dist[encaixe].min() - g.INSERTO_FURO / 2, dist[fora].min() - g.INSERTO_FURO / 2))
@@ -80,7 +80,7 @@ f = lambda n: ('%.2f' % n).rstrip('0').rstrip('.').replace('.', ',')
 d.notas(620, 490, 190, [
     (d.LARANJA, '1 e 4. Insertos e parafusos', 'Furo de 4,0 por 6,2 nos 4 cantos, por fora da placa, com 0,8 de frente embaixo. O M3 de 19 entra pela torre da moldura de trás: a cabeça apoia a 13 mm da placa e a ponta para 0,4 antes do fundo.'),
     (d.VERDE, '2. Pininhos', 'Quatro de 2,8, com os furos da tela a 1 mm da borda: 90,4 x 49,2 entre centros. Alinham a placa; não seguram.'),
-    (d.AZUL, 'Encaixe da placa', 'De %s a %s (%s x 55,4): 2 mm a mais à esquerda, 1 onde a placa não entrou no primeiro teste e 1 de garantia.' % (f(g.ENC_U0), f(g.PCB[0] + g.FOLGA), f(g.PCB[0] + g.FOLGA - g.ENC_U0))),
+    (d.AZUL, 'Encaixe da placa', 'De %s a %s (%s x 55,4): 1 mm a mais de cada lado, porque a placa não entrou no primeiro teste.' % (f(g.ENC_U0), f(g.ENC_U1), f(g.ENC_U1 - g.ENC_U0))),
     (d.AZUL, 'Bolso do vidro', 'De %s a %s (%s de largura): 0,4 de folga de cada lado, como no primeiro teste, em que o vidro entrou perfeito.' % (f(g.BOLSO_U[0]), f(g.BOLSO_U[1]), f(g.BOLSO_U[1] - g.BOLSO_U[0]))),
     (d.AZUL, '3. Moldura de trás', 'Aperta só os 4 cantos da placa, em cima dos furos; o meio fica livre para os componentes e o conector. Fica 0,2 acima da frente: o parafuso puxa e prende a placa.'),
     (d.CINZA, 'Sólidos', 'Os dois fechados, uma casca cada. Montados, não se invadem.'),

@@ -42,7 +42,7 @@ As medidas ficam no começo de `gerar_teste_tela.py`. Mudou uma medida, muda lá
 
 ## Pendências
 
-1. No primeiro teste da tela o vidro, os pininhos e a janela ficaram certos; a placa vermelha não entrou do lado esquerdo. Segunda versão: encaixe da placa 2 mm maior à esquerda (98,6 de largura: 1 que faltou e 1 de garantia); o bolso do vidro continua 85,0. Imprimir de novo a moldura da frente e conferir.
+1. No primeiro teste da tela o vidro, os pininhos e a janela ficaram certos; a placa vermelha não entrou do lado esquerdo. Segunda versão: encaixe da placa 1 mm maior de cada lado (98,6 de largura, de −1,3 a 97,3); o bolso do vidro continua 85,0. Imprimir de novo a moldura da frente e conferir.
 2. Confirmar o tamanho dos insertos. Supus os de 5,7 mm de comprimento e 4,6 por fora (furo de 4,0).
 3. Furos da tela: a 1 mm da borda dá 90,4 × 49,2 entre centros; a primeira medida tinha dado 89,5 × 50. O teste decide.
 4. Alto-falante: tem furos ou abas? Amplificador: medir (supus 18 × 19).

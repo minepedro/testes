@@ -51,7 +51,8 @@ MARGEM_JANELA = 0.5           # a janela mostra 0,5 mm a mais da parte que acend
 PINO_D, PINO_H = 2.8, 1.4     # pininhos: 0,4 de folga no furo de 3,6; não passam da placa (1,6)
 FOLGA_VIDRO = 0.4             # em volta do vidro, na largura
 # o primeiro teste impresso: o vidro entrou perfeito; a placa vermelha não entrou do lado esquerdo (o dos pinos)
-ENCAIXE_ESQ = 2.0             # encaixe da placa: 2 mm a mais à esquerda, 1 que faltou e 1 de garantia
+ENCAIXE_ESQ = 1.0             # encaixe da placa: 1 mm a mais à esquerda
+ENCAIXE_DIR = 1.0             # e 1 mm a mais à direita
 
 c = FURO_BORDA + FURO_D / 2
 FUROS = [(c, c), (PCB[0] - c, c), (c, PCB[1] - c), (PCB[0] - c, PCB[1] - c)]
@@ -59,7 +60,7 @@ FUROS = [(c, c), (PCB[0] - c, c), (c, PCB[1] - c), (PCB[0] - c, PCB[1] - c)]
 v_esq = (VIDRO_BORDAS[0] + (PCB[0] - VIDRO_BORDAS[1] - VIDRO_L)) / 2
 VIDRO_U = (v_esq, v_esq + VIDRO_L)
 BOLSO_U = (VIDRO_U[0] - FOLGA_VIDRO, VIDRO_U[1] + FOLGA_VIDRO)
-ENC_U0 = -FOLGA - ENCAIXE_ESQ                    # borda esquerda do encaixe da placa
+ENC_U0, ENC_U1 = -FOLGA - ENCAIXE_ESQ, PCB[0] + FOLGA + ENCAIXE_DIR   # bordas do encaixe da placa
 assert BOLSO_U[0] > FUROS[0][0] + PINO_D / 2 and BOLSO_U[1] < FUROS[1][0] - PINO_D / 2, 'o bolso do vidro come os pininhos'
 Z_APOIO = PELE + (ESP_TELA - 1.6) + 0.2          # onde a placa vermelha apoia (vidro + tela + 0,2)
 Z_PLACA = Z_APOIO + 1.6                          # costas da placa vermelha
@@ -94,7 +95,7 @@ def cilindros(pontos, diam, z1, z2):
 def frente():
     p = bloco(FORA[0], FORA[1], FORA[2], FORA[3], 0, Z_TOTAL).edges('|Z').fillet(3)
     # encaixe da placa vermelha, por trás
-    p = p.cut(bloco(ENC_U0, PCB[0] + FOLGA, -FOLGA, PCB[1] + FOLGA, Z_APOIO, Z_TOTAL + 1))
+    p = p.cut(bloco(ENC_U0, ENC_U1, -FOLGA, PCB[1] + FOLGA, Z_APOIO, Z_TOTAL + 1))
     # bolso do vidro: altura toda do encaixe; sobe 0,1 dentro do encaixe para não deixar face coincidente
     p = p.cut(bloco(BOLSO_U[0], BOLSO_U[1], -FOLGA, PCB[1] + FOLGA, PELE, Z_APOIO + 0.1))
     # janela com chanfro de 45°: começa 0,5 abaixo da frente para o corte atravessar limpo
@@ -121,8 +122,8 @@ def tras():
     """Moldura de trás na posição montada: a face de baixo encosta nas costas da placa."""
     z1, z2 = Z_PLACA, Z_PLACA + QUADRO_E
     q = bloco(FORA[0], FORA[1], FORA[2], FORA[3], z1, z2).edges('|Z').fillet(3)
-    vao = bloco(ENC_U0, PCB[0] + FOLGA, -FOLGA, PCB[1] + FOLGA, z1 - 1, z2 + 1)
-    for u1, u2 in ((ENC_U0 - 1, CANTO[0]), (PCB[0] - CANTO[0], PCB[0] + FOLGA + 1)):
+    vao = bloco(ENC_U0, ENC_U1, -FOLGA, PCB[1] + FOLGA, z1 - 1, z2 + 1)
+    for u1, u2 in ((ENC_U0 - 1, CANTO[0]), (PCB[0] - CANTO[0], ENC_U1 + 1)):
         for v1, v2 in ((-FOLGA - 1, CANTO[1]), (PCB[1] - CANTO[1], PCB[1] + FOLGA + 1)):
             vao = vao.cut(bloco(u1, u2, v1, v2, z1 - 2, z2 + 2))
     q = q.cut(vao)
@@ -136,7 +137,7 @@ def resumo():
         'frente': '%s x %s x %s' % (f(FORA[1] - FORA[0]), f(FORA[3] - FORA[2]), f(Z_TOTAL)),
         'janela': '%s x %s' % (f(JANELA[1] - JANELA[0]), f(JANELA[3] - JANELA[2])),
         'bolso do vidro': '%s de largura, de %s a %s' % (f(BOLSO_U[1] - BOLSO_U[0]), f(BOLSO_U[0]), f(BOLSO_U[1])),
-        'encaixe da placa': '%s x %s, de %s a %s' % (f(PCB[0] + FOLGA - ENC_U0), f(PCB[1] + 2 * FOLGA), f(ENC_U0), f(PCB[0] + FOLGA)),
+        'encaixe da placa': '%s x %s, de %s a %s' % (f(ENC_U1 - ENC_U0), f(PCB[1] + 2 * FOLGA), f(ENC_U0), f(ENC_U1)),
         'furos da tela': 'centros a %s das bordas: %s x %s' % (f(c), f(FUROS[1][0] - FUROS[0][0]), f(FUROS[2][1] - FUROS[0][1])),
         'insertos': 'furo %s, fundo a %s da frente' % (f(INSERTO_FURO), f(Z_FUNDO_INSERTO)),
         'trás': '%s de quadro, torres até %s acima da placa' % (f(QUADRO_E), f(Z_CABECA - Z_PLACA)),
