@@ -80,8 +80,8 @@ f = lambda n: ('%.2f' % n).rstrip('0').rstrip('.').replace('.', ',')
 d.notas(620, 490, 190, [
     (d.LARANJA, '1 e 4. Insertos e parafusos', 'Furo de 4,0 por 6,2 nos 4 cantos, por fora da placa, com 0,8 de frente embaixo. O M3 de 19 entra pela torre da moldura de trás: a cabeça apoia a 13 mm da placa e a ponta para 0,4 antes do fundo.'),
     (d.VERDE, '2. Pininhos', 'Quatro de 2,8, com os furos da tela a 1 mm da borda: 90,4 x 49,2 entre centros. Alinham a placa; não seguram.'),
-    (d.AZUL, 'Encaixe da placa', 'De %s a %s (%s x 55,4): 1 mm a mais à esquerda, onde a placa não entrou no primeiro teste.' % (f(g.ENC_U0), f(g.PCB[0] + g.FOLGA), f(g.PCB[0] + g.FOLGA - g.ENC_U0))),
-    (d.AZUL, 'Bolso do vidro', 'De %s a %s (%s de largura): 0,4 de folga à direita e %s à esquerda, por garantia.' % (f(g.BOLSO_U[0]), f(g.BOLSO_U[1]), f(g.BOLSO_U[1] - g.BOLSO_U[0]), f(g.FOLGA_VIDRO + g.EXTRA_ESQ))),
+    (d.AZUL, 'Encaixe da placa', 'De %s a %s (%s x 55,4): 2 mm a mais à esquerda, 1 onde a placa não entrou no primeiro teste e 1 de garantia.' % (f(g.ENC_U0), f(g.PCB[0] + g.FOLGA), f(g.PCB[0] + g.FOLGA - g.ENC_U0))),
+    (d.AZUL, 'Bolso do vidro', 'De %s a %s (%s de largura): 0,4 de folga de cada lado, como no primeiro teste, em que o vidro entrou perfeito.' % (f(g.BOLSO_U[0]), f(g.BOLSO_U[1]), f(g.BOLSO_U[1] - g.BOLSO_U[0]))),
     (d.AZUL, '3. Moldura de trás', 'Aperta só os 4 cantos da placa, em cima dos furos; o meio fica livre para os componentes e o conector. Fica 0,2 acima da frente: o parafuso puxa e prende a placa.'),
     (d.CINZA, 'Sólidos', 'Os dois fechados, uma casca cada. Montados, não se invadem.'),
 ])

@@ -98,11 +98,11 @@ svg .oculto.inserto { stroke: var(--erro); }
 
   <section class="prancha confirmar" aria-labelledby="h-muda">
     <h2 id="h-muda">O que muda no segundo teste</h2>
-    <p>No primeiro teste o vidro entrou perfeito, os pininhos entraram e a janela mostrou a imagem inteira. O que não entrou foi a placa vermelha, no encaixe de trás. Então o encaixe da placa fica 1 mm maior do lado esquerdo (o dos pinos) e, por garantia, o bolso do vidro também. Em laranja, o que entra; tracejado, como era. Os arquivos já foram gerados com estas medidas e conferidos.</p>
+    <p>No primeiro teste o vidro entrou perfeito, os pininhos entraram e a janela mostrou a imagem inteira. O que não entrou foi a placa vermelha, no encaixe de trás. Então o encaixe da placa fica 2 mm maior do lado esquerdo (o dos pinos): 1 mm que faltou e 1 de garantia. O bolso do vidro não muda. Em laranja, o que entra; tracejado, como era. Os arquivos já foram gerados com estas medidas e conferidos.</p>
     <figure class="desenho"><div id="d-muda"></div><figcaption>De frente, com a placa vermelha clarinha por cima. A direita, o topo e o fundo do encaixe continuam iguais; a profundidade continua 1,4.</figcaption></figure>
     <div class="duas">
-      <figure class="desenho"><div id="d-muda-canto"></div><figcaption>O canto de cima à esquerda, de perto: tracejado, onde as paredes estavam; em laranja, onde ficam. A parede até o inserto, medida no arquivo, é de 2,0.</figcaption></figure>
-      <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Em corte, na ponta esquerda: a faixa laranja é o 1 mm a mais do encaixe.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-canto"></div><figcaption>O canto de cima à esquerda, de perto: tracejado, onde a parede do encaixe estava; em laranja, onde fica. A parede até o inserto, medida no arquivo, fica com 1,5.</figcaption></figure>
+      <figure class="desenho"><div id="d-muda-corte"></div><figcaption>Em corte, na ponta esquerda: a faixa laranja são os 2 mm a mais do encaixe.</figcaption></figure>
     </div>
     <p>A moldura de trás acompanha: o vão dela também cresce 1 mm à esquerda. A antiga ainda serve, então só a moldura da frente precisa ser impressa de novo.</p>
   </section>
@@ -134,10 +134,10 @@ svg .oculto.inserto { stroke: var(--erro); }
       <thead><tr><th>O quê</th><th>Medida</th><th>Origem</th></tr></thead>
       <tbody>
         <tr><td>Placa vermelha</td><td class="num">96 × 54,8</td><td><span class="tag sua">sua</span> 54,8 = 0,3 + 54,2 + 0,3</td></tr>
-        <tr><td>Encaixe da placa (por trás)</td><td class="num">97,6 × 55,4 × 1,4</td><td><span class="tag sua">seu teste</span> 1 mm a mais à esquerda, porque a placa não entrou; 0,3 de folga nos outros lados; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
+        <tr><td>Encaixe da placa (por trás)</td><td class="num">98,6 × 55,4 × 1,4</td><td><span class="tag sua">seu teste</span> 2 mm a mais à esquerda: 1 onde a placa não entrou e 1 de garantia; 0,3 de folga nos outros lados; a placa fica 0,2 para fora, para a moldura de trás apertar</td></tr>
         <tr><td>Vidro: da borda da placa até o vidro</td><td class="num">6,1 esq. · 5,7 dir. · 0,3 cima e baixo</td><td><span class="tag sua">sua</span></td></tr>
         <tr><td>Vidro: largura</td><td class="num">84,2</td><td><span class="tag sua">sua</span> fecha: 6,1 + 84,2 + 5,7 = 96</td></tr>
-        <tr><td>Bolso do vidro</td><td class="num">86,0 de largura, altura toda</td><td><span class="tag sua">seu teste</span> 1,4 de folga à esquerda, por garantia, e 0,4 à direita</td></tr>
+        <tr><td>Bolso do vidro</td><td class="num">85,0 de largura, altura toda</td><td><span class="tag sua">seu teste</span> 0,4 de folga de cada lado: o vidro entrou perfeito</td></tr>
         <tr><td>Profundidade do bolso do vidro</td><td class="num">4,0</td><td><span class="tag conta">conta</span> 5,4 − 1,6 da placa = 3,8, mais 0,2 de folga</td></tr>
         <tr><td>Furos da tela</td><td class="num">Ø 3,6, a 1 mm da borda: 90,4 × 49,2</td><td><span class="tag sua">sua</span> antes você tinha medido 89,5 × 50</td></tr>
         <tr><td>Pininhos</td><td class="num">Ø 2,8 × 1,4</td><td><span class="tag minha">escolha minha</span> 0,4 de folga no furo; não passam da placa</td></tr>
@@ -178,8 +178,8 @@ svg .oculto.inserto { stroke: var(--erro); }
   // ---------------- medidas (mm), com a origem na quina de cima à esquerda da placa vermelha, vista de frente ----------------
   const PCB = [96, 54.8], FOLGA = .3, PAREDE = 7;
   const X0 = -FOLGA - PAREDE, X1 = PCB[0] + FOLGA + PAREDE, Y0 = -FOLGA - PAREDE, Y1 = PCB[1] + FOLGA + PAREDE;
-  const BOLSO_V = [4.7, 90.7];                    // o vidro entrou perfeito no primeiro teste; 1 mm a mais à esquerda por garantia
-  const ENC_ESQ = -FOLGA - 1;                     // encaixe da placa: 1 mm a mais à esquerda, a placa não entrou no primeiro teste                 // bolso do vidro, na largura (altura toda do encaixe da placa)
+  const BOLSO_V = [5.7, 90.7];                    // o vidro entrou perfeito no primeiro teste
+  const ENC_ESQ = -FOLGA - 2;                     // encaixe da placa: 2 mm a mais à esquerda, 1 que faltou no primeiro teste e 1 de garantia                 // bolso do vidro, na largura (altura toda do encaixe da placa)
   const VIDRO = [6.1, 90.3, .3, 54.5];          // onde o vidro está pelas bordas medidas
   const JANELA = [7.6, 83.8, 1.8, 53.0], CH = 1;
   const FUROS = [[2.8, 2.8], [93.2, 2.8], [2.8, 52], [93.2, 52]];       // furos da tela a 1 mm da borda
@@ -282,13 +282,13 @@ svg .oculto.inserto { stroke: var(--erro); }
     s += chamada(fx, Y(Z_APOIO + PINO_H), fx + (esq ? 2 : -2), Y(Z_TOTAL) - 3.5 * U, `pininho Ø2,8 × ${fmt(PINO_H)}`, esq ? 'start' : 'end');
     if (esq) {
       s += chamada(JANELA[0] - CH / 2, Y(CH / 2), JANELA[0] + 2.5, Y(0) + 3.6 * U, 'chanfro 1 × 45°')
-        + cH(BOLSO_V[0], VIDRO[0], Y(PELE) + .1, Y(PELE), Y(PELE), 'folga 1,4', 'dir');
+        + cH(BOLSO_V[0], VIDRO[0], Y(PELE) + .1, Y(PELE), Y(PELE), 'folga 0,4', 'dir');
       s += t(10.5, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro');
     } else {
       s += chamada(BOLSO_V[1], Y(3.5), 86.5, Y(0) + 3.6 * U, 'folga 0,4', 'end')
         + t(84, Y(Z_APOIO - 1.9) + FS() * .35, 'vidro', 'middle', 'rot-claro');
     }
-    if (comAntes) s += `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${-FOLGA} ${Y(Z_APOIO)} V${Y(Z_TOTAL)}"/>` + `<rect class="novo-faixa" x="${ENC_ESQ}" y="${Y(Z_TOTAL)}" width="1" height="${r2(Z_TOTAL - Z_APOIO)}"/>`
+    if (comAntes) s += `<path class="antes" stroke-width="${r2(.3 * U)}" d="M${-FOLGA} ${Y(Z_APOIO)} V${Y(Z_TOTAL)}"/>` + `<rect class="novo-faixa" x="${ENC_ESQ}" y="${Y(Z_TOTAL)}" width="${r2(-FOLGA - ENC_ESQ)}" height="${r2(Z_TOTAL - Z_APOIO)}"/>`
 ;
     s += t((xa + xb) / 2, Y(0) + 7.5 * U, 'frente (fica na mesa da impressora)', 'middle', 'rot');
     return svg(xa - (esq ? 14 : 2) * U, -6 * U, xb - xa + 16 * U, Z_TOTAL + 15 * U, esq ? 'Corte da ponta esquerda' : 'Corte da ponta direita', s);
@@ -305,10 +305,10 @@ svg .oculto.inserto { stroke: var(--erro); }
       + rect(-FOLGA, E[1], E[2], E[3], 'antes', `stroke-width="${r2(.3 * U)}"`)
       + rect(E[0], E[1], E[2], E[3], 'novo', `stroke-width="${r2(.45 * U)}"`);
     FUROS.forEach(([x, y]) => s += `<circle class="oculto" ${o} cx="${x}" cy="${y}" r="${PINO_R}"/>`);
-    s += t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 - 1.5 * U, 'bolso do vidro: 86,0', 'middle', 'rot-forte')
-      + t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 + 2.4 * U, '(+1 à esquerda, por garantia)', 'middle', 'rot');
+    s += t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 - 1.5 * U, 'bolso do vidro: 85,0', 'middle', 'rot-forte')
+      + t((BOLSO_V[0] + BOLSO_V[1]) / 2, PCB[1] / 2 + 2.4 * U, '(não muda: o vidro entrou perfeito)', 'middle', 'rot');
     s += cH(E[0], E[1], Y0 - 10 * U, E[2], E[2], `encaixe da placa: ${fmt(E[1] - E[0])} (era ${fmt(E[1] + FOLGA)})`)
-      + cH(E[0], -FOLGA, Y0 - 4 * U, E[2], E[2], '1', 'esq')
+      + cH(E[0], -FOLGA, Y0 - 4 * U, E[2], E[2], fmt(-FOLGA - E[0]), 'esq')
       + cH(FUROS[2][0], FUROS[3][0], Y1 + 5 * U, FUROS[2][1] + PINO_R, FUROS[3][1] + PINO_R, `pininhos ${fmt(FUROS[3][0] - FUROS[2][0])}: não mudam`);
     return svg(X0 - 20 * U, Y0 - 15 * U, X1 - X0 + 31 * U, Y1 - Y0 + 26 * U, 'O que muda: o encaixe da placa fica 1 mm maior à esquerda', s);
   }
@@ -318,16 +318,16 @@ svg .oculto.inserto { stroke: var(--erro); }
     const sw2 = k => `stroke-width="${r2(k * U)}"`, L = -FOLGA, N = ENC_ESQ;
     let s = `<rect class="bege" x="${X0}" y="${Y0}" width="${r2(X1 - X0)}" height="${r2(Y1 - Y0)}" rx="3" ${sw2(.3)}/>`
       + `<rect class="fantasma-pcb" x="0" y="0" width="${PCB[0]}" height="${PCB[1]}" style="opacity:.22"/>`
-      + `<rect class="novo-faixa" x="${N}" y="${-FOLGA}" width="1" height="${r2(yb + 2)}"/>`
+      + `<rect class="novo-faixa" x="${N}" y="${-FOLGA}" width="${r2(L - N)}" height="${r2(yb + 2)}"/>`
       + `<path class="antes" ${sw2(.35)} d="M${L} ${yb + 2} V${-FOLGA} H${xb + 2}"/>`
       + `<path class="novo" ${sw2(.55)} d="M${N} ${yb + 2} V${-FOLGA} H${xb + 2}"/>`
-      + `<path class="antes" ${sw2(.3)} d="M${BOLSO_V[0] + 1} ${yb + 2} V${-FOLGA}"/><path class="novo" ${sw2(.45)} d="M${BOLSO_V[0]} ${yb + 2} V${-FOLGA}"/>`
+      + `<path class="oculto" ${sw2(.25)} d="M${BOLSO_V[0]} ${yb + 2} V${-FOLGA}"/>`
       + `<circle style="fill: var(--folha); stroke: var(--bege-borda)" ${sw2(.25)} cx="${FUROS[0][0]}" cy="${FUROS[0][1]}" r="1.8"/><circle class="oculto" ${sw2(.25)} cx="${FUROS[0][0]}" cy="${FUROS[0][1]}" r="${PINO_R}"/>`
       + `<circle class="oculto" ${sw2(.3)} style="stroke: var(--erro)" cx="-3.6" cy="-3.6" r="2"/>`;
     s += t(L + .8, 11.5, 'era', 'start', 'rot') + t(N - .8, 11.5, 'agora', 'end', 'rot-forte')
-      + t(BOLSO_V[0] + 1.8, 9.5, 'bolso do vidro', 'start', 'rot') + t(BOLSO_V[0] + 1.8, 11.2, '(+1, por garantia)', 'start', 'rot')
+      + t(BOLSO_V[0] + .8, 9.5, 'bolso do vidro', 'start', 'rot') + t(BOLSO_V[0] + .8, 11.2, '(não muda)', 'start', 'rot')
       + t(FUROS[0][0] + 2.3, FUROS[0][1] + .6, 'pininho', 'start', 'rot') + t(-3.6, -6.4, 'inserto', 'middle', 'rot');
-    s += cH(N, L, 6.5, null, null, '1', 'esq');
+    s += cH(N, L, 6.5, null, null, fmt(L - N), 'esq');
     const d = Math.hypot(N + 3.6, -FOLGA + 3.6) - 2;
     s += chamada(-3.6 + 2 * Math.cos(Math.atan2(3.3, N + 3.6)), -3.6 + 2 * Math.sin(Math.atan2(3.3, N + 3.6)), 4, -5.5, `parede de ${d.toFixed(1).replace('.', ',')}`, 'start');
     return svg(xa, ya, xb - xa, yb - ya, 'O canto de cima à esquerda, de perto: o encaixe da placa recua 1 mm', s);
