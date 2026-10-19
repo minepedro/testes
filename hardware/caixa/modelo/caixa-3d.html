@@ -1,0 +1,424 @@
+<title>Caixa Mini Mac em 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+/* Bancada: o modelo 3D grande à esquerda (em cima no celular) e, ao lado, as peças, o que falta medir e o que foi conferido */
+:root {
+  --bg: #E6E9ED; --folha: #FAFAF9; --tinta: #1B2130; --mudo: #586172; --linha: #CBD0D8;
+  --cota: #1E5BB8; --ok: #24804F; --atencao: #A35B00; --atencao-fundo: #FFF3E0;
+  --palco-1: #F4F5F7; --palco-2: #D9DDE3; --grade-1: #9AA3B2; --grade-2: #C3C9D2;
+  --f-titulo: "Pixelify Sans", "Courier New", monospace;
+  --f-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+    --cota: #78AAFF; --ok: #4CC089; --atencao: #FFB35C; --atencao-fundo: #2A2116;
+    --palco-1: #232832; --palco-2: #0F1217; --grade-1: #4A5263; --grade-2: #2A303B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11141A; --folha: #191D24; --tinta: #E4E7EC; --mudo: #9AA3B2; --linha: #2D333E;
+  --cota: #78AAFF; --ok: #4CC089; --atencao: #FFB35C; --atencao-fundo: #2A2116;
+  --palco-1: #232832; --palco-2: #0F1217; --grade-1: #4A5263; --grade-2: #2A303B;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--tinta); font: 16px/1.5 var(--f-texto); }
+.pagina {
+  max-width: 1200px; margin: 0 auto; display: grid; gap: 20px;
+  padding-block: 24px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sobre { margin: 0 0 4px; font: 600 12px var(--f-texto); letter-spacing: .09em; text-transform: uppercase; color: var(--mudo); }
+h1 { margin: 0; font: 500 clamp(30px, 6vw, 44px)/1.05 var(--f-titulo); text-wrap: balance; }
+h2 { margin: 0; font: 500 21px/1.2 var(--f-titulo); }
+.lead { margin: 10px 0 0; max-width: 66ch; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+
+.bancada { display: grid; gap: 20px; align-items: start; }
+@media (min-width: 940px) { .bancada { grid-template-columns: minmax(0, 1fr) 380px; } .visor { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); } }
+.visor { display: grid; gap: 10px; min-width: 0; }
+.palco {
+  position: relative; height: min(64vh, 640px); min-height: 340px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--linha); background: radial-gradient(120% 90% at 50% 25%, var(--palco-1), var(--palco-2));
+}
+.palco canvas { display: block; width: 100%; height: 100%; outline: none; }
+.palco .aviso-carga {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px;
+  color: var(--mudo); font: 500 14px var(--f-num);
+}
+.vistas { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.vistas button { pointer-events: auto; }
+.botao {
+  font: 600 13px var(--f-texto); color: var(--tinta); background: var(--folha); border: 1px solid var(--linha);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 32px;
+}
+.botao:hover { border-color: var(--cota); }
+.botao:focus-visible, .chave input:focus-visible + span, input[type=range]:focus-visible { outline: 2px solid var(--cota); outline-offset: 2px; }
+.botao[aria-pressed="true"] { background: var(--tinta); color: var(--folha); border-color: var(--tinta); }
+.selo {
+  position: absolute; left: 10px; bottom: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+  pointer-events: none; font: 500 12px var(--f-num); color: var(--mudo);
+}
+.ferramentas { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.chave { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; user-select: none; }
+.chave input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.chave span { width: 34px; height: 20px; border-radius: 999px; background: var(--linha); position: relative; flex: none; transition: background .15s; }
+.chave span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--folha); transition: transform .15s; }
+.chave input:checked + span { background: var(--cota); }
+.chave input:checked + span::after { transform: translateX(14px); }
+.separar { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; font-size: 14px; }
+.separar input { flex: 1; accent-color: var(--cota); min-width: 0; }
+.escolhida {
+  background: var(--folha); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; min-height: 66px;
+  display: grid; gap: 2px; align-content: center;
+}
+.escolhida b { font-weight: 600; }
+.escolhida p { margin: 0; color: var(--mudo); font-size: 14px; }
+
+.lado { display: grid; gap: 16px; min-width: 0; }
+.cartao { background: var(--folha); border: 1px solid var(--linha); border-radius: 8px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; }
+.cartao p { margin: 0; }
+.cartao.atencao { background: var(--atencao-fundo); border-color: var(--atencao); }
+.cartao.atencao h2 { color: var(--atencao); }
+.lista-pecas { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.lista-pecas li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--linha); }
+.lista-pecas li:first-child { border-top: 0; }
+.lista-pecas .cor { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--linha); margin-top: 2px; }
+.lista-pecas b { font-weight: 600; font-size: 15px; }
+.lista-pecas p { margin: 0; font-size: 13px; color: var(--mudo); }
+.lista-pecas .chave { margin-top: 1px; }
+.sub { font: 600 12px var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--mudo); margin: 4px 0 0; }
+ul.marcas { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; }
+ul.marcas li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; }
+ul.marcas li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+ul.marcas.falta li::before { content: "?"; color: var(--atencao); }
+ul.marcas.nao li::before { content: "–"; color: var(--mudo); }
+table.medidas { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.medidas td { padding: 6px 0; border-top: 1px solid var(--atencao); vertical-align: top; }
+table.medidas td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+a { color: var(--cota); }
+.arquivos { display: grid; gap: 8px; font-size: 14px; }
+.arquivos div { display: grid; gap: 1px; }
+.arquivos code { font: 500 13px var(--f-num); overflow-wrap: anywhere; }
+.arquivos span { color: var(--mudo); }
+@media (max-width: 480px) { .vistas { gap: 4px; } .vistas .botao { padding: 4px 9px; font-size: 12px; min-height: 30px; } }
+@media (prefers-reduced-motion: reduce) { .chave span, .chave span::after { transition: none; } }
+</style>
+
+<div class="pagina">
+  <header>
+    <p class="sobre">Mascote do Claude · caixa v1</p>
+    <h1>Caixa Mini Mac em 3D</h1>
+    <p class="lead">Gire com um dedo, aproxime com dois e toque numa peça para ver o que ela é. É o mesmo arquivo que vai para a impressora, com as peças de verdade (tela, placa, alto-falante) dentro para conferir.</p>
+  </header>
+
+  <div class="bancada">
+    <section class="visor" aria-label="Modelo 3D">
+      <div class="palco" id="palco">
+        <div class="aviso-carga" id="aviso">Carregando o modelo (1 MB)…</div>
+        <div class="vistas" role="group" aria-label="Vistas">
+          <button class="botao" type="button" id="v-34" aria-pressed="true">3/4</button>
+          <button class="botao" type="button" id="v-frente" aria-pressed="false">Frente</button>
+          <button class="botao" type="button" id="v-usb" aria-pressed="false">Lado do USB</button>
+          <button class="botao" type="button" id="v-tras" aria-pressed="false">Trás</button>
+          <button class="botao" type="button" id="v-cima" aria-pressed="false">Cima</button>
+        </div>
+        <div class="selo"><span class="num">110 × 112 × 130 mm</span><span>grade de 10 mm</span></div>
+      </div>
+      <div class="ferramentas">
+        <label class="chave"><input type="checkbox" id="raio-x"><span></span>Corpo transparente</label>
+        <label class="chave"><input type="checkbox" id="de-verdade" checked><span></span>Peças de verdade</label>
+        <label class="separar" for="separa">Montada<input type="range" id="separa" min="0" max="100" value="0" aria-label="Separar as peças">Separada</label>
+      </div>
+      <div class="escolhida" id="escolhida" aria-live="polite">
+        <b>Toque numa peça</b>
+        <p>Com o corpo transparente dá para tocar nas peças de dentro.</p>
+      </div>
+    </section>
+
+    <div class="lado">
+      <section class="cartao atencao">
+        <h2>Ainda não imprima a caixa</h2>
+        <p>Faltam duas coisas. A primeira é o resultado do segundo teste da tela, com o encaixe da placa 1 mm maior de cada lado. A segunda são três medidas que ainda são chute. Como a entrada do USB-C é embutida e o plugue entra inteiro na lateral, o túnel precisa das medidas reais.</p>
+        <table class="medidas">
+          <tr><td>Plástico do plugue USB-C: largura × altura, comprimento</td><td class="num">12 × 6,5, 20</td></tr>
+          <tr><td>Medida J: da borda de trás da placa até o meio do USB</td><td class="num">25,1</td></tr>
+          <tr><td>Plaquinha do amplificador</td><td class="num">18 × 19,3</td></tr>
+        </table>
+        <p>Preencha em <a href="https://claude.ai/artifact/MskuowJLJFxwNJLMU6zfgv" target="_blank" rel="noopener">Medidas do Mini Mac</a>. O comprimento do plugue também move a placa na bandeja, então o corpo e a bandeja esperam essas medidas.</p>
+      </section>
+
+      <section class="cartao">
+        <h2>As peças</h2>
+        <p class="sub">Para imprimir</p>
+        <ul class="lista-pecas" id="impressas"></ul>
+        <p class="sub">De verdade, só para conferir</p>
+        <ul class="lista-pecas" id="referencias"></ul>
+      </section>
+
+      <section class="cartao">
+        <h2>O que foi conferido</h2>
+        <p>Medido nos arquivos gerados, com as peças montadas no computador.</p>
+        <ul class="marcas">
+          <li>As 5 peças estão fechadas, cada uma inteira, sem pedaço solto.</li>
+          <li>Montadas, nenhuma invade outra nem as peças de verdade.</li>
+          <li>A bandeja entra por trás com a placa, o ESP32 e os jumpers em cima sem bater em nada.</li>
+          <li>A chave de fenda alcança os 4 parafusos da tela por trás, com o alto-falante e o amplificador já no lugar.</li>
+          <li>Os parafusos de 19 mm param antes do fundo dos furos: sobram 0,4 mm na tela e 0,9 mm atrás.</li>
+          <li>Imprime sem suporte. Os únicos pontos no ar são furos deitados (o maior é o do USB, com 7 mm de altura), as pontes de 1,8 mm das fendas e um degrau de 1 mm em volta da janela da tela.</li>
+        </ul>
+        <p class="sub">O que não deu para conferir</p>
+        <ul class="marcas nao">
+          <li>Não fatiei no Bambu Studio: o tempo, o filamento e as pontes você confere lá.</li>
+          <li>Encaixe do plugue, dos insertos e do alto-falante só a impressão mostra.</li>
+        </ul>
+      </section>
+
+      <section class="cartao">
+        <h2>Como vai imprimir</h2>
+        <div class="arquivos">
+          <div><code>caixa-corpo.3mf</code><span>O corpo já deitado com a frente na mesa: a frente sai lisa, com o acabamento da placa de impressão.</span></div>
+          <div><code>caixa-bandeja-e-pecas.3mf</code><span>A bandeja deitada, a moldura da tela, a tecla (com a face na mesa) e a tampa do microfone.</span></div>
+        </div>
+        <p class="sub">Para montar</p>
+        <ul class="marcas nao">
+          <li>6 insertos M3 e 6 parafusos M3 × 19: 4 na tela e 2 na tampa de trás.</li>
+          <li>Fita dupla-face para o alto-falante, embaixo da grade do topo.</li>
+          <li>Um anel de EVA de 1 mm entre a grade e o microfone.</li>
+          <li>4 pezinhos de borracha colados embaixo da bandeja.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  // peças no modelo (nomes iguais aos de gerar_caixa.py); separa = quanto a peça anda, em mm, com a caixa separada (x, y, z do modelo)
+  const PECAS = [
+    { nome: 'corpo', cor: '#D8CDB2', impressa: true, txt: 'Frente, topo e laterais numa peça só, com a moldura da tela, o queixo e a entrada do USB-C embutida na lateral direita.', separa: [0, 0, 0] },
+    { nome: 'bandeja', cor: '#CDBFA0', impressa: true, txt: 'Fundo e tampa de trás. A placa encaixa em 4 pininhos; a bandeja entra por trás nos trilhos e prende com 2 parafusos.', separa: [0, 95, 0] },
+    { nome: 'moldura da tela', cor: '#BDB193', impressa: true, txt: 'Aperta os 4 cantos da placa vermelha da tela, com 4 parafusos em insertos em cima e embaixo da tela.', separa: [0, 42, 0] },
+    { nome: 'tecla', cor: '#F3F0E8', impressa: true, txt: 'Passa pelo furo da frente e aperta o botão tátil que fica atrás.', separa: [0, -18, 0] },
+    { nome: 'tampa do microfone', cor: '#E7E1D2', impressa: true, txt: 'Prende o microfone no copo atrás da grade, com o anel de EVA entre os dois.', separa: [0, 26, 0] },
+    { nome: 'tela: vidro', cor: '#1B1F26', grupo: 'tela', txt: 'Tela de 3,5": o vidro entra no bolso que já deu certo no primeiro teste.', separa: [0, 24, 0] },
+    { nome: 'tela: placa', cor: '#B3322B', grupo: 'tela', txt: 'Placa vermelha da tela, 96 × 54,8, no encaixe com 1 mm a mais de cada lado.', separa: [0, 24, 0] },
+    { nome: 'tela: jumpers', cor: '#E8B52F', grupo: 'tela', txt: 'Jumpers nos pinos da tela, do lado esquerdo.', separa: [0, 24, 0] },
+    { nome: 'placa ilhada', cor: '#2F6A46', txt: 'Placa ilhada 80 × 60, presa nos pininhos da bandeja.', separa: [0, 95, 0] },
+    { nome: 'ESP32', cor: '#2A2F38', txt: 'ESP32-S3 no soquete. O USB dele fica virado para a lateral direita.', separa: [0, 95, 0] },
+    { nome: 'jumpers da placa', cor: '#3D9B5B', txt: 'Jumpers em pé na placa (até 48,5 mm de altura).', separa: [0, 95, 0] },
+    { nome: 'jumpers do mic', cor: '#3B7DD8', txt: 'Jumpers que vão até o microfone.', separa: [0, 95, 0] },
+    { nome: 'jumpers do amp', cor: '#D9453B', txt: 'Jumpers que vão até o amplificador.', separa: [0, 95, 0] },
+    { nome: 'plugue USB-C', cor: '#202226', txt: 'Plugue do cabo: entra inteiro na lateral, até o USB do ESP32. Medida de chute: 12 × 6,5 × 20.', separa: [45, 0, 0] },
+    { nome: 'alto-falante', cor: '#8D96A3', txt: 'Alto-falante de 40 mm colado com dupla-face embaixo da grade do topo, centrado por 4 aletas.', separa: [0, 0, -32] },
+    { nome: 'amplificador', cor: '#5B2E87', txt: 'MAX98357A: desliza por trás em dois trilhos na parede esquerda. Medida de chute: 18 × 19,3.', separa: [0, 62, 0] },
+    { nome: 'microfone', cor: '#25518F', txt: 'INMP441 atrás da grade de 19 furos, no copo.', separa: [0, 15, 0] },
+    { nome: 'LED', cor: '#5FD17A', txt: 'LED de 5 mm: a ponta fica rente à frente e a aba apoia atrás.', separa: [0, 20, 0] },
+    { nome: 'botão tátil', cor: '#33363C', txt: 'Botão 6 × 6 encaixado no suporte atrás da tecla.', separa: [0, 18, 0] }
+  ];
+  const chave = (s) => s.normalize('NFC').replace(/[\s_:]+/g, '').toLowerCase();
+  const porChave = {};
+  PECAS.forEach((p) => { porChave[chave(p.nome)] = p; p.objs = []; });
+  const titulo = (p) => p.nome.charAt(0).toUpperCase() + p.nome.slice(1);
+
+  // ---------- lista de peças ----------
+  const listaImp = document.getElementById('impressas');
+  const listaRef = document.getElementById('referencias');
+  PECAS.forEach((p, i) => {
+    if (p.grupo && p.nome !== 'tela: vidro') return;
+    const li = document.createElement('li');
+    const nome = p.grupo === 'tela' ? 'Tela' : titulo(p);
+    const txt = p.grupo === 'tela' ? 'Vidro, placa vermelha e jumpers, com as medidas que você tirou.' : p.txt;
+    li.innerHTML = '<span class="cor"></span><div><b></b><p></p></div><label class="chave" title="Mostrar"><input type="checkbox" checked id="ver-' + i + '"><span></span></label>';
+    li.querySelector('.cor').style.background = p.cor;
+    li.querySelector('b').textContent = nome;
+    li.querySelector('p').textContent = txt;
+    const caixa = li.querySelector('input');
+    caixa.setAttribute('aria-label', 'Mostrar ' + nome);
+    caixa.addEventListener('change', () => {
+      PECAS.filter((q) => q === p || (p.grupo && q.grupo === p.grupo)).forEach((q) => { q.ligada = caixa.checked; });
+      atualizarVisiveis();
+    });
+    p.caixa = caixa;
+    (p.impressa ? listaImp : listaRef).appendChild(li);
+  });
+  PECAS.forEach((p) => { p.ligada = true; });
+
+  // ---------- cena ----------
+  const palco = document.getElementById('palco');
+  const aviso = document.getElementById('aviso');
+  if (!window.THREE || !THREE.GLTFLoader || !THREE.OrbitControls) {
+    aviso.textContent = 'Não consegui carregar o visualizador 3D. Recarregue a página.';
+    return;
+  }
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.92;
+  palco.insertBefore(renderer.domElement, palco.firstChild);
+  renderer.domElement.setAttribute('aria-label', 'Caixa em 3D: arraste para girar');
+
+  const cena = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 1, 5000);
+  const controles = new THREE.OrbitControls(camera, renderer.domElement);
+  controles.enableDamping = true;
+  controles.dampingFactor = 0.09;
+  controles.minDistance = 120;
+  controles.maxDistance = 900;
+  controles.target.set(0, 0, 0);
+
+  cena.add(new THREE.HemisphereLight(0xffffff, 0x8a8170, 0.75));
+  const sol = new THREE.DirectionalLight(0xffffff, 1.6); sol.position.set(160, 260, 220); cena.add(sol);
+  const contra = new THREE.DirectionalLight(0xdfe8ff, 0.55); contra.position.set(-220, 80, -200); cena.add(contra);
+
+  // o modelo vem em mm com z para cima: gira para o y do three e centra a caixa (110 × 112 × 130)
+  const mundo = new THREE.Group(); mundo.rotation.x = -Math.PI / 2; cena.add(mundo);
+  const modelo = new THREE.Group(); modelo.position.set(-55, -56, -65); mundo.add(modelo);
+  let grade = null;
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#999'; }
+  function fazerGrade() {
+    if (grade) { cena.remove(grade); grade.geometry.dispose(); grade.material.dispose(); }
+    grade = new THREE.GridHelper(260, 26, new THREE.Color(cssVar('--grade-1')).convertSRGBToLinear(), new THREE.Color(cssVar('--grade-2')).convertSRGBToLinear());
+    grade.material.toneMapped = false;
+    grade.position.y = -65.05;
+    cena.add(grade);
+  }
+  fazerGrade();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fazerGrade);
+  new MutationObserver(fazerGrade).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  const corLinear = (hx) => new THREE.Color(hx).convertSRGBToLinear();
+  new THREE.GLTFLoader().load('caixa-3d.gltf.json', (gltf) => {
+    const malhas = [];
+    gltf.scene.traverse((o) => { if (o.isMesh) malhas.push(o); });
+    malhas.forEach((o) => {
+      let p = null;
+      for (let n = o; n && !p; n = n.parent) p = porChave[chave(n.name || '')];
+      if (!p) return;
+      const mat = new THREE.MeshStandardMaterial({ color: corLinear(p.cor), roughness: p.impressa ? 0.78 : 0.55, metalness: p.nome === 'alto-falante' ? 0.35 : 0.0 });
+      // normais por face: o arquivo junta os vértices das quinas e o sombreado liso borra as arestas vivas
+      const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, mat);
+      m.userData.peca = p;
+      if (p.impressa) {
+        const linhas = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 28),
+          new THREE.LineBasicMaterial({ color: corLinear('#6E6450'), transparent: true, opacity: 0.35 }));
+        m.add(linhas);
+        m.userData.linhas = linhas;
+      }
+      p.objs.push(m);
+      modelo.add(m);
+    });
+    aviso.remove();
+    atualizarVisiveis();
+    separar();
+  }, undefined, () => { aviso.textContent = 'Não consegui abrir o arquivo do modelo (caixa-3d.gltf.json). Recarregue a página.'; });
+
+  // ---------- controles ----------
+  const raioX = document.getElementById('raio-x');
+  const deVerdade = document.getElementById('de-verdade');
+  const separa = document.getElementById('separa');
+  function atualizarVisiveis() {
+    PECAS.forEach((p) => {
+      const ver = p.ligada && (p.impressa || deVerdade.checked);
+      p.objs.forEach((m) => {
+        m.visible = ver;
+        if (p.nome === 'corpo') {
+          m.material.transparent = raioX.checked;
+          m.material.opacity = raioX.checked ? 0.16 : 1;
+          m.material.depthWrite = !raioX.checked;
+          m.material.needsUpdate = true;
+          if (m.userData.linhas) m.userData.linhas.material.opacity = raioX.checked ? 0.22 : 0.35;
+        }
+      });
+    });
+  }
+  raioX.addEventListener('change', atualizarVisiveis);
+  deVerdade.addEventListener('change', () => {
+    PECAS.filter((p) => !p.impressa).forEach((p) => { if (p.caixa) p.caixa.disabled = !deVerdade.checked; });
+    atualizarVisiveis();
+  });
+  function separar() {
+    const t = separa.value / 100;
+    const e = t * t * (3 - 2 * t);
+    PECAS.forEach((p) => p.objs.forEach((m) => m.position.set(p.separa[0] * e, p.separa[1] * e, p.separa[2] * e)));
+  }
+  separa.addEventListener('input', separar);
+
+  // ---------- vistas ----------
+  const calmo = matchMedia('(prefers-reduced-motion: reduce)');
+  const VISTAS = {
+    'v-34': [215, 150, 300], 'v-frente': [0, 20, 380], 'v-usb': [380, 20, 0], 'v-tras': [0, 40, -380], 'v-cima': [0, 390, 30]
+  };
+  let anim = null;
+  function irPara(id) {
+    Object.keys(VISTAS).forEach((k) => document.getElementById(k).setAttribute('aria-pressed', String(k === id)));
+    const fim = new THREE.Vector3().fromArray(VISTAS[id]);
+    if (calmo.matches) { camera.position.copy(fim); controles.target.set(0, 0, 0); return; }
+    anim = { de: camera.position.clone(), alvo0: controles.target.clone(), para: fim, t0: performance.now() };
+  }
+  Object.keys(VISTAS).forEach((k) => document.getElementById(k).addEventListener('click', () => irPara(k)));
+  controles.addEventListener('start', () => {
+    anim = null;
+    Object.keys(VISTAS).forEach((k) => document.getElementById(k).setAttribute('aria-pressed', 'false'));
+  });
+  camera.position.fromArray(VISTAS['v-34']);
+
+  // ---------- tocar numa peça ----------
+  const escolhida = document.getElementById('escolhida');
+  const raio = new THREE.Raycaster();
+  let marcada = null, inicio = null;
+  renderer.domElement.addEventListener('pointerdown', (ev) => { inicio = [ev.clientX, ev.clientY]; });
+  renderer.domElement.addEventListener('pointerup', (ev) => {
+    if (!inicio || Math.hypot(ev.clientX - inicio[0], ev.clientY - inicio[1]) > 6) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    raio.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), camera);
+    const alvos = [];
+    PECAS.forEach((p) => p.objs.forEach((m) => { if (m.visible && !(raioX.checked && p.nome === 'corpo')) alvos.push(m); }));
+    const hit = raio.intersectObjects(alvos, false)[0];
+    if (marcada) marcada.objs.forEach((m) => m.material.emissive.setHex(0x000000));
+    marcada = hit ? hit.object.userData.peca : null;
+    if (!marcada) {
+      escolhida.innerHTML = '<b>Toque numa peça</b><p>Com o corpo transparente dá para tocar nas peças de dentro.</p>';
+      return;
+    }
+    marcada.objs.forEach((m) => m.material.emissive.copy(corLinear('#1E5BB8')).multiplyScalar(0.35));
+    escolhida.innerHTML = '<b></b><p></p>';
+    escolhida.querySelector('b').textContent = titulo(marcada) + (marcada.impressa ? ' · imprime' : ' · peça de verdade');
+    escolhida.querySelector('p').textContent = marcada.txt;
+  });
+
+  // ---------- laço ----------
+  function ajustar() {
+    const w = palco.clientWidth, h = palco.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(ajustar).observe(palco);
+  ajustar();
+  function quadro(agora) {
+    if (anim) {
+      const t = Math.min((agora - anim.t0) / 650, 1), e = 1 - Math.pow(1 - t, 3);
+      camera.position.lerpVectors(anim.de, anim.para, e);
+      controles.target.lerpVectors(anim.alvo0, new THREE.Vector3(), e);
+      if (t >= 1) anim = null;
+    }
+    controles.update();
+    renderer.render(cena, camera);
+    requestAnimationFrame(quadro);
+  }
+  requestAnimationFrame(quadro);
+})();
+</script>
